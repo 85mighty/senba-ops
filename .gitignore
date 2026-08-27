@@ -1,0 +1,9 @@
+*.env
+.env*
+*service-account*.json
+*credentials*.json
+*dbpass*
+*wppass*
+node_modules/
+logs/
+*.log
