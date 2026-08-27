@@ -7,6 +7,7 @@
 | 디렉터리 | 내용 | 운영 원본 위치 |
 |---|---|---|
 | `square/` | Square 예약: 웹훅→텔레그램(`webhook-server.js`, pm2 senba-sq-webhook), 밤 21시 시프트 크론(`shift-cron-v1.js`), 초기세팅·검증 스크립트 | `/opt/senba-square/` |
+| `attendance/` | 알바 근태 봇: 텔레그램 출근/퇴근 버튼 → 근무시간·일급(시급1200엔) 계산 → 자산현황 '알바근태' 탭 (pm2 senba-attend-bot) | `/opt/senba-attend/` |
 | `blog-auto/` | blog.senbaartstudio.com 자동발행 (v2 = 장문·FAQ스키마·CTA없음, 크론 매일 JST10시 + 수·토 EN) | `/opt/senba-blog-auto/` |
 | `blog-theme/` | 블로그 갤러리 테마 mu-plugin (히어로 예약버튼은 애드센스 심사 동안 주석 처리) | `/var/www/blog.senbaartstudio.com/wp-content/mu-plugins/` |
 | `site-i18n/` | senbaartstudio.com 다국어 오버레이 v10 (일/영/중/베트남, 날짜 게이트 예약 모달, 언어별 이벤트) — 배포는 GitHub senba-website 저장소 public/i18n.js | `/root/senbaart-site/senbaartstudio.com/` |
@@ -16,6 +17,7 @@
 
 ## 시크릿 위치 (커밋 금지, 서버에만)
 - `/opt/senba-square/.env` — Square 토큰·로케이션·웹훅 서명키·블록용 ID
+- `/opt/senba-attend/.env` — 알바 근태 봇 토큰·채팅 ID·시급 설정
 - `/opt/senba-blog-auto/.env` — WP 앱패스워드·Anthropic·Brave·텔레그램·시트
 - `/root/.senba-blog-dbpass`, `/root/.senba-blog-wppass`
 
