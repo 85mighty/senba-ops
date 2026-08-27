@@ -67,10 +67,11 @@ const ownerTg = async text => {
   await fetch(`https://api.telegram.org/bot${OWN.TELEGRAM_BOT_TOKEN}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: OWN.TELEGRAM_CHAT_ID, text, parse_mode: 'HTML' }) }).catch(e => console.error('owner tg fail:', e.message));
 };
 const BTN_IN = '▶️ 出勤 (출근)', BTN_OUT = '⏹ 退勤 (퇴근)';
-const KB_IN = { inline_keyboard: [[{ text: BTN_IN, callback_data: 'in' }]] };
-const KB_OUT = { inline_keyboard: [[{ text: BTN_OUT, callback_data: 'out' }]] };
 // 입력창 위 상시 대형 버튼 (그룹에서는 봇이 관리자여야 누른 메시지를 수신함)
-const RM_MAIN = { keyboard: [[{ text: BTN_IN }, { text: BTN_OUT }]], resize_keyboard: true, is_persistent: true };
+// 출근 전엔 [出勤]만 → 출근 후엔 [退勤]만 → 퇴근하면 버튼 제거
+const RM_IN = { keyboard: [[{ text: BTN_IN }]], resize_keyboard: true, is_persistent: true };
+const RM_OUT = { keyboard: [[{ text: BTN_OUT }]], resize_keyboard: true, is_persistent: true };
+const RM_NONE = { remove_keyboard: true };
 
 // ── Square: 오늘 기준출근·예약 정보 (shift-cron-v1 과 동일 규칙) ─
 async function todayInfo(ymd) {
@@ -142,8 +143,8 @@ async function clockIn(name) {
   rec.effIn = toHM(Math.max(toM(hm), toM(rec.sched)));
   rec.name = name || rec.name || '';
   save(st);
-  const text = `🗓 <b>${dayLabel(now)}</b> 基準出勤 ${rec.sched}\n▶️ 出勤 ${hm} → 認定 <b>${rec.effIn}</b>\nお疲れさまです！帰るとき [⏹ 退勤] を押してください`;
-  return { rec, ymd, text, kb: KB_OUT };
+  const text = `🗓 <b>${dayLabel(now)}</b> 基準出勤 ${rec.sched}\n▶️ 出勤 ${hm} → 認定 <b>${rec.effIn}</b>\nお疲れさまです！帰るとき下の [⏹ 退勤] を押してください`;
+  return { rec, ymd, text, rm: RM_OUT };
 }
 async function clockOut() {
   const now = jstNow(), ymd = ymdOf(now), hm = hmOf(now);
@@ -160,7 +161,7 @@ async function clockOut() {
   await writeSheet(ymd, rec);
   await ownerTg(`👷 <b>센바 알바 퇴근</b> ${dayLabel(now)}\n${rec.effIn} → ${rec.effOut} = <b>${fmtDur(rec.min)}</b> · ${yen(rec.wage)} (시급 ${WAGE})\n(누름: 출근 ${rec.inAt} / 퇴근 ${rec.outAt})`);
   const text = `🗓 <b>${dayLabel(now)}</b> 勤務終了 ✅\n▶️ ${rec.inAt} → ⏹ ${rec.outAt}\n認定 ${rec.effIn}〜${rec.effOut} = <b>${fmtDur(rec.min)}</b>\n💴 ${yen(rec.wage)}\nお疲れさまでした！`;
-  return { rec, ymd, text };
+  return { rec, ymd, text, rm: RM_NONE };
 }
 
 // ── 명령 처리 ────────────────────────────────────────────────────
@@ -168,11 +169,11 @@ async function handleCommand(text, chatId) {
   const now = jstNow();
   if (/^\/(출근|出勤|in\b)/.test(text)) {
     const r = await clockIn('');
-    return r.err ? send(r.err) : send(r.text, r.kb);
+    return r.err ? send(r.err) : send(r.text, r.rm);
   }
   if (/^\/(퇴근|退勤|out\b)/.test(text)) {
     const r = await clockOut();
-    return r.err ? send(r.err) : send(r.text);
+    return r.err ? send(r.err) : send(r.text, r.rm);
   }
   if (/^\/(오늘|今日|today\b)/.test(text)) {
     const rec = load().days[ymdOf(now)];
@@ -203,24 +204,25 @@ async function handleCommand(text, chatId) {
 }
 
 async function handle(u) {
-  if (u.callback_query) {
+  if (u.callback_query) {   // 예전 메시지의 인라인 버튼 (지금은 하단 대형 버튼이 기본)
     const cq = u.callback_query;
     if (String(cq.message?.chat?.id) !== CHAT) return answerCb(cq.id, '');
     const r = cq.data === 'in' ? await clockIn(cq.from?.first_name) : cq.data === 'out' ? await clockOut() : { err: '?' };
     if (r.err) return answerCb(cq.id, r.err);
     await answerCb(cq.id, cq.data === 'in' ? '출근 기록 완료' : '퇴근 기록 완료');
-    await api('editMessageText', { chat_id: CHAT, message_id: cq.message.message_id, text: r.text, parse_mode: 'HTML', ...(r.kb ? { reply_markup: r.kb } : {}) });
+    await api('editMessageReplyMarkup', { chat_id: CHAT, message_id: cq.message.message_id });   // 누른 인라인 버튼 제거
+    await send(r.text, r.rm);
   } else if (u.message?.text) {
     const chatId = String(u.message.chat.id);
     if (chatId !== CHAT && chatId !== ADMIN_CHAT) return;
     const text = u.message.text.trim();
     if (text === BTN_IN || /^▶/.test(text)) {         // 하단 대형 버튼 (출근)
       const r = await clockIn(u.message.from?.first_name);
-      return r.err ? send(r.err) : send(r.text, RM_MAIN);
+      return r.err ? send(r.err) : send(r.text, r.rm);
     }
     if (text === BTN_OUT || /^⏹/.test(text)) {        // 하단 대형 버튼 (퇴근)
       const r = await clockOut();
-      return r.err ? send(r.err) : send(r.text, RM_MAIN);
+      return r.err ? send(r.err) : send(r.text, r.rm);
     }
     await handleCommand(text, chatId);
   }
@@ -233,16 +235,26 @@ async function postDaily() {
   const st = load(); const rec = st.days[ymd] ||= {};
   Object.assign(rec, { sched: info.sched, first: info.first, count: info.count, posted: true });
   save(st);
-  const j = await send(`🗓 <b>${dayLabel(now)}</b> おはようございます\n🕐 出勤 <b>${info.sched}</b>${info.first ? ` (最初の予約 ${info.first} · ${info.count}件)` : info.count === 0 ? ' (予約なし)' : ''}\n👇 着いたら下の <b>[▶️ 出勤]</b> ボタンを押してください`, RM_MAIN);
+  const j = await send(`🗓 <b>${dayLabel(now)}</b> おはようございます\n🕐 出勤 <b>${info.sched}</b>${info.first ? ` (最初の予約 ${info.first} · ${info.count}件)` : info.count === 0 ? ' (予約なし)' : ''}\n👇 着いたら下の <b>[▶️ 出勤]</b> ボタンを押してください`, RM_IN);
   if (j.result?.message_id) await api('pinChatMessage', { chat_id: CHAT, message_id: j.result.message_id, disable_notification: true });   // 봇이 관리자면 상단 고정
 }
 async function tick() {
-  const now = jstNow(), ymd = ymdOf(now), h = now.getUTCHours();
+  const now = jstNow(), ymd = ymdOf(now), h = now.getUTCHours(), curM = h * 60 + now.getUTCMinutes();
   const st = load(); const rec = st.days[ymd] ||= {};
   if (h === POST_HOUR && !rec.posted) { rec.posted = true; save(st); await postDaily().catch(e => console.error('post fail:', e.message)); }
+  // 출근 30분 전 리마인드 (12:30 출근→12:00, 13:30 출근→13:00)
+  if (rec.sched && !rec.inAt && !rec.remIn && curM >= toM(rec.sched) - 30 && curM < toM(rec.sched) + 60) {
+    rec.remIn = true; save(st);
+    await send(`🔔 今日の出勤は <b>${rec.sched}</b> です\n👇 着いたら下の [▶️ 出勤] ボタンを押してください`, RM_IN);
+  }
+  // 17시: 퇴근 버튼 미리 리마인드
+  if (h >= 17 && rec.inAt && !rec.outAt && !rec.remOut) {
+    rec.remOut = true; save(st);
+    await send('🔔 帰るとき、下の [⏹ 退勤] ボタンを忘れずに押してください！', RM_OUT);
+  }
   if (h === 21 && rec.inAt && !rec.outAt && !rec.reminded) {
     rec.reminded = true; save(st);
-    await send('⚠️ 退勤ボタンが押されていません！[⏹ 退勤] を押すか /수정 で入力してください', KB_OUT);
+    await send('⚠️ 退勤ボタンが押されていません！[⏹ 退勤] を押すか /수정 で入力してください', RM_OUT);
     await ownerTg('⚠️ 센바 알바 퇴근 미기록 (' + dayLabel(now) + ', 출근 ' + rec.inAt + ')');
   }
 }
