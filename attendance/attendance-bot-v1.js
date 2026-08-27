@@ -155,26 +155,26 @@ async function clockOut() {
 // ── 명령 처리 ────────────────────────────────────────────────────
 async function handleCommand(text, chatId) {
   const now = jstNow();
-  if (/^\/(출근|出勤)/.test(text)) {
+  if (/^\/(출근|出勤|in\b)/.test(text)) {
     const r = await clockIn('');
     return r.err ? send(r.err) : send(r.text, r.kb);
   }
-  if (/^\/(퇴근|退勤)/.test(text)) {
+  if (/^\/(퇴근|退勤|out\b)/.test(text)) {
     const r = await clockOut();
     return r.err ? send(r.err) : send(r.text);
   }
-  if (/^\/(오늘|今日)/.test(text)) {
+  if (/^\/(오늘|今日|today\b)/.test(text)) {
     const rec = load().days[ymdOf(now)];
     if (!rec?.inAt) return send('오늘 출근 기록 없음');
     return send(rec.outAt ? `오늘: ${rec.effIn}〜${rec.effOut} = ${fmtDur(rec.min)} · ${yen(rec.wage)}` : `오늘: ${rec.effIn} 출근, 근무 중`);
   }
-  if (/^\/(이번달|今月)/.test(text)) {
+  if (/^\/(이번달|今月|month\b)/.test(text)) {
     const ym = ymdOf(now).slice(0, 7);
     const days = Object.entries(load().days).filter(([d, r]) => d.startsWith(ym) && r.min > 0);
     const min = days.reduce((s, [, r]) => s + r.min, 0), pay = days.reduce((s, [, r]) => s + r.wage, 0);
     return send(`📊 <b>${ym}</b> 근무 ${days.length}일\n합계 <b>${fmtDur(min)}</b> · <b>${yen(pay)}</b> (시급 ${WAGE})`);
   }
-  const m = text.match(/^\/(수정|修正)(?:\s+(\d{1,2})\/(\d{1,2}))?\s+(\d{1,2}:\d{2})\s+(\d{1,2}:\d{2})/);
+  const m = text.match(/^\/(수정|修正|fix)(?:\s+(\d{1,2})\/(\d{1,2}))?\s+(\d{1,2}:\d{2})\s+(\d{1,2}:\d{2})/);
   if (m) {   // /수정 [M/D] HH:MM HH:MM — 입력값 그대로(절사 없이) 기록
     const d = new Date(now); if (m[2]) { d.setUTCMonth(Number(m[2]) - 1, Number(m[3])); if (d > now) d.setUTCFullYear(d.getUTCFullYear() - 1); }
     const ymd = ymdOf(d);
@@ -188,7 +188,7 @@ async function handleCommand(text, chatId) {
     await writeSheet(ymd, rec);
     return send(`✏️ ${ymd} 수정: ${inHM}〜${outHM} = ${fmtDur(rec.min)} · ${yen(rec.wage)}`);
   }
-  if (text.startsWith('/')) return send('명령: /출근 /퇴근 /오늘 /이번달 /수정 [M/D] HH:MM HH:MM');
+  if (text.startsWith('/')) return send('명령: /출근(/in) /퇴근(/out) /오늘(/today) /이번달(/month) /수정(/fix) [M/D] HH:MM HH:MM');
 }
 
 async function handle(u) {

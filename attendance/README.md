@@ -18,11 +18,17 @@
 | 마지막 예약 종료+정리 30분이 18:30을 넘는 날 | 그 시각까지 분단위 인정 |
 | 그 외 예외 (장시간 연장 등) | `/수정 HH:MM HH:MM` 입력값 그대로 |
 
-## 명령어 (알바방·관리자 채팅)
-- `/출근` `/퇴근` — 버튼 대신 명령으로도 가능
-- `/오늘` — 오늘 상태 확인
-- `/이번달` — 이번달 근무일수·합계시간·급여 합계
-- `/수정 [M/D] HH:MM HH:MM` — 기록 정정 (날짜 생략 시 오늘, 절사 없이 그대로 기록)
+## 명령어 (알바방·관리자 채팅, 영문 별칭은 텔레그램 명령 메뉴용)
+- `/출근`(`/in`) `/퇴근`(`/out`) — 버튼 대신 명령으로도 가능
+- `/오늘`(`/today`) — 오늘 상태 확인
+- `/이번달`(`/month`) — 이번달 근무일수·합계시간·급여 합계
+- `/수정`(`/fix`) `[M/D] HH:MM HH:MM` — 기록 정정 (날짜 생략 시 오늘, 절사 없이 그대로 기록)
+
+명령 메뉴 등록(선택, 서버에서 1회):
+```
+curl -s "https://api.telegram.org/bot<토큰>/setMyCommands" -H 'Content-Type: application/json' \
+  -d '{"commands":[{"command":"in","description":"出勤 (출근)"},{"command":"out","description":"退勤 (퇴근)"},{"command":"today","description":"今日の状況"},{"command":"month","description":"今月の合計"},{"command":"fix","description":"記録修正 HH:MM HH:MM"}]}'
+```
 
 ## 설치 (서버)
 1. BotFather로 알바용 봇 새로 생성 → 토큰 확보
