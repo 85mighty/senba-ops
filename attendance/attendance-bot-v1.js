@@ -49,8 +49,16 @@ const save = st => fs.writeFileSync(STATE_FILE, JSON.stringify(st, null, 1));
 
 // ── 텔레그램 ─────────────────────────────────────────────────────
 const api = async (method, body) => {
-  const r = await fetch(`https://api.telegram.org/bot${BOT}/${method}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
-  const j = await r.json(); if (!j.ok) console.error(method, 'fail:', j.description); return j;
+  for (let i = 0; ; i++) {
+    try {
+      const r = await fetch(`https://api.telegram.org/bot${BOT}/${method}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+      const j = await r.json(); if (!j.ok) console.error(method, 'fail:', j.description); return j;
+    } catch (e) {
+      if (i >= 2 || method === 'getUpdates') throw e;   // 롱폴링은 poll 루프가 자체 재시도
+      console.error(method, 'retry', i + 1, '-', e.cause?.code || e.message);
+      await new Promise(r => setTimeout(r, 2000 * (i + 1)));
+    }
+  }
 };
 const send = (text, rm) => api('sendMessage', { chat_id: CHAT, text, parse_mode: 'HTML', ...(rm ? { reply_markup: rm } : {}) });
 const answerCb = (id, text) => api('answerCallbackQuery', { callback_query_id: id, text });
@@ -264,4 +272,4 @@ async function poll() {
   console.log(`[attend] start — wage ${WAGE}, end ${END_HM}, post ${POST_HOUR}:00 JST, chat ${CHAT}`);
   setInterval(() => tick().catch(e => console.error('tick fail:', e.message)), 30e3);
   poll();
-})().catch(e => { console.error('FAIL:', e.message); process.exit(1); });
+})().catch(e => { console.error('FAIL:', e.message, e.cause ? '| cause: ' + (e.cause.code || e.cause.message) : ''); process.exit(1); });
