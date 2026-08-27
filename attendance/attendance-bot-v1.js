@@ -52,14 +52,17 @@ const api = async (method, body) => {
   const r = await fetch(`https://api.telegram.org/bot${BOT}/${method}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
   const j = await r.json(); if (!j.ok) console.error(method, 'fail:', j.description); return j;
 };
-const send = (text, kb) => api('sendMessage', { chat_id: CHAT, text, parse_mode: 'HTML', ...(kb ? { reply_markup: { inline_keyboard: kb } } : {}) });
+const send = (text, rm) => api('sendMessage', { chat_id: CHAT, text, parse_mode: 'HTML', ...(rm ? { reply_markup: rm } : {}) });
 const answerCb = (id, text) => api('answerCallbackQuery', { callback_query_id: id, text });
 const ownerTg = async text => {
   if (!OWN.TELEGRAM_BOT_TOKEN || !OWN.TELEGRAM_CHAT_ID) return;
   await fetch(`https://api.telegram.org/bot${OWN.TELEGRAM_BOT_TOKEN}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: OWN.TELEGRAM_CHAT_ID, text, parse_mode: 'HTML' }) }).catch(e => console.error('owner tg fail:', e.message));
 };
-const KB_IN = [[{ text: '▶️ 出勤 (출근)', callback_data: 'in' }]];
-const KB_OUT = [[{ text: '⏹ 退勤 (퇴근)', callback_data: 'out' }]];
+const BTN_IN = '▶️ 出勤 (출근)', BTN_OUT = '⏹ 退勤 (퇴근)';
+const KB_IN = { inline_keyboard: [[{ text: BTN_IN, callback_data: 'in' }]] };
+const KB_OUT = { inline_keyboard: [[{ text: BTN_OUT, callback_data: 'out' }]] };
+// 입력창 위 상시 대형 버튼 (그룹에서는 봇이 관리자여야 누른 메시지를 수신함)
+const RM_MAIN = { keyboard: [[{ text: BTN_IN }, { text: BTN_OUT }]], resize_keyboard: true, is_persistent: true };
 
 // ── Square: 오늘 기준출근·예약 정보 (shift-cron-v1 과 동일 규칙) ─
 async function todayInfo(ymd) {
@@ -198,11 +201,20 @@ async function handle(u) {
     const r = cq.data === 'in' ? await clockIn(cq.from?.first_name) : cq.data === 'out' ? await clockOut() : { err: '?' };
     if (r.err) return answerCb(cq.id, r.err);
     await answerCb(cq.id, cq.data === 'in' ? '출근 기록 완료' : '퇴근 기록 완료');
-    await api('editMessageText', { chat_id: CHAT, message_id: cq.message.message_id, text: r.text, parse_mode: 'HTML', ...(r.kb ? { reply_markup: { inline_keyboard: r.kb } } : {}) });
+    await api('editMessageText', { chat_id: CHAT, message_id: cq.message.message_id, text: r.text, parse_mode: 'HTML', ...(r.kb ? { reply_markup: r.kb } : {}) });
   } else if (u.message?.text) {
     const chatId = String(u.message.chat.id);
     if (chatId !== CHAT && chatId !== ADMIN_CHAT) return;
-    await handleCommand(u.message.text.trim(), chatId);
+    const text = u.message.text.trim();
+    if (text === BTN_IN || /^▶/.test(text)) {         // 하단 대형 버튼 (출근)
+      const r = await clockIn(u.message.from?.first_name);
+      return r.err ? send(r.err) : send(r.text, RM_MAIN);
+    }
+    if (text === BTN_OUT || /^⏹/.test(text)) {        // 하단 대형 버튼 (퇴근)
+      const r = await clockOut();
+      return r.err ? send(r.err) : send(r.text, RM_MAIN);
+    }
+    await handleCommand(text, chatId);
   }
 }
 
@@ -213,7 +225,8 @@ async function postDaily() {
   const st = load(); const rec = st.days[ymd] ||= {};
   Object.assign(rec, { sched: info.sched, first: info.first, count: info.count, posted: true });
   save(st);
-  await send(`🗓 <b>${dayLabel(now)}</b> おはようございます\n出勤 <b>${info.sched}</b>${info.first ? ` (最初の予約 ${info.first} · ${info.count}件)` : info.count === 0 ? ' (予約なし)' : ''}\n着いたら [▶️ 出勤] を押してください`, KB_IN);
+  const j = await send(`🗓 <b>${dayLabel(now)}</b> おはようございます\n🕐 出勤 <b>${info.sched}</b>${info.first ? ` (最初の予約 ${info.first} · ${info.count}件)` : info.count === 0 ? ' (予約なし)' : ''}\n👇 着いたら下の <b>[▶️ 出勤]</b> ボタンを押してください`, RM_MAIN);
+  if (j.result?.message_id) await api('pinChatMessage', { chat_id: CHAT, message_id: j.result.message_id, disable_notification: true });   // 봇이 관리자면 상단 고정
 }
 async function tick() {
   const now = jstNow(), ymd = ymdOf(now), h = now.getUTCHours();
