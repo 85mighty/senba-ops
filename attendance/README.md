@@ -32,8 +32,8 @@ curl -s "https://api.telegram.org/bot<토큰>/setMyCommands" -H 'Content-Type: a
 
 ## 설치 (서버)
 1. BotFather로 알바용 봇 새로 생성 → 토큰 확보
-2. 알바방(그룹 또는 1:1)에 봇 추가, 방에서 아무 메시지나 보낸 뒤:
-   `node attendance-bot-v1.js --chatid` 로 chat id 확인
+2. 알바방(그룹 또는 1:1)에 봇 추가, 방에서 `/start` 전송 뒤(그룹은 프라이버시 모드 때문에
+   일반 메시지가 봇에 안 감 — `/`로 시작해야 함): `node attendance-bot-v1.js --chatid` 로 chat id 확인
 3. `/opt/senba-attend/.env` 작성:
    ```
    ATTEND_BOT_TOKEN=봇토큰
