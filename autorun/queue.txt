@@ -1,0 +1,4 @@
+# senba-ops 자동 실행 목록 — runner.sh 가 이 파일의 새 커밋을 감지하면 아래 스크립트를 순서대로 실행
+# 형식: sheets-scripts/이름.js (한 줄에 하나, #은 주석). runner 는 이 패턴 외에는 실행하지 않음.
+sheets-scripts/senba-kobe2.js
+sheets-scripts/senba-savings2.js
