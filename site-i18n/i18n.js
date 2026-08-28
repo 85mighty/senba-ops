@@ -294,7 +294,9 @@
   var lang = 'ja';
   try { lang = localStorage.getItem(LS_KEY) || 'ja'; } catch (e) {}
   if (['ja','en','zh','vi'].indexOf(lang) < 0) lang = 'ja';
-  // 예약 링크: 일본어=구루나비 유지, 외국어=Square 예약 페이지 (2026-08-26)
+  // 예약 링크: [2026-08-28] 아직 전 언어 구루나비 유지 — Square 전환 시행일에 아래 플래그만 true 로.
+  // true 가 되면 gnavi 링크가 Square 날짜 게이트(평일/토일축 판정 → 코스 딥링크)로 바뀐다.
+  var USE_SQUARE_BOOKING = false;
   var SQUARE_BOOKING_URL = 'https://book.squareup.com/appointments/w10qd9b5byn80k/location/LCM2AJZHBA6SK';
 
   // ── 날짜 우선 예약 게이트 (2026-08-27) ──
@@ -385,13 +387,14 @@
   }
   var origHref = new WeakMap();
   function applyLinks() {
+    if (!USE_SQUARE_BOOKING) return;   // 구루나비 원본 링크 그대로 (번들의 gnavi href 를 건드리지 않음)
     document.querySelectorAll('a[href]').forEach(function (a) {
       var o = origHref.get(a);
       if (o == null) {
         var h = a.getAttribute('href') || '';
         if (/gnavi\.co\.jp/.test(h)) { o = h; origHref.set(a, o); } else return;
       }
-      var want = SQUARE_BOOKING_URL;   // [2026-08-27] 일본어 포함 전 언어 Square 통일 (구루나비는 승인제 채널로만)
+      var want = SQUARE_BOOKING_URL;
       if (a.getAttribute('href') !== want) a.setAttribute('href', want);
       if (!a.dataset.sdgBound) {
         a.dataset.sdgBound = '1';
