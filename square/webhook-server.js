@@ -43,9 +43,15 @@ async function handleEvent(ev) {
     const room = await teamName(seg.team_member_id);
     const dur = seg.duration_minutes ? ` ${seg.duration_minutes}분` : '';
     const status = b.status || '';
-    const icon = status === 'CANCELLED_BY_CUSTOMER' || status === 'CANCELLED_BY_SELLER' ? '❌' : (type === 'booking.created' ? '🆕' : '✏️');
-    const label = status.startsWith('CANCELLED') ? '예약 취소' : (type === 'booking.created' ? '새 예약' : '예약 변경');
-    await tg(`${icon} <b>센바 ${label}</b>\n${jst(b.start_at)}${dur}\n방: ${room}\n상태: ${status}${b.customer_note ? '\n메모: ' + b.customer_note : ''}`);
+    // 승인제(리퀘스트) 대응: PENDING=승인 대기 → 台帳 확인 후 수락/거절 안내 (2026-08-28)
+    let icon, label, extra = '';
+    if (status.startsWith('CANCELLED')) { icon = '❌'; label = '예약 취소'; extra = '\n📒 구루나비 台帳에 넣었던 건이면 삭제하세요'; }
+    else if (status === 'PENDING') { icon = '🙋'; label = '예약 요청 — 승인 대기'; extra = '\n👉 구루나비 台帳 확인 → 빈 방 있으면 台帳에 기입 후 Square 앱에서 <b>수락</b>, 없으면 <b>거절</b>'; }
+    else if (status === 'DECLINED') { icon = '🚫'; label = '요청 거절 완료'; }
+    else if (type === 'booking.updated' && status === 'ACCEPTED') { icon = '✅'; label = '예약 확정·변경'; extra = '\n📒 구루나비 台帳 반영 확인'; }
+    else if (type === 'booking.created') { icon = '🆕'; label = '새 예약'; }
+    else { icon = '✏️'; label = '예약 변경'; }
+    await tg(`${icon} <b>센바 ${label}</b>\n${jst(b.start_at)}${dur}\n방: ${room}${status === 'PENDING' ? '' : '\n상태: ' + status}${b.customer_note ? '\n메모: ' + b.customer_note : ''}${extra}`);
   } else if (type === 'payment.created') {
     const p = ev.data?.object?.payment || {};
     if (p.status === 'COMPLETED' || p.status === 'APPROVED') {
