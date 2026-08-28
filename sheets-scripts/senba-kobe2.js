@@ -11,7 +11,9 @@ const MARGIN = 0.834197, TICKET = 3300;      // 세후 마진율(소비세 간�
 const RENT = 148500, SHOP = 9000, UTIL = 25000, MKT = 20000;   // 야칭 · 상점가비(쓰레기 포함) · 공과금 가정 · 마케팅
 const DAYS = 26;                              // 주6일 (화요일만 휴무) = 4.33주 × 6일
 const ALBA_MIN = DAYS * 4800, ALBA_MAX = DAYS * 7200;   // 본점과 동일: 기본 4h=4,800/일 · 최대 6h=7,200/일 (시급 1,200)
+const COMMUTE = 780 * DAYS;                   // 사장 직접 시 통근: 石橋阪大前↔神戸三宮 편도 390 × 왕복 × 26일 (정기권이면 절감)
 const BASE = RENT + SHOP + UTIL + MKT;
+const FIXED_OWN = BASE + COMMUTE;
 const FIXED_MIN = BASE + ALBA_MIN, FIXED_MAX = BASE + ALBA_MAX;
 const INIT = 1188000;                         // 초기비용 합계 (견적서 · 첫달 야칭 포함)
 const be = f => Math.ceil(f / MARGIN / 1000) * 1000;
@@ -25,7 +27,7 @@ const push = r => { rows.push(r); return rows.length - 1; };
 const blank = () => push([]);
 
 const iTitle = push(['센바미술관 고베 2호점 — ヒライビル 3F']);
-const iSub = push(['상담 2026-08-28 (イーアールホームズ·大橋) · 알바 주6일(화 휴무)·본점과 동일 근무시간 기준 · 소비세 4.55% 반영(세후)']);
+const iSub = push(['상담 2026-08-28 (イーアールホームズ·大橋) · 주6일(화 휴무) 영업 — 사장 직접 vs 알바(본점 동일 근무시간) 비교 · 소비세 4.55% 반영(세후)']);
 blank();
 
 const iSec1 = push(['■ 물건 개요·초기비용 (상담 확정치)']);
@@ -38,36 +40,37 @@ const o5 = push(['초기비용 합계', INIT, '', '비고', '첫달 야칭 포�
 const o6 = push(['조건', 'A간판 1곳 가능 · 협상 원칙불가 · 프리렌트는 신청 시 희망 전달', '', '링크', 'https://www.athome.co.jp/rent_store/1191889824/']);
 blank();
 
-const iSec2 = push(['■ 운영 전제 — 알바 체제 (2027-03~ 예정)']);
-const p1 = push(['영업일', '주6일 (화요일만 휴무) = 월 26일 — 영업일 = 알바 근무일']);
-const p2 = push(['알바 근무', '본점과 동일 시간: 기본 4h(13:30~17:30) 4,800/일 · 최대 6h(12:30~18:30) 7,200/일 · 시급 1,200']);
+const iSec2 = push(['■ 운영 전제 — 주6일 (화요일만 휴무) = 월 26일']);
+const p1 = push(['사장 직접', '통근 石橋阪大前↔神戸三宮 왕복 780(편도 390) × 26일 = 20,280/월 · 정기권 구입 시 절감 가능']);
+const p2 = push(['알바 체제', '본점과 동일 시간: 기본 4h(13:30~17:30) 4,800/일 · 최대 6h(12:30~18:30) 7,200/일 · 시급 1,200']);
 const p3 = push(['공과금(가정)', UTIL, '', '마케팅', MKT]);
 const p4 = push(['객단가', TICKET, '', '마진율(세후)', Number(MARGIN.toFixed(6))]);
 blank();
 
 const iSec3 = push(['■ 월 고정비']);
-const h3 = push(['구분', '알바 기본(4h)', '알바 최대(6h)']);
-push(['야칭+상점가비', RENT + SHOP, RENT + SHOP]);
-push(['공과금(가정)', UTIL, UTIL]);
-push(['마케팅', MKT, MKT]);
-push(['알바비 (26일)', ALBA_MIN, ALBA_MAX]);
-const t3 = push(['합계', FIXED_MIN, FIXED_MAX]);
+const h3 = push(['구분', '사장 직접(주6일)', '알바 기본(4h)', '알바 최대(6h)']);
+push(['야칭+상점가비', RENT + SHOP, RENT + SHOP, RENT + SHOP]);
+push(['공과금(가정)', UTIL, UTIL, UTIL]);
+push(['마케팅', MKT, MKT, MKT]);
+push(['통근비 (26일 왕복)', COMMUTE, 0, 0]);
+push(['알바비 (26일)', 0, ALBA_MIN, ALBA_MAX]);
+const t3 = push(['합계', FIXED_OWN, FIXED_MIN, FIXED_MAX]);
 blank();
 
 const iSec4 = push(['■ 손익분기']);
-const h4 = push(['구분', '알바 기본(4h)', '알바 최대(6h)']);
-push(['월 매출', be(FIXED_MIN), be(FIXED_MAX)]);
-push(['하루 매출 (26일)', Math.round(be(FIXED_MIN) / DAYS), Math.round(be(FIXED_MAX) / DAYS)]);
-const r4ppl = push(['하루 필요 인원', ppl(be(FIXED_MIN)) + '명', ppl(be(FIXED_MAX)) + '명']);
-const r4own = push(['(참고) 사장 직접 운영 시', 260000, '주4일(금~월)·알바 0·통근비 포함 — 오픈~2027-02 체제']);
+const h4 = push(['구분', '사장 직접(주6일)', '알바 기본(4h)', '알바 최대(6h)']);
+push(['월 매출', be(FIXED_OWN), be(FIXED_MIN), be(FIXED_MAX)]);
+push(['하루 매출 (26일)', Math.round(be(FIXED_OWN) / DAYS), Math.round(be(FIXED_MIN) / DAYS), Math.round(be(FIXED_MAX) / DAYS)]);
+const r4ppl = push(['하루 필요 인원', ppl(be(FIXED_OWN)) + '명', ppl(be(FIXED_MIN)) + '명', ppl(be(FIXED_MAX)) + '명']);
+const r4own = push(['(참고) 주4일(금~월) 스타트 시', 260000, '사장 직접·통근 포함 — 초기 축소 운영안']);
 const r4hon = push(['(참고) 본점 손익분기', 518000, '야칭 30만·마케팅 5만·알바 17일 기본 — 고베 알바 체제가 약 ' + Math.round((518000 - be(FIXED_MIN)) / 10000) + '만엔 낮음']);
 blank();
 
 const iSec5 = push(['■ 매출별 월 순수익 (세전) · 초기비용 회수']);
-const h5 = push(['월 매출', '하루 평균 인원', '순수익 — 알바 기본(4h)', '순수익 — 알바 최대(6h)', '초기 118.8만 회수 (기본)']);
+const h5 = push(['월 매출', '하루 평균 인원', '사장 직접(주6일)', '알바 기본(4h)', '알바 최대(6h)', '초기 118.8만 회수 (사장 직접)']);
 const refStart = rows.length;
 for (const R of [300000, 400000, 450000, 500000, 600000, 700000, 800000, 900000, 1000000])
-  push([R, ppl(R) + '명', net(R, FIXED_MIN), net(R, FIXED_MAX), payback(net(R, FIXED_MIN))]);
+  push([R, ppl(R) + '명', net(R, FIXED_OWN), net(R, FIXED_MIN), net(R, FIXED_MAX), payback(net(R, FIXED_OWN))]);
 const refEnd = rows.length;
 blank();
 
@@ -140,14 +143,14 @@ const iN = push(['※ 조건 바꿔 계산은 「2호점 시뮬레이션」 탭 
     if (totalRow !== null) cellFmt(range(totalRow, totalRow + 1, 0, cols), { backgroundColor: C.total, textFormat: { bold: true } }, 'userEnteredFormat(backgroundColor,textFormat.bold)');
     R.push({ updateBorders: { range: range(hRow, d1, 0, cols), top: gb, bottom: gb, left: gb, right: gb, innerHorizontal: ib, innerVertical: ib } });
   };
-  table(h3, 4, 3, { totalRow: t3 });
-  table(h4, 5, 3);
-  cellFmt(range(r4ppl, r4ppl + 1, 1, 3), { horizontalAlignment: 'RIGHT', textFormat: { bold: true } }, 'userEnteredFormat(horizontalAlignment,textFormat.bold)');
-  cellFmt(range(h4 + 1, h4 + 2, 0, 3), { backgroundColor: C.gold, textFormat: { bold: true } }, 'userEnteredFormat(backgroundColor,textFormat.bold)');
-  for (const rr of [r4own, r4hon]) cellFmt(range(rr, rr + 1, 2, 3), { numberFormat: { type: 'TEXT' }, horizontalAlignment: 'LEFT', textFormat: { fontSize: 9, foregroundColor: C.note } }, 'userEnteredFormat(numberFormat,horizontalAlignment,textFormat)');
-  table(h5, refEnd - refStart, 5);
+  table(h3, 5, 4, { totalRow: t3 });
+  table(h4, 5, 4);
+  cellFmt(range(r4ppl, r4ppl + 1, 1, 4), { horizontalAlignment: 'RIGHT', textFormat: { bold: true } }, 'userEnteredFormat(horizontalAlignment,textFormat.bold)');
+  cellFmt(range(h4 + 1, h4 + 2, 0, 4), { backgroundColor: C.gold, textFormat: { bold: true } }, 'userEnteredFormat(backgroundColor,textFormat.bold)');
+  for (const rr of [r4own, r4hon]) cellFmt(range(rr, rr + 1, 2, 4), { numberFormat: { type: 'TEXT' }, horizontalAlignment: 'LEFT', textFormat: { fontSize: 9, foregroundColor: C.note } }, 'userEnteredFormat(numberFormat,horizontalAlignment,textFormat)');
+  table(h5, refEnd - refStart, 6);
   cellFmt(range(refStart, refEnd, 1, 2), { horizontalAlignment: 'RIGHT' }, 'userEnteredFormat.horizontalAlignment');
-  cellFmt(range(refStart, refEnd, 4, 5), { numberFormat: { type: 'TEXT' }, horizontalAlignment: 'RIGHT' }, 'userEnteredFormat(numberFormat,horizontalAlignment)');
+  cellFmt(range(refStart, refEnd, 5, 6), { numberFormat: { type: 'TEXT' }, horizontalAlignment: 'RIGHT' }, 'userEnteredFormat(numberFormat,horizontalAlignment)');
   table(h6, 6, 2, { numFrom: 2 });
   cellFmt(range(h6 + 1, h6 + 7, 1, 2), { wrapStrategy: 'WRAP', textFormat: { fontSize: 9 } }, 'userEnteredFormat(wrapStrategy,textFormat)');
   R.push({ mergeCells: { range: range(iN, iN + 1), mergeType: 'MERGE_ALL' } });
@@ -157,7 +160,7 @@ const iN = push(['※ 조건 바꿔 계산은 「2호점 시뮬레이션」 탭 
   R.push({ updateDimensionProperties: { range: { sheetId: sid, dimension: 'COLUMNS', startIndex: 2, endIndex: 5 }, properties: { pixelSize: 170 }, fields: 'pixelSize' } });
   await sheets.spreadsheets.batchUpdate({ spreadsheetId: SHEET_ID, requestBody: { requests: R } });
 
-  console.log('[고베 2호점 탭 완료] 고정비 기본', yen(FIXED_MIN), '최대', yen(FIXED_MAX),
-    '| 손익분기 기본', yen(be(FIXED_MIN)), '(' + ppl(be(FIXED_MIN)) + '명/일)',
-    '최대', yen(be(FIXED_MAX)), '(' + ppl(be(FIXED_MAX)) + '명/일)');
+  console.log('[고베 2호점 탭 완료] 고정비 사장', yen(FIXED_OWN), '기본', yen(FIXED_MIN), '최대', yen(FIXED_MAX),
+    '| 손익분기 사장', yen(be(FIXED_OWN)), '(' + ppl(be(FIXED_OWN)) + '명/일)',
+    '기본', yen(be(FIXED_MIN)), '최대', yen(be(FIXED_MAX)));
 })().catch(e => { console.error('ERROR:', e.response?.data?.error?.message || e.message); process.exit(1); });
