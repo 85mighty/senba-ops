@@ -27,7 +27,7 @@ const push = r => { rows.push(r); return rows.length - 1; };
 const blank = () => push([]);
 
 const iTitle = push(['센바미술관 고베 2호점 — ヒライビル 3F']);
-const iSub = push(['상담 2026-08-28 (イーアールホームズ·大橋) · 주6일(화 휴무) 영업 — 사장 직접 vs 알바(본점 동일 근무시간) 비교 · 소비세 4.55% 반영(세후)']);
+const iSub = push(['상담 2026-08-28 (イーアールホームズ·大橋) · 주6일(화 휴무) 영업 — 사장 직접 vs 알바(본점 동일 근무시간) 비교 · 소비세 4.55% 반영(세후) · 舊 산노미야 후보 탭 통합']);
 blank();
 
 const iSec1 = push(['■ 물건 개요·초기비용 (상담 확정치)']);
@@ -81,7 +81,10 @@ const k2 = push(['2026-11', '알바 공고 게시(타운워크) — 1~2월 채�
 const k3 = push(['2027-03~', '알바 전환 → 이 탭의 주6일 체제 수치 적용 · 근태봇/시프트 크론 고베 복제']);
 const k4 = push(['알바 주6일 체제', '1명 단독이면 병결 시 휴업 — 2명 채용해 분할 권장 (본점과 동일 근태봇으로 관리)']);
 const k5 = push(['신청 전 확인', '프리렌트 희망 개월 수 명기 · A간판 설치 위치 실물 확인(1층 노출이 핵심) · 음식 제공 범위 보건소 사전 상담']);
-const k6 = push(['계약 조건', '해약 예고 기간 · 원상회복 범위 · 화재보험 견적 확인']);
+const k6 = push(['계약 조건', '해약 예고 기간 · 원상회복 범위 · 화재보험 견적 확인 · 소음·물사용(석고) 제한 확인']);
+const k7 = push(['3층·엘리베이터 없음', '고객 접근성 감점 + 석고·캔버스 재료 운반 부담. 1층 입간판·아케이드 유도 사인 허가를 임대인에게 반드시 확인']);
+const k8 = push(['쇼텐가이 입지', '평일 유동인구 확보에 유리. 산노미야 관광객 → 인스타 외국인 집객과 궁합 좋음']);
+const k9 = push(['오픈 시기', '1~2월 오픈 → 2~3월 성수기(본점 작년 2월 100만·3월 147만)를 바로 타는 흐름이 안전']);
 blank();
 const iN = push(['※ 조건 바꿔 계산은 「2호점 시뮬레이션」 탭 (야칭+공과금 182,500 · 주6일 입력) · 이 탭은 senba-kobe2.js 로 재생성']);
 
@@ -89,7 +92,7 @@ const iN = push(['※ 조건 바꿔 계산은 「2호점 시뮬레이션」 탭 
   const auth = new google.auth.GoogleAuth({ keyFile: '/opt/senba-sales-sync/service-account.json', scopes: ['https://www.googleapis.com/auth/spreadsheets'] });
   const sheets = google.sheets({ version: 'v4', auth: await auth.getClient() });
   const meta = await sheets.spreadsheets.get({ spreadsheetId: SHEET_ID });
-  const olds = meta.data.sheets.filter(s => s.properties.title.startsWith(TAB));
+  const olds = meta.data.sheets.filter(s => s.properties.title.startsWith(TAB) || s.properties.title === '고베 산노미야점 후보');
   const reqs0 = olds.map(o => ({ deleteSheet: { sheetId: o.properties.sheetId } }));
   reqs0.push({ addSheet: { properties: { title: TAB, index: meta.data.sheets.length - olds.length, gridProperties: { rowCount: rows.length + 5, columnCount: NCOL } } } });
   const created = await sheets.spreadsheets.batchUpdate({ spreadsheetId: SHEET_ID, requestBody: { requests: reqs0 } });
@@ -151,8 +154,8 @@ const iN = push(['※ 조건 바꿔 계산은 「2호점 시뮬레이션」 탭 
   table(h5, refEnd - refStart, 6);
   cellFmt(range(refStart, refEnd, 1, 2), { horizontalAlignment: 'RIGHT' }, 'userEnteredFormat.horizontalAlignment');
   cellFmt(range(refStart, refEnd, 5, 6), { numberFormat: { type: 'TEXT' }, horizontalAlignment: 'RIGHT' }, 'userEnteredFormat(numberFormat,horizontalAlignment)');
-  table(h6, 6, 2, { numFrom: 2 });
-  cellFmt(range(h6 + 1, h6 + 7, 1, 2), { wrapStrategy: 'WRAP', textFormat: { fontSize: 9 } }, 'userEnteredFormat(wrapStrategy,textFormat)');
+  table(h6, 9, 2, { numFrom: 2 });
+  cellFmt(range(h6 + 1, h6 + 10, 1, 2), { wrapStrategy: 'WRAP', textFormat: { fontSize: 9 } }, 'userEnteredFormat(wrapStrategy,textFormat)');
   R.push({ mergeCells: { range: range(iN, iN + 1), mergeType: 'MERGE_ALL' } });
   cellFmt(range(iN, iN + 1), { textFormat: { italic: true, fontSize: 9, foregroundColor: C.note } }, 'userEnteredFormat.textFormat');
   R.push({ updateDimensionProperties: { range: { sheetId: sid, dimension: 'COLUMNS', startIndex: 0, endIndex: 1 }, properties: { pixelSize: 190 }, fields: 'pixelSize' } });
