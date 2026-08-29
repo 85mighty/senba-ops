@@ -35,7 +35,9 @@ async function gcal(method, path, body) {
     method, headers: { Authorization: 'Bearer ' + await gToken(), 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined,
   });
   if (r.status === 204) return {};
-  const j = await r.json(); if (j.error) throw new Error(j.error.message); return j;
+  const j = await r.json();
+  if (j.error) throw new Error(`${method} ${j.error.message}${j.error.message === 'Forbidden' ? ' — 캘린더 공유 권한을 "일정 변경"으로 올려주세요 (senba-sync@... 서비스계정)' : ''}`);
+  return j;
 }
 
 const hm = m => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
@@ -107,12 +109,14 @@ function render(ymd, evs) {
   const clampP = pct(Math.min(Math.max(nowMin, OPEN * 60), CLOSE * 60));
   const nowLine = isToday ? `<div class="now" style="left:${clampP};display:${nowVisible ? 'block' : 'none'}"></div>` : '';
   const nowChip = isToday ? `<em class="nowchip" style="left:${clampP};display:${nowVisible ? 'flex' : 'none'}">${hm(nowMin)}</em>` : '';
-  const block = ev =>
-    `<div class="bk st-${ev.st}" style="left:${pct(ev.s)};width:${wpct(ev.e - ev.s)}"` +
+  const block = (ev, lanes = 1) => {
+    const laneStyle = lanes > 1 ? `top:calc(${(ev.lane || 0) * (100 / lanes)}% + 4px);height:calc(${100 / lanes}% - 8px);bottom:auto;` : '';
+    return `<div class="bk st-${ev.st}" style="left:${pct(ev.s)};width:${wpct(ev.e - ev.s)};${laneStyle}"` +
     ` data-id="${esc(ev.id)}" data-src="${ev.src}" data-st="${ev.st}" data-rm="${ev.rm}" data-s="${hm(ev.s)}" data-dur="${ev.e - ev.s}"` +
     ` data-nm="${esc(ev.meta.nm || ev.title.replace(/\s*\d+\s*[명名].*$/, ''))}" data-ph="${esc(ev.meta.ph)}" data-pp="${esc(ev.meta.pp || ev.ppl)}" data-co="${esc(ev.meta.co)}" data-ch="${esc(ev.meta.ch)}" data-desc="${esc(ev.desc)}"` +
     ` title="${esc(ev.title + '\n' + hm(ev.s) + '–' + hm(ev.e) + '\n' + ev.desc)}">` +
-    `<b>${hm(ev.s)}–${hm(ev.e)} · ${ev.ppl || '?'}명</b><span>${EMOJI[ev.src]} ${esc(ev.title.replace(/\s*\d+\s*[명名].*$/, ''))}</span></div>`;
+    `<b>${ev.warn ? '⚠️ ' : ''}${hm(ev.s)}–${hm(ev.e)} · ${ev.ppl || '?'}명</b><span>${EMOJI[ev.src]} ${esc(ev.title.replace(/\s*\d+\s*[명名].*$/, ''))}</span></div>`;
+  };
   const rst = ev => {
     if (ev.e >= CLOSE * 60) return '';
     const w = Math.min(RESET, CLOSE * 60 - ev.e);
@@ -123,7 +127,17 @@ function render(ymd, evs) {
   let rows = `<div class="row hd"><div class="rl"></div><div class="tlh">${hoursCells}${nowChip}</div></div>`;
   for (let i = 0; i < ROOMS; i++) {
     const rs = evs.filter(e => e.room === i);
-    rows += `<div class="row"><div class="rl">room#${i + 1}</div><div class="tl" data-row="1">${nowLine}${rs.map(rst).join('')}${rs.map(block).join('')}</div></div>`;
+    // 같은 방에서 시간이 겹치면 台帳처럼 레인을 나눠 세로로 쌓고 ⚠️ 표시 (방 수동 이동으로 겹친 경우)
+    const laneEnds = [];
+    for (const ev of rs) {
+      let l = laneEnds.findIndex(en => en <= ev.s);
+      if (l < 0) { l = laneEnds.length; laneEnds.push(0); }
+      ev.lane = l; laneEnds[l] = ev.e;
+    }
+    const lanes = Math.max(1, laneEnds.length);
+    for (const ev of rs) ev.warn = lanes > 1 && rs.some(o => o !== ev && o.s < ev.e && ev.s < o.e);
+    const hStyle = lanes > 1 ? ` style="height:${lanes * 66}px"` : '';
+    rows += `<div class="row"><div class="rl">room#${i + 1}${lanes > 1 ? ' ⚠️' : ''}</div><div class="tl" data-row="1"${hStyle}>${nowLine}${rs.map(rst).join('')}${rs.map(ev => block(ev, lanes)).join('')}</div></div>`;
   }
   if (over.length)
     rows += `<div class="row ov"><div class="rl">⚠️ 초과</div><div class="tl">${over.map(block).join('')}</div></div>`;
