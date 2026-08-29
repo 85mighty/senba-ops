@@ -51,14 +51,18 @@ async function dayEvents(ymd) {
       const tm = d => Math.round((d.getTime() + 9 * 3600e3) / 60000) % 1440;
       const sum = ev.summary || '';
       const P = ev.extendedProperties?.private || {};
+      const desc = ev.description || '';
       return {
         id: ev.id,
         src: sum.includes('🟦') ? 'sq' : sum.includes('📞') ? 'man' : 'gn',
         title: sum.replace(/🎨|🟦|📞/g, '').trim(),
-        desc: ev.description || '',
+        desc,
         s: tm(s), e: tm(e),
         ppl: Number((sum.match(/(\d+)\s*[명名]/) || [])[1] || P.pp || 0),
-        meta: { nm: P.nm || '', ph: P.ph || '', pp: P.pp || '', co: P.co || '', ch: P.ch || '' },
+        meta: {
+          nm: P.nm || '', pp: P.pp || '', co: P.co || '', ch: P.ch || '',
+          ph: P.ph || (desc.match(/전화[:：]\s*([\d\-+ ]{8,})/) || [])[1] || '',
+        },
       };
     }).sort((a, b) => a.s - b.s || a.e - b.e);
 }
@@ -94,7 +98,7 @@ function render(ymd, evs) {
   const block = ev =>
     `<div class="bk ${ev.src}" style="left:${pct(ev.s)};width:${wpct(ev.e - ev.s)}"` +
     ` data-id="${esc(ev.id)}" data-src="${ev.src}" data-s="${hm(ev.s)}" data-dur="${ev.e - ev.s}"` +
-    ` data-nm="${esc(ev.meta.nm || ev.title)}" data-ph="${esc(ev.meta.ph)}" data-pp="${esc(ev.meta.pp || ev.ppl)}" data-co="${esc(ev.meta.co)}" data-ch="${esc(ev.meta.ch)}"` +
+    ` data-nm="${esc(ev.meta.nm || ev.title.replace(/\s*\d+\s*[명名].*$/, ''))}" data-ph="${esc(ev.meta.ph)}" data-pp="${esc(ev.meta.pp || ev.ppl)}" data-co="${esc(ev.meta.co)}" data-ch="${esc(ev.meta.ch)}" data-desc="${esc(ev.desc)}"` +
     ` title="${esc(ev.title + '\n' + hm(ev.s) + '–' + hm(ev.e) + '\n' + ev.desc)}">` +
     `<b>${hm(ev.s)}–${hm(ev.e)} · ${ev.ppl || '?'}명</b><span>${esc(ev.title.replace(/\s*\d+\s*[명名].*$/, ''))}</span></div>`;
   let hoursCells = '';
@@ -119,7 +123,10 @@ header b{font-size:17px}header a{color:#fff;text-decoration:none;background:#3a4
 .rl{width:84px;flex-shrink:0;font-weight:700;font-size:13px;display:flex;align-items:center;color:#555;position:sticky;left:0;background:#f4f3ef;z-index:3;padding-right:6px}
 .tlh{position:relative;flex:1;height:18px}
 .tlh i{position:absolute;font-style:normal;font-size:11.5px;color:#999;transform:translateX(-2px)}
-.tl{position:relative;flex:1;height:80px;background:repeating-linear-gradient(to right,#e6e3da 0 1px,transparent 1px calc(100%/${CLOSE - OPEN})),#fbfaf7;border-radius:6px;cursor:copy}
+.tl{position:relative;flex:1;height:80px;border-radius:6px;cursor:copy;background:
+  repeating-linear-gradient(to right,rgba(0,0,0,.30) 0 1px,transparent 1px calc(100%/${CLOSE - OPEN})),
+  repeating-linear-gradient(to right,rgba(0,0,0,.10) 0 1px,transparent 1px calc(100%/${(CLOSE - OPEN) * 4})),
+  #fbfaf7}
 .bk{position:absolute;top:5px;bottom:5px;min-width:58px;border-radius:8px;padding:8px 10px;overflow:hidden;color:#fff;line-height:1.4;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.18)}
 .bk b{display:block;font-size:13px;opacity:.9;white-space:nowrap;font-weight:600}
 .bk span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700;font-size:15.5px;margin-top:2px}
@@ -165,6 +172,7 @@ form.nav{display:inline}input[type=date]{border:0;border-radius:8px;padding:6px 
 <div class="half"><div><label>인원</label><select id="f_pp"><option>1</option><option selected>2</option><option>3</option><option>4</option></select></div>
 <div><label>경로</label><select id="f_ch"><option>전화</option><option>현장(워크인)</option><option>인스타DM</option><option>기타</option></select></div></div>
 <label>코스</label><select id="f_co"><option>캔버스 2h</option><option>캔버스 3h</option><option>고양이 석고</option><option>기타</option></select>
+<div id="rodesc" hidden style="white-space:pre-wrap;font-size:13px;background:#f6f5f1;border-radius:8px;padding:10px;margin-top:10px;max-height:180px;overflow-y:auto"></div>
 <div id="roinfo" hidden>🎨/🟦 예약은 여기서 수정할 수 없습니다 — ぐるなび台帳 / Square 앱에서 변경하세요.</div>
 <div class="btns"><button id="save">저장</button><button id="del" hidden>삭제</button><button id="close">닫기</button></div>
 </div></div>
@@ -173,9 +181,9 @@ var KEY=${JSON.stringify(KEY)}, DATE=${JSON.stringify(ymd)}, OPEN=${OPEN}, T=${T
 var editId=null;
 var M=document.getElementById('modal');
 function $(i){return document.getElementById(i)}
-function openNew(startHM){editId=null;$('mtitle').textContent='수동 예약 추가';$('f_s').value=startHM;$('f_d').value='120';$('f_nm').value='';$('f_ph').value='';$('f_pp').value='2';$('f_co').selectedIndex=0;$('f_ch').selectedIndex=0;$('del').hidden=true;$('roinfo').hidden=true;setRO(false);M.style.display='flex'}
-function openEdit(b){editId=b.dataset.id;$('mtitle').textContent='예약 수정 (📞수동)';$('f_s').value=b.dataset.s;$('f_d').value=b.dataset.dur;$('f_nm').value=b.dataset.nm;$('f_ph').value=b.dataset.ph;$('f_pp').value=b.dataset.pp||'2';$('f_co').value=b.dataset.co||'캔버스 2h';$('f_ch').value=b.dataset.ch||'전화';$('del').hidden=false;$('roinfo').hidden=true;setRO(false);M.style.display='flex'}
-function openRO(b){editId=null;$('mtitle').textContent=b.dataset.src==='gn'?'ぐるなび 예약 (조회만)':'Square 예약 (조회만)';$('f_s').value=b.dataset.s;$('f_d').value=b.dataset.dur;$('f_nm').value=b.dataset.nm;$('f_ph').value='';$('f_pp').value=b.dataset.pp||'2';$('roinfo').hidden=false;$('del').hidden=true;setRO(true);M.style.display='flex'}
+function openNew(startHM){editId=null;$('mtitle').textContent='수동 예약 추가';$('f_s').value=startHM;$('f_d').value='120';$('f_nm').value='';$('f_ph').value='';$('f_pp').value='2';$('f_co').selectedIndex=0;$('f_ch').selectedIndex=0;$('del').hidden=true;$('roinfo').hidden=true;$('rodesc').hidden=true;setRO(false);M.style.display='flex'}
+function openEdit(b){editId=b.dataset.id;$('mtitle').textContent='예약 수정 (📞수동)';$('f_s').value=b.dataset.s;$('f_d').value=b.dataset.dur;$('f_nm').value=b.dataset.nm;$('f_ph').value=b.dataset.ph;$('f_pp').value=b.dataset.pp||'2';$('f_co').value=b.dataset.co||'캔버스 2h';$('f_ch').value=b.dataset.ch||'전화';$('del').hidden=false;$('roinfo').hidden=true;$('rodesc').hidden=true;setRO(false);M.style.display='flex'}
+function openRO(b){editId=null;$('mtitle').textContent=b.dataset.src==='gn'?'ぐるなび 예약 (조회만)':'Square 예약 (조회만)';$('f_s').value=b.dataset.s;$('f_d').value=b.dataset.dur;$('f_nm').value=b.dataset.nm;$('f_ph').value=b.dataset.ph;$('f_pp').value=b.dataset.pp||'2';$('rodesc').textContent=b.dataset.desc||'';$('rodesc').hidden=!b.dataset.desc;$('roinfo').hidden=false;$('del').hidden=true;setRO(true);M.style.display='flex'}
 function setRO(ro){['f_s','f_d','f_nm','f_ph','f_pp','f_co','f_ch'].forEach(function(i){$(i).disabled=ro});$('save').style.display=ro?'none':''}
 document.querySelectorAll('.tl[data-row]').forEach(function(tl){tl.addEventListener('click',function(e){
   if(e.target!==tl)return;
