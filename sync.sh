@@ -3,9 +3,10 @@
 # 사용법: ./sync.sh && git add -A && git commit -m "..."
 set -e
 cd "$(dirname "$0")"
-mkdir -p square blog-auto blog-theme site-i18n sheets-scripts dashboard nginx
+mkdir -p square blog-auto blog-theme site-i18n sheets-scripts dashboard nginx sales-sync
 
 cp /opt/senba-square/*.js                                  square/
+cp /opt/senba-sales-sync/*.js                              sales-sync/ 2>/dev/null || true
 cp /opt/senba-blog-auto/auto_post_v*.js                    blog-auto/
 cp /var/www/blog.senbaartstudio.com/wp-content/mu-plugins/senba-blog-theme.php blog-theme/
 cp /root/senbaart-site/senbaartstudio.com/i18n.js          site-i18n/

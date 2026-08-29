@@ -21,6 +21,52 @@ async function tg(text) {
 const yen = n => '¥' + Number(n || 0).toLocaleString('ja-JP');
 const jst = iso => { try { return new Date(iso).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', weekday: 'short' }); } catch { return iso; } };
 
+// ── 구글캘린더 동기화 (통합 예약 원장) — /opt/senba-sales-sync/.env 에 GCAL_ID 있을 때만 동작 (2026-08-29)
+// ACCEPTED 예약만 기록, 취소·거절 시 삭제. 이벤트는 sqid 확장속성으로 추적(중복·수정 안전).
+const GCAL_ID = TG.GCAL_ID || '';
+const SA_KEY = '/opt/senba-sales-sync/service-account.json';
+let gtok = { v: null, exp: 0 };
+async function gToken() {
+  if (Date.now() < gtok.exp - 60e3) return gtok.v;
+  const sa = JSON.parse(fs.readFileSync(SA_KEY, 'utf8'));
+  const now = Math.floor(Date.now() / 1000);
+  const b64 = o => Buffer.from(JSON.stringify(o)).toString('base64url');
+  const unsigned = b64({ alg: 'RS256', typ: 'JWT' }) + '.' + b64({ iss: sa.client_email, scope: 'https://www.googleapis.com/auth/calendar', aud: sa.token_uri, iat: now, exp: now + 3600 });
+  const sig = crypto.createSign('RSA-SHA256').update(unsigned).sign(sa.private_key).toString('base64url');
+  const r = await fetch(sa.token_uri, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'grant_type=' + encodeURIComponent('urn:ietf:params:oauth:grant-type:jwt-bearer') + '&assertion=' + unsigned + '.' + sig });
+  const j = await r.json(); if (!j.access_token) throw new Error('gauth: ' + JSON.stringify(j));
+  gtok = { v: j.access_token, exp: Date.now() + (j.expires_in || 3600) * 1000 };
+  return gtok.v;
+}
+async function gcal(method, path, body) {
+  const r = await fetch('https://www.googleapis.com/calendar/v3/calendars/' + encodeURIComponent(GCAL_ID) + path, {
+    method, headers: { Authorization: 'Bearer ' + await gToken(), 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined,
+  });
+  if (r.status === 204) return {};
+  const j = await r.json(); if (j.error) throw new Error('gcal: ' + j.error.message); return j;
+}
+async function calSync(b, seg, room) {
+  if (!GCAL_ID || !b.id) return;
+  try {
+    const q = await gcal('GET', '/events?maxResults=2&privateExtendedProperty=' + encodeURIComponent('sqid=' + b.id));
+    const ex = (q.items || [])[0];
+    const gone = (b.status || '').startsWith('CANCELLED') || b.status === 'DECLINED' || b.status === 'NO_SHOW';
+    if (gone) { if (ex) await gcal('DELETE', '/events/' + ex.id); return; }
+    if (b.status !== 'ACCEPTED') return;   // PENDING(승인 대기)은 확정 후에만 캘린더에
+    const start = new Date(b.start_at);
+    const end = new Date(start.getTime() + (seg.duration_minutes || 120) * 60000);
+    const ev = {
+      summary: `🟦Square ${room}${b.customer_note ? ' · ' + b.customer_note.slice(0, 30) : ''}`,
+      description: `Square 예약 ${b.id}\n방: ${room}${b.customer_note ? '\n메모: ' + b.customer_note : ''}`,
+      start: { dateTime: start.toISOString(), timeZone: 'Asia/Tokyo' },
+      end: { dateTime: end.toISOString(), timeZone: 'Asia/Tokyo' },
+      extendedProperties: { private: { src: 'square', sqid: b.id } },
+    };
+    if (ex) await gcal('PATCH', '/events/' + ex.id, ev);
+    else await gcal('POST', '/events', ev);
+  } catch (e) { console.error('gcal fail:', e.message); }
+}
+
 // 스태프 ID → 방 이름 캐시
 let teamCache = {};
 async function teamName(id) {
@@ -52,6 +98,7 @@ async function handleEvent(ev) {
     else if (type === 'booking.created') { icon = '🆕'; label = '새 예약'; }
     else { icon = '✏️'; label = '예약 변경'; }
     await tg(`${icon} <b>센바 ${label}</b>\n${jst(b.start_at)}${dur}\n방: ${room}${status === 'PENDING' ? '' : '\n상태: ' + status}${b.customer_note ? '\n메모: ' + b.customer_note : ''}${extra}`);
+    await calSync(b, seg, room);   // 통합 캘린더 반영 (GCAL_ID 설정 시)
   } else if (type === 'payment.created') {
     const p = ev.data?.object?.payment || {};
     if (p.status === 'COMPLETED' || p.status === 'APPROVED') {
