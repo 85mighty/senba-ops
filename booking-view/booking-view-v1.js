@@ -94,7 +94,10 @@ function render(ymd, evs) {
   const nowJ = new Date(Date.now() + 9 * 3600e3);
   const todayYmd = nowJ.toISOString().slice(0, 10);
   const nowMin = nowJ.getUTCHours() * 60 + nowJ.getUTCMinutes();
-  const nowLine = (ymd === todayYmd && nowMin > OPEN * 60 && nowMin < CLOSE * 60) ? `<div class="now" style="left:${pct(nowMin)}"></div>` : '';
+  const isToday = ymd === todayYmd;
+  const nowVisible = isToday && nowMin > OPEN * 60 && nowMin < CLOSE * 60;
+  const nowLine = isToday ? `<div class="now" style="left:${pct(Math.min(Math.max(nowMin, OPEN * 60), CLOSE * 60))};display:${nowVisible ? 'block' : 'none'}"></div>` : '';
+  const nowChip = isToday ? `<em class="nowchip" style="left:${pct(Math.min(Math.max(nowMin, OPEN * 60), CLOSE * 60))};display:${nowVisible ? 'flex' : 'none'}">${hm(nowMin)}</em>` : '';
   const block = ev =>
     `<div class="bk ${ev.src}" style="left:${pct(ev.s)};width:${wpct(ev.e - ev.s)}"` +
     ` data-id="${esc(ev.id)}" data-src="${ev.src}" data-s="${hm(ev.s)}" data-dur="${ev.e - ev.s}"` +
@@ -108,7 +111,7 @@ function render(ymd, evs) {
     const w = Math.min(RESET, CLOSE * 60 - ev.e);
     return `<div class="rst ${ev.src}" style="left:${pct(ev.e)};width:${wpct(w)}"></div>`;
   };
-  let rows = `<div class="row hd"><div class="rl"></div><div class="tlh">${hoursCells}</div></div>`;
+  let rows = `<div class="row hd"><div class="rl"></div><div class="tlh">${hoursCells}${nowChip}</div></div>`;
   for (let i = 0; i < ROOMS; i++) {
     const rs = evs.filter(e => e.room === i);
     rows += `<div class="row"><div class="rl">room#${i + 1}</div><div class="tl" data-row="1">${nowLine}${rs.map(rst).join('')}${rs.map(block).join('')}</div></div>`;
@@ -145,6 +148,7 @@ header b{font-size:17px}header a{color:#fff;text-decoration:none;background:#3a4
 .ov .tl{background:#fdecea;cursor:default}
 .now{position:absolute;top:-2px;bottom:-2px;width:2px;background:#e02020;z-index:2}
 .now::after{content:'';position:absolute;top:-4px;left:-3px;width:8px;height:8px;border-radius:50%;background:#e02020}
+.nowchip{position:absolute;top:4px;bottom:4px;display:flex;align-items:center;background:#e02020;color:#fff;font-style:normal;font-weight:700;font-size:13px;padding:0 7px;border-radius:5px;transform:translateX(-50%);z-index:3;white-space:nowrap}
 .legend{padding:4px 16px 16px;font-size:12px;color:#777}.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 4px 0 12px;vertical-align:-1px}
 form.nav{display:inline}input[type=date]{border:0;border-radius:8px;padding:6px 8px;font-size:14px}
 @media(min-width:1100px){.tl{height:104px}.bk{padding:12px 13px}.bk b{font-size:17px}.bk span{font-size:23px;margin-top:5px}.rl{font-size:16px;width:104px}.tlh i{font-size:16.5px}body{font-size:15px}}
@@ -219,6 +223,19 @@ $('del').onclick=function(){
   .then(function(r){return r.json()}).then(function(j){if(j.ok)location.reload();else alert(j.error||'실패')});
 };
 setTimeout(function(){location.reload()},300000);
+var IS_TODAY=${JSON.stringify(ymd === todayYmd)};
+function tickNow(){
+  if(!IS_TODAY)return;
+  var n=new Date(Date.now()+9*3600e3);
+  var m=n.getUTCHours()*60+n.getUTCMinutes();
+  var vis=m>OPEN*60&&m<OPEN*60+T;
+  var left=((Math.min(Math.max(m,OPEN*60),OPEN*60+T)-OPEN*60)/T*100)+'%';
+  document.querySelectorAll('.now').forEach(function(el){el.style.left=left;el.style.display=vis?'block':'none'});
+  var c=document.querySelector('.nowchip');
+  if(c){c.style.left=left;c.style.display=vis?'flex':'none';
+    c.textContent=String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')}
+}
+tickNow();setInterval(tickNow,30000);
 </script></body></html>`;
 }
 
