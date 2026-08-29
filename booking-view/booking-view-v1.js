@@ -58,6 +58,7 @@ async function dayEvents(ymd) {
         id: ev.id,
         src: sum.includes('🟦') ? 'sq' : sum.includes('📞') ? 'man' : 'gn',
         st: ['in', 'out'].includes(P.st) ? P.st : 'wait',
+        rm: /^[0-4]$/.test(P.rm || '') ? Number(P.rm) : -1,
         title: sum.replace(/🎨|🟦|📞/g, '').trim(),
         desc,
         s: tm(s), e: tm(e),
@@ -71,7 +72,11 @@ async function dayEvents(ymd) {
 }
 function assignRooms(evs) {
   const ends = Array(ROOMS).fill(-9999);
+  for (const ev of evs) {   // 수동 지정(rm) 우선, 나머지는 first-fit (시간순)
+    if (ev.rm >= 0) { ev.room = ev.rm; ends[ev.rm] = Math.max(ends[ev.rm], ev.e); }
+  }
   for (const ev of evs) {
+    if (ev.rm >= 0) continue;
     ev.room = -1;
     for (let i = 0; i < ROOMS; i++) if (ends[i] + RESET <= ev.s) { ev.room = i; ends[i] = ev.e; break; }
   }
@@ -104,7 +109,7 @@ function render(ymd, evs) {
   const nowChip = isToday ? `<em class="nowchip" style="left:${clampP};display:${nowVisible ? 'flex' : 'none'}">${hm(nowMin)}</em>` : '';
   const block = ev =>
     `<div class="bk st-${ev.st}" style="left:${pct(ev.s)};width:${wpct(ev.e - ev.s)}"` +
-    ` data-id="${esc(ev.id)}" data-src="${ev.src}" data-st="${ev.st}" data-s="${hm(ev.s)}" data-dur="${ev.e - ev.s}"` +
+    ` data-id="${esc(ev.id)}" data-src="${ev.src}" data-st="${ev.st}" data-rm="${ev.rm}" data-s="${hm(ev.s)}" data-dur="${ev.e - ev.s}"` +
     ` data-nm="${esc(ev.meta.nm || ev.title.replace(/\s*\d+\s*[명名].*$/, ''))}" data-ph="${esc(ev.meta.ph)}" data-pp="${esc(ev.meta.pp || ev.ppl)}" data-co="${esc(ev.meta.co)}" data-ch="${esc(ev.meta.ch)}" data-desc="${esc(ev.desc)}"` +
     ` title="${esc(ev.title + '\n' + hm(ev.s) + '–' + hm(ev.e) + '\n' + ev.desc)}">` +
     `<b>${hm(ev.s)}–${hm(ev.e)} · ${ev.ppl || '?'}명</b><span>${EMOJI[ev.src]} ${esc(ev.title.replace(/\s*\d+\s*[명名].*$/, ''))}</span></div>`;
@@ -149,6 +154,7 @@ header b{font-size:17px}header a{color:#fff;text-decoration:none;background:#2f8
 .st-wait{background:#fff;border:2px solid #3f9dcb;color:#1f78a6;box-shadow:0 1px 2px rgba(0,0,0,.10)}
 .st-in{background:#3f9dcb;border:2px solid #3f9dcb;color:#fff}
 .st-out{background:#1b8e6f;border:2px solid #1b8e6f;color:#fff}
+.bk.drag{opacity:.75;z-index:5;box-shadow:0 4px 14px rgba(0,0,0,.35);cursor:grabbing}
 .rst{position:absolute;top:6px;bottom:6px;background:#e3e6e9;border-radius:0 8px 8px 0;pointer-events:none}
 .ov .tl{background:#fdecea;cursor:default}
 .now{position:absolute;top:-1px;bottom:-1px;width:2px;background:#e02020;z-index:2}
@@ -194,7 +200,8 @@ form.nav{display:inline}input[type=date]{border:0;border-radius:8px;padding:6px 
 <h3 id="mtitle">수동 예약 추가</h3>
 <div id="strow_wrap" hidden><label>상태</label><div class="strow" id="strow">
 <button data-st="wait">来店待ち</button><button data-st="in">ご来店</button><button data-st="out">お帰り</button>
-</div></div>
+</div>
+<label>방 이동</label><select id="f_rm"><option value="-1">자동 배정</option><option value="0">room#1</option><option value="1">room#2</option><option value="2">room#3</option><option value="3">room#4</option><option value="4">room#5</option></select></div>
 <div class="half"><div><label>시작 시각</label><select id="f_s">${startOpts}</select></div>
 <div><label>시간</label><select id="f_d"><option value="120">2시간</option><option value="180">3시간</option><option value="90">1.5시간</option><option value="60">1시간</option></select></div></div>
 <label>이름</label><input id="f_nm" placeholder="예약자 이름">
@@ -213,8 +220,8 @@ var M=document.getElementById('modal');
 function $(i){return document.getElementById(i)}
 function markSt(st){document.querySelectorAll('#strow button').forEach(function(x){x.classList.toggle('on',x.dataset.st===st)})}
 function openNew(startHM){editId=null;curId=null;$('mtitle').textContent='수동 예약 추가';$('f_s').value=startHM;$('f_d').value='120';$('f_nm').value='';$('f_ph').value='';$('f_pp').value='2';$('f_co').selectedIndex=0;$('f_ch').selectedIndex=0;$('del').hidden=true;$('roinfo').hidden=true;$('rodesc').hidden=true;$('strow_wrap').hidden=true;setRO(false);M.style.display='flex'}
-function openEdit(b){editId=b.dataset.id;curId=b.dataset.id;$('mtitle').textContent='예약 수정 (📞수동)';$('f_s').value=b.dataset.s;$('f_d').value=b.dataset.dur;$('f_nm').value=b.dataset.nm;$('f_ph').value=b.dataset.ph;$('f_pp').value=b.dataset.pp||'2';$('f_co').value=b.dataset.co||'캔버스 2h';$('f_ch').value=b.dataset.ch||'전화';$('del').hidden=false;$('roinfo').hidden=true;$('rodesc').hidden=true;$('strow_wrap').hidden=false;markSt(b.dataset.st);setRO(false);M.style.display='flex'}
-function openRO(b){editId=null;curId=b.dataset.id;$('mtitle').textContent=b.dataset.src==='gn'?'ぐるなび 예약':'Square 예약';$('f_s').value=b.dataset.s;$('f_d').value=b.dataset.dur;$('f_nm').value=b.dataset.nm;$('f_ph').value=b.dataset.ph;$('f_pp').value=b.dataset.pp||'2';$('rodesc').textContent=b.dataset.desc||'';$('rodesc').hidden=!b.dataset.desc;$('roinfo').hidden=false;$('del').hidden=true;$('strow_wrap').hidden=false;markSt(b.dataset.st);setRO(true);M.style.display='flex'}
+function openEdit(b){editId=b.dataset.id;curId=b.dataset.id;$('mtitle').textContent='예약 수정 (📞수동)';$('f_s').value=b.dataset.s;$('f_d').value=b.dataset.dur;$('f_nm').value=b.dataset.nm;$('f_ph').value=b.dataset.ph;$('f_pp').value=b.dataset.pp||'2';$('f_co').value=b.dataset.co||'캔버스 2h';$('f_ch').value=b.dataset.ch||'전화';$('f_rm').value=b.dataset.rm;$('del').hidden=false;$('roinfo').hidden=true;$('rodesc').hidden=true;$('strow_wrap').hidden=false;markSt(b.dataset.st);setRO(false);M.style.display='flex'}
+function openRO(b){editId=null;curId=b.dataset.id;$('mtitle').textContent=b.dataset.src==='gn'?'ぐるなび 예약':'Square 예약';$('f_s').value=b.dataset.s;$('f_d').value=b.dataset.dur;$('f_nm').value=b.dataset.nm;$('f_ph').value=b.dataset.ph;$('f_pp').value=b.dataset.pp||'2';$('f_rm').value=b.dataset.rm;$('rodesc').textContent=b.dataset.desc||'';$('rodesc').hidden=!b.dataset.desc;$('roinfo').hidden=false;$('del').hidden=true;$('strow_wrap').hidden=false;markSt(b.dataset.st);setRO(true);M.style.display='flex'}
 function setRO(ro){['f_s','f_d','f_nm','f_ph','f_pp','f_co','f_ch'].forEach(function(i){$(i).disabled=ro});$('save').style.display=ro?'none':''}
 document.querySelectorAll('.tl[data-row]').forEach(function(tl){tl.addEventListener('click',function(e){
   if(e.target!==tl)return;
@@ -223,6 +230,7 @@ document.querySelectorAll('.tl[data-row]').forEach(function(tl){tl.addEventListe
 })});
 document.querySelectorAll('.bk').forEach(function(b){b.addEventListener('click',function(e){
   e.stopPropagation();
+  if(window.__dragJust){window.__dragJust=false;return}
   if(b.dataset.src==='man')openEdit(b);else openRO(b);
 })});
 document.querySelectorAll('#strow button').forEach(function(x){x.addEventListener('click',function(){
@@ -230,6 +238,48 @@ document.querySelectorAll('#strow button').forEach(function(x){x.addEventListene
   fetch('/api/status?key='+encodeURIComponent(KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:curId,st:x.dataset.st})})
   .then(function(r){return r.json()}).then(function(j){if(j.ok)location.reload();else alert(j.error||'실패')});
 })});
+$('f_rm').addEventListener('change',function(){
+  if(!curId)return;
+  fetch('/api/room?key='+encodeURIComponent(KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:curId,rm:$('f_rm').value})})
+  .then(function(r){return r.json()}).then(function(j){if(j.ok)location.reload();else alert(j.error||'실패')});
+});
+// 길게 누르면 좌우 드래그로 시간 이동 (📞수동만, 15분 스냅)
+(function(){
+  var dragEl=null,armed=false,sx=0,orig=0,dur=0,tlW=1,newS=null,lpTimer=null;
+  document.querySelectorAll('.bk').forEach(function(b){
+    b.addEventListener('pointerdown',function(e){
+      if(b.dataset.src!=='man')return;
+      sx=e.clientX;orig=null;newS=null;armed=false;dragEl=b;
+      var p=b.parentElement;tlW=p.clientWidth;dur=Number(b.dataset.dur);
+      var hmv=b.dataset.s.split(':');orig=Number(hmv[0])*60+Number(hmv[1]);
+      lpTimer=setTimeout(function(){armed=true;b.classList.add('drag');try{b.setPointerCapture(e.pointerId)}catch(_){}},350);
+    });
+    b.addEventListener('touchmove',function(e){if(armed&&dragEl===b)e.preventDefault()},{passive:false});
+  });
+  document.addEventListener('pointermove',function(e){
+    if(!dragEl)return;
+    var dx=e.clientX-sx;
+    if(!armed){if(Math.abs(dx)>8){clearTimeout(lpTimer);dragEl=null}return}
+    var dm=Math.round(dx/tlW*T/15)*15;
+    var s=Math.min(Math.max(orig+dm,OPEN*60),OPEN*60+T-dur);
+    newS=s;
+    dragEl.style.left=((s-OPEN*60)/T*100)+'%';
+    var bEl=dragEl.querySelector('b');
+    if(bEl)bEl.textContent=fmtHM(s)+'–'+fmtHM(s+dur)+' · '+(dragEl.dataset.pp||'?')+'명';
+  });
+  document.addEventListener('pointerup',function(){
+    clearTimeout(lpTimer);
+    if(dragEl&&armed)window.__dragJust=true;
+    if(dragEl&&armed&&newS!==null&&newS!==orig){
+      var el=dragEl;
+      fetch('/api/move?key='+encodeURIComponent(KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:el.dataset.id,start:fmtHM(newS)})})
+      .then(function(r){return r.json()}).then(function(j){if(j.ok)location.reload();else{alert(j.error||'실패');location.reload()}});
+    }else if(dragEl&&armed){location.reload()}
+    if(dragEl)dragEl.classList.remove('drag');
+    dragEl=null;armed=false;
+  });
+  function fmtHM(m){return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')}
+})();
 $('close').onclick=function(){M.style.display='none'};
 M.addEventListener('click',function(e){if(e.target===M)M.style.display='none'});
 $('save').onclick=function(){
@@ -291,6 +341,24 @@ async function apiDel(p) {
   if (cur.extendedProperties?.private?.src !== 'manual') throw new Error('수동 예약만 삭제할 수 있습니다');
   await gcal('DELETE', '/events/' + encodeURIComponent(p.id));
 }
+async function apiMove(p) {   // 드래그 시간 이동 — 수동 예약만
+  if (!p.id || !/^\d{2}:\d{2}$/.test(p.start || '')) throw new Error('입력값 부족');
+  const cur = await gcal('GET', '/events/' + encodeURIComponent(p.id));
+  if (cur.extendedProperties?.private?.src !== 'manual') throw new Error('🎨/🟦 예약은 시간 이동 불가 — 台帳/Square에서 변경하세요');
+  const date = (cur.start.dateTime || '').slice(0, 10);
+  const durMin = Math.round((new Date(cur.end.dateTime) - new Date(cur.start.dateTime)) / 60000);
+  const s = toMin(p.start);
+  await gcal('PATCH', '/events/' + encodeURIComponent(p.id), {
+    start: { dateTime: `${date}T${p.start}:00`, timeZone: 'Asia/Tokyo' },
+    end: { dateTime: `${date}T${hm(Math.min(s + durMin, 1439))}:00`, timeZone: 'Asia/Tokyo' },
+  });
+}
+async function apiRoom(p) {   // 방 수동 지정 — 전 채널 (우리 화면의 배정 오버레이)
+  if (!p.id || !/^-?[0-4]$|^-1$/.test(String(p.rm))) throw new Error('입력값 부족');
+  const cur = await gcal('GET', '/events/' + encodeURIComponent(p.id));
+  const priv = { ...(cur.extendedProperties?.private || {}), rm: Number(p.rm) >= 0 ? String(p.rm) : '' };
+  await gcal('PATCH', '/events/' + encodeURIComponent(p.id), { extendedProperties: { private: priv } });
+}
 async function apiStatus(p) {
   if (!p.id || !['wait', 'in', 'out'].includes(p.st)) throw new Error('입력값 부족');
   const cur = await gcal('GET', '/events/' + encodeURIComponent(p.id));
@@ -306,6 +374,8 @@ http.createServer(async (req, res) => {
     if (req.method === 'POST' && u.pathname === '/api/save') { try { await apiSave(await readBody(req)); return json(200, { ok: 1 }); } catch (e) { return json(400, { error: e.message }); } }
     if (req.method === 'POST' && u.pathname === '/api/del') { try { await apiDel(await readBody(req)); return json(200, { ok: 1 }); } catch (e) { return json(400, { error: e.message }); } }
     if (req.method === 'POST' && u.pathname === '/api/status') { try { await apiStatus(await readBody(req)); return json(200, { ok: 1 }); } catch (e) { return json(400, { error: e.message }); } }
+    if (req.method === 'POST' && u.pathname === '/api/move') { try { await apiMove(await readBody(req)); return json(200, { ok: 1 }); } catch (e) { return json(400, { error: e.message }); } }
+    if (req.method === 'POST' && u.pathname === '/api/room') { try { await apiRoom(await readBody(req)); return json(200, { ok: 1 }); } catch (e) { return json(400, { error: e.message }); } }
     const ymd = /^\d{4}-\d{2}-\d{2}$/.test(u.searchParams.get('date') || '') ? u.searchParams.get('date') : new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
     const evs = assignRooms(await dayEvents(ymd));
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
