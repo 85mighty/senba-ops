@@ -103,9 +103,16 @@ function render(ymd, evs) {
     `<b>${hm(ev.s)}–${hm(ev.e)} · ${ev.ppl || '?'}명</b><span>${esc(ev.title.replace(/\s*\d+\s*[명名].*$/, ''))}</span></div>`;
   let hoursCells = '';
   for (let h = OPEN; h < CLOSE; h++) hoursCells += `<i style="left:${pct(h * 60)}">${h}:00</i>`;
+  const rst = ev => {   // 정리시간(15분) — 바 색의 옅은 연장 블록
+    if (ev.e >= CLOSE * 60) return '';
+    const w = Math.min(RESET, CLOSE * 60 - ev.e);
+    return `<div class="rst ${ev.src}" style="left:${pct(ev.e)};width:${wpct(w)}"></div>`;
+  };
   let rows = `<div class="row hd"><div class="rl"></div><div class="tlh">${hoursCells}</div></div>`;
-  for (let i = 0; i < ROOMS; i++)
-    rows += `<div class="row"><div class="rl">room#${i + 1}</div><div class="tl" data-row="1">${nowLine}${evs.filter(e => e.room === i).map(block).join('')}</div></div>`;
+  for (let i = 0; i < ROOMS; i++) {
+    const rs = evs.filter(e => e.room === i);
+    rows += `<div class="row"><div class="rl">room#${i + 1}</div><div class="tl" data-row="1">${nowLine}${rs.map(rst).join('')}${rs.map(block).join('')}</div></div>`;
+  }
   if (over.length)
     rows += `<div class="row ov"><div class="rl">⚠️ 초과</div><div class="tl">${over.map(block).join('')}</div></div>`;
   let startOpts = '';
@@ -131,6 +138,8 @@ header b{font-size:17px}header a{color:#fff;text-decoration:none;background:#3a4
 .bk b{display:block;font-size:15px;opacity:.92;white-space:nowrap;font-weight:600}
 .bk span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700;font-size:19px;margin-top:3px}
 .gn{background:#b8433a}.sq{background:#2d6bc4}.man{background:#1a7f3c}
+.rst{position:absolute;top:5px;bottom:5px;border-radius:0 8px 8px 0;pointer-events:none}
+.rst.gn{background:rgba(184,67,58,.20)}.rst.sq{background:rgba(45,107,196,.20)}.rst.man{background:rgba(26,127,60,.20)}
 .ov .tl{background:#fdecea;cursor:default}
 .now{position:absolute;top:-2px;bottom:-2px;width:2px;background:#e02020;z-index:2}
 .now::after{content:'';position:absolute;top:-4px;left:-3px;width:8px;height:8px;border-radius:50%;background:#e02020}
