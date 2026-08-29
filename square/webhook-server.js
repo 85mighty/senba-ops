@@ -50,7 +50,7 @@ async function gcal(method, path, body) {
 async function overlapCount(startISO, mins) {
   const s = new Date(startISO), e = new Date(new Date(startISO).getTime() + mins * 60000);
   const q = await gcal('GET', '/events?singleEvents=true&maxResults=50&timeMin=' + encodeURIComponent(s.toISOString()) + '&timeMax=' + encodeURIComponent(e.toISOString()));
-  return (q.items || []).filter(ev => ev.status !== 'cancelled' && /🎨|🟦/.test(ev.summary || '')).length;
+  return (q.items || []).filter(ev => ev.status !== 'cancelled' && /🎨|🟦|📞/.test(ev.summary || '')).length;
 }
 async function calSync(b, seg, room) {
   if (!GCAL_ID || !b.id) return;
