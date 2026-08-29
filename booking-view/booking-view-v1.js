@@ -11,7 +11,7 @@ const E = envOf('/opt/senba-sales-sync/.env');
 const CAL_ID = E.CALENDAR_ID || '';
 const KEY = E.VIEW_KEY || '';
 const SA_KEY = '/opt/senba-sales-sync/service-account.json';
-const PORT = 3016;
+const PORT = Number(E.VIEW_PORT || 3017);   // 3016은 naver 프로세스가 사용 중
 const ROOMS = 5, RESET = 15;          // 방 수 · 턴 사이 정리시간(분)
 const OPEN = 10, CLOSE = 21;          // 표시 시간대
 const PX = 1.5;                       // 1분당 px
