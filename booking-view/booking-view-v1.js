@@ -128,8 +128,10 @@ header b{font-size:17px}header a{color:#fff;text-decoration:none;background:#3a4
 .row{display:flex;align-items:stretch;margin-bottom:8px}
 .row.hd{margin-bottom:2px}
 .rl{width:84px;flex-shrink:0;font-weight:700;font-size:13px;display:flex;align-items:center;color:#555;position:sticky;left:0;background:#f4f3ef;z-index:3;padding-right:6px}
-.tlh{position:relative;flex:1;height:26px}
-.tlh i{position:absolute;font-style:normal;font-size:15px;font-weight:700;color:#444;transform:translateX(-2px)}
+.tlh{position:relative;flex:1;height:34px;background:#2e3a4a;border-radius:6px;overflow:hidden;
+  background-image:repeating-linear-gradient(to right,rgba(255,255,255,.25) 0 1px,transparent 1px calc(100%/${CLOSE - OPEN}))}
+.tlh i{position:absolute;top:50%;transform:translateY(-50%);font-style:normal;font-size:15px;font-weight:700;color:#fff;padding-left:7px}
+.row.hd{margin-bottom:8px}
 .tl{position:relative;flex:1;height:80px;border-radius:6px;cursor:copy;background:
   repeating-linear-gradient(to right,rgba(0,0,0,.30) 0 1px,transparent 1px calc(100%/${CLOSE - OPEN})),
   repeating-linear-gradient(to right,rgba(0,0,0,.10) 0 1px,transparent 1px calc(100%/${(CLOSE - OPEN) * 4})),
