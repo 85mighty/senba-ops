@@ -206,7 +206,7 @@ form.nav{display:inline}input[type=date]{border:0;border-radius:8px;padding:6px 
 <header><b>船場美術館 ${ymd.slice(5).replace('-', '/')} (${dow})</b>
 <a href="${q(nav(-1))}">◀</a>
 <form class="nav" method="get"><input type="hidden" name="key" value="${esc(KEY)}"><input type="date" name="date" value="${ymd}" onchange="this.form.submit()"></form>
-<a href="${q(nav(1))}">▶</a><a href="${q(todayYmd)}">오늘</a>
+<a href="${q(nav(1))}">▶</a><a href="${q(todayYmd)}">오늘</a><a href="#" id="reshuf">🔀 방 재배치</a>
 <span class="stats">${evs.length}조 · ${ppl}명 · 최대 동시 ${mc}조${mc >= ROOMS ? ' 🔴만석' : ''}</span></header>
 <div class="wrap"><div class="grid">${rows}</div></div>
 <div class="legend">빈 칸 탭 = 수동 예약 추가 · 바 탭 = 상태·시각 변경(전 채널) · 바 길게 눌러 좌우 드래그 = 시간 이동 · 정리 ${RESET}분
@@ -259,6 +259,18 @@ $('f_rm').addEventListener('change',function(){
   if(!curId)return;
   fetch('/api/room?key='+encodeURIComponent(KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:curId,rm:$('f_rm').value})})
   .then(function(r){return r.json()}).then(function(j){if(j.ok)location.reload();else alert(j.error||'실패')});
+});
+$('reshuf').addEventListener('click',function(e){
+  e.preventDefault();
+  if(!confirm('방 배정을 자동으로 다시 정리할까요?\\n(입실 중인 조는 현재 방에 그대로 둡니다)'))return;
+  fetch('/api/reshuffle?key='+encodeURIComponent(KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({date:DATE})})
+  .then(function(r){return r.json()}).then(function(j){
+    if(!j.ok){alert(j.error||'실패');return}
+    var m='재배치 완료: '+j.moved+'건 이동';
+    if(j.tight)m+='\\n⚠️ '+j.tight+'건은 정리 15분 없이 바로 이어붙임';
+    if(j.over)m+='\\n🔴 '+j.over+'건은 어느 방에도 안 들어감(시간 겹침) — 예약 확인 필요';
+    alert(m);location.reload();
+  }).catch(function(e){alert(e)});
 });
 // 길게(0.35초) 누르면 좌우 드래그로 시간 이동 — 전 채널, 15분 스냅 (🎨/🟦는 보드에만 반영)
 (function(){
@@ -379,6 +391,35 @@ async function apiMove(p) {   // 시간 이동 — 전 채널 (🎨/🟦는 이 
     end: { dateTime: `${date}T${hm(Math.min(s + durMin, 1439))}:00`, timeZone: 'Asia/Tokyo' },
   });
 }
+async function apiReshuffle(p) {  // 방 자동 재배치 — 입실 중(in)인 조만 현재 방에 고정, 나머지는 시간순 first-fit으로 다시 배정해 저장
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(p.date || '')) throw new Error('입력값 부족');
+  const evs = assignRooms(await dayEvents(p.date));
+  const ends = Array(ROOMS).fill(-9999);
+  const fixed = new Set(evs.filter(ev => ev.st === 'in' && ev.room >= 0));
+  for (const ev of fixed) ends[ev.room] = Math.max(ends[ev.room], ev.e);
+  const rest = evs.filter(ev => !fixed.has(ev));
+  for (const ev of rest) {
+    ev.room = -1;
+    for (let i = 0; i < ROOMS; i++) if (ends[i] + RESET <= ev.s) { ev.room = i; ends[i] = ev.e; break; }
+  }
+  let tight = 0;                    // 정리 15분을 못 지키고 바로 이어 붙인 건수
+  for (const ev of rest) {
+    if (ev.room >= 0) continue;
+    for (let i = 0; i < ROOMS; i++) if (ends[i] <= ev.s) { ev.room = i; ends[i] = ev.e; tight++; break; }
+  }
+  let moved = 0;
+  for (const ev of evs) {
+    const newRm = ev.room >= 0 ? String(ev.room) : '';
+    const oldRm = ev.rm >= 0 ? String(ev.rm) : '';
+    if (newRm === oldRm) continue;
+    const cur = await gcal('GET', '/events/' + encodeURIComponent(ev.id));
+    const priv = { ...(cur.extendedProperties?.private || {}), rm: newRm };
+    await gcal('PATCH', '/events/' + encodeURIComponent(ev.id), { extendedProperties: { private: priv } });
+    moved++;
+  }
+  const over = evs.filter(ev => ev.room < 0).length;
+  return { moved, tight, over };
+}
 async function apiRoom(p) {   // 방 수동 지정 — 전 채널 (우리 화면의 배정 오버레이)
   if (!p.id || !/^-?[0-4]$|^-1$/.test(String(p.rm))) throw new Error('입력값 부족');
   const cur = await gcal('GET', '/events/' + encodeURIComponent(p.id));
@@ -402,6 +443,7 @@ http.createServer(async (req, res) => {
     if (req.method === 'POST' && u.pathname === '/api/status') { try { await apiStatus(await readBody(req)); return json(200, { ok: 1 }); } catch (e) { return json(400, { error: e.message }); } }
     if (req.method === 'POST' && u.pathname === '/api/move') { try { await apiMove(await readBody(req)); return json(200, { ok: 1 }); } catch (e) { return json(400, { error: e.message }); } }
     if (req.method === 'POST' && u.pathname === '/api/room') { try { await apiRoom(await readBody(req)); return json(200, { ok: 1 }); } catch (e) { return json(400, { error: e.message }); } }
+    if (req.method === 'POST' && u.pathname === '/api/reshuffle') { try { const r = await apiReshuffle(await readBody(req)); return json(200, { ok: 1, ...r }); } catch (e) { return json(400, { error: e.message }); } }
     const ymd = /^\d{4}-\d{2}-\d{2}$/.test(u.searchParams.get('date') || '') ? u.searchParams.get('date') : new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
     const evs = assignRooms(await dayEvents(ymd));
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
