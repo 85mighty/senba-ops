@@ -94,13 +94,77 @@ function maxConcurrent(evs) {
 }
 const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+// ── 월 전체 뷰 (구루나비 홈 달력 스타일: 일자별 조수·명수·만석 표시, 탭하면 그날 간트로)
+async function monthEvents(ym) {
+  const [y, mo] = ym.split('-').map(Number);
+  const last = new Date(Date.UTC(y, mo, 0)).getUTCDate();
+  const min = encodeURIComponent(`${ym}-01T00:00:00+09:00`), max = encodeURIComponent(`${ym}-${String(last).padStart(2, '0')}T23:59:59+09:00`);
+  const j = await gcal('GET', `/events?singleEvents=true&orderBy=startTime&maxResults=2500&timeMin=${min}&timeMax=${max}`);
+  const days = {};
+  for (const ev of j.items || []) {
+    if (ev.status === 'cancelled' || !/🎨|🟦|📞/.test(ev.summary || '') || !ev.start?.dateTime) continue;
+    const s = new Date(ev.start.dateTime), e = new Date(ev.end.dateTime);
+    const tm = d => Math.round((d.getTime() + 9 * 3600e3) / 60000) % 1440;
+    const day = new Date(s.getTime() + 9 * 3600e3).toISOString().slice(0, 10);
+    const ppl = Number(((ev.summary || '').match(/(\d+)\s*[명名]/) || [])[1] || ev.extendedProperties?.private?.pp || 0);
+    (days[day] = days[day] || []).push({ s: tm(s), e: tm(e), ppl });
+  }
+  return { last, days };
+}
+function renderMonth(ym, { last, days }) {
+  const [y, mo] = ym.split('-').map(Number);
+  const todayYmd = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+  const kq = `?key=${encodeURIComponent(KEY)}`;
+  const mnav = d => { const t = new Date(Date.UTC(y, mo - 1 + d, 1)); return `${kq}&view=month&ym=${t.toISOString().slice(0, 7)}`; };
+  const lead = (new Date(`${ym}-01T12:00:00`).getDay() + 6) % 7;   // 월요일 시작
+  let cells = '', totG = 0, totP = 0;
+  for (let i = 0; i < lead; i++) cells += '<div class="mc off"></div>';
+  for (let d = 1; d <= last; d++) {
+    const ymd = `${ym}-${String(d).padStart(2, '0')}`;
+    const list = days[ymd] || [];
+    const g = list.length, p = list.reduce((s, e) => s + e.ppl, 0), mc = maxConcurrent(list);
+    totG += g; totP += p;
+    const col = (lead + d - 1) % 7;   // 0=월 .. 5=토 6=일
+    const numCls = col === 6 ? ' sun' : col === 5 ? ' sat' : '';
+    const bar = g ? `<span class="mbar${mc >= ROOMS ? ' full' : ''}">${g}조 ${p}명${mc >= ROOMS ? ' 🔴' : ''}</span>` : '';
+    cells += `<a class="mc${ymd === todayYmd ? ' today' : ''}" href="${kq}&date=${ymd}"><i class="d${numCls}">${d}</i>${bar}</a>`;
+  }
+  return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>센바 예약 ${ym}</title><style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,'Hiragino Sans','Noto Sans KR',sans-serif;background:#fff;color:#222;font-size:14px}
+header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 14px;background:#45a0cc;color:#fff}
+header b{font-size:17px}header a{color:#fff;text-decoration:none;background:#2f86b1;border-radius:8px;padding:6px 14px;font-size:14px}
+.stats{margin-left:auto;font-size:13px}
+.mwrap{padding:10px;max-width:1100px;margin:0 auto}
+.mhead{display:grid;grid-template-columns:repeat(7,1fr);background:#68727a;color:#fff;border-radius:8px 8px 0 0;overflow:hidden}
+.mhead div{padding:8px 0;text-align:center;font-weight:700;font-size:14px}
+.mgrid{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid #dfe3e7;border-top:0}
+.mc{min-height:84px;border-right:1px solid #e8ebee;border-bottom:1px solid #e8ebee;padding:6px;display:flex;flex-direction:column;gap:6px;text-decoration:none;color:#222}
+.mc:hover{background:#eef6fb}.mc.off{background:#f7f8f9}
+.mc.today{outline:2px solid #45a0cc;outline-offset:-2px;background:#f0f8fc}
+.mc .d{font-style:normal;font-weight:700;font-size:15px}
+.mc .d.sat{color:#2b7bd3}.mc .d.sun{color:#d63333}
+.mbar{background:#8a949c;color:#fff;border-radius:4px;padding:3px 6px;font-size:12.5px;font-weight:700;text-align:center;white-space:nowrap}
+.mbar.full{background:#d63333}
+@media(max-width:700px){.mc{min-height:64px;padding:4px}.mbar{font-size:11px;padding:2px 3px}.mc .d{font-size:13px}}
+</style></head><body>
+<header><b>船場美術館 ${y}년 ${mo}월</b>
+<a href="${mnav(-1)}">◀</a><a href="${mnav(1)}">▶</a>
+<a href="${kq}&view=month&ym=${todayYmd.slice(0, 7)}">이번달</a><a href="${kq}&date=${todayYmd}">📋 오늘 일별</a>
+<span class="stats">월 합계 ${totG}조 · ${totP}명</span></header>
+<div class="mwrap"><div class="mhead"><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div><div>日</div></div>
+<div class="mgrid">${cells}</div></div>
+<div style="padding:6px 14px;color:#888;font-size:13px">날짜 탭 = 그날 간트(일별) 보기 · 🔴 = 만석 시간대 있음</div>
+</body></html>`;
+}
+
 function render(ymd, evs) {
   const dow = '日月火水木金土'[new Date(ymd + 'T12:00:00').getDay()];
   const ppl = evs.reduce((s, e) => s + e.ppl, 0);
   const mc = maxConcurrent(evs);
   const over = evs.filter(e => e.room < 0);
   const nav = d => { const t = new Date(ymd + 'T12:00:00'); t.setDate(t.getDate() + d); return t.toISOString().slice(0, 10); };
-  const q = d => `/?key=${encodeURIComponent(KEY)}&date=${d}`;
+  const q = d => `?key=${encodeURIComponent(KEY)}&date=${d}`;
   const nowJ = new Date(Date.now() + 9 * 3600e3);
   const todayYmd = nowJ.toISOString().slice(0, 10);
   const nowMin = nowJ.getUTCHours() * 60 + nowJ.getUTCMinutes();
@@ -215,7 +279,7 @@ form.nav{display:inline}input[type=date]{border:0;border-radius:8px;padding:6px 
 <header><b>船場美術館 ${ymd.slice(5).replace('-', '/')} (${dow})</b>
 <a href="${q(nav(-1))}">◀</a>
 <form class="nav" method="get"><input type="hidden" name="key" value="${esc(KEY)}"><input type="date" name="date" value="${ymd}" onchange="this.form.submit()"></form>
-<a href="${q(nav(1))}">▶</a><a href="${q(todayYmd)}">오늘</a><a href="#" id="reshuf">🔀 방 재배치</a>
+<a href="${q(nav(1))}">▶</a><a href="${q(todayYmd)}">오늘</a><a href="?key=${encodeURIComponent(KEY)}&view=month&ym=${ymd.slice(0, 7)}">📅 월</a><a href="#" id="reshuf">🔀 방 재배치</a>
 <span class="stats">${evs.length}조 · ${ppl}명 · 최대 동시 ${mc}조${mc >= ROOMS ? ' 🔴만석' : ''}</span></header>
 <div class="wrap"><div class="grid">${rows}</div></div>
 <div id="alerts"></div>
@@ -504,6 +568,11 @@ http.createServer(async (req, res) => {
     if (req.method === 'POST' && u.pathname === '/api/room') { try { await apiRoom(await readBody(req)); return json(200, { ok: 1 }); } catch (e) { return json(400, { error: e.message }); } }
     if (req.method === 'POST' && u.pathname === '/api/reshuffle') { try { const r = await apiReshuffle(await readBody(req)); return json(200, { ok: 1, ...r }); } catch (e) { return json(400, { error: e.message }); } }
     if (req.method === 'POST' && u.pathname === '/api/rowswap') { try { const r = await apiRowSwap(await readBody(req)); return json(200, { ok: 1, ...r }); } catch (e) { return json(400, { error: e.message }); } }
+    if (u.searchParams.get('view') === 'month') {
+      const ym = /^\d{4}-\d{2}$/.test(u.searchParams.get('ym') || '') ? u.searchParams.get('ym') : new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 7);
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      return res.end(renderMonth(ym, await monthEvents(ym)));
+    }
     const ymd = /^\d{4}-\d{2}-\d{2}$/.test(u.searchParams.get('date') || '') ? u.searchParams.get('date') : new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
     const evs = assignRooms(await dayEvents(ymd));
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
