@@ -154,7 +154,7 @@ header b{font-size:17px}header a{color:#fff;text-decoration:none;background:#2f8
 .mid{margin:0 auto;display:flex;align-items:center;gap:2px;border:1px solid #e4e8eb;border-radius:26px;padding:4px 8px;box-shadow:0 1px 4px rgba(0,0,0,.07);background:#fff}
 .arr{color:#2b7bd3;font-size:24px;line-height:1;text-decoration:none;padding:2px 16px;font-weight:700}
 .yr{font-size:15px;color:#555;font-weight:600}
-#msel{border:0;font-size:19px;font-weight:800;color:#222;background:transparent;padding:2px 4px;font-family:inherit}
+#msel{-webkit-appearance:none;appearance:none;border:0;outline:0;font-size:19px;font-weight:800;color:#222;padding:2px 24px 2px 8px;font-family:inherit;text-align:center;text-align-last:center;background:transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23666' stroke-width='2'/%3E%3C/svg%3E") right 6px center no-repeat}
 .tog{display:flex;align-items:center;gap:2px}
 .tog a{padding:9px 18px;font-size:14px;text-decoration:none;color:#8a949c;font-weight:700;border:2px solid transparent;border-radius:22px}
 .tog a.on{border-color:#2b7bd3;color:#1a66c0;background:#fff}
@@ -312,7 +312,7 @@ form.nav{display:inline}input[type=date]{border:0;border-radius:8px;padding:6px 
 <header><b>船場美術館 ${ymd.slice(5).replace('-', '/')} (${dow})</b>
 <a href="${q(nav(-1))}">◀</a>
 <form class="nav" method="get"><input type="hidden" name="key" value="${esc(KEY)}"><input type="date" name="date" value="${ymd}" onchange="this.form.submit()"></form>
-<a href="${q(nav(1))}">▶</a><a href="${q(todayYmd)}">오늘</a><a href="?key=${encodeURIComponent(KEY)}&view=month&ym=${ymd.slice(0, 7)}">📅 월</a><a href="#" id="reshuf">🔀 방 재배치</a>
+<a href="${q(nav(1))}">▶</a><a href="${q(todayYmd)}">오늘</a><a href="?key=${encodeURIComponent(KEY)}&view=month&ym=${ymd.slice(0, 7)}">📅 월</a><a href="#" id="reshuf">🔀 방 재배치</a><a href="#" id="allout">🏁 일괄 お帰り</a>
 <span class="stats">${evs.length}조 · ${ppl}명 · 최대 동시 ${mc}조${mc >= ROOMS ? ' 🔴만석' : ''}</span></header>
 <div class="wrap"><div class="grid">${rows}</div></div>
 <div id="alerts"></div>
@@ -378,6 +378,12 @@ document.querySelectorAll('.rl[data-ri]').forEach(function(rl){rl.addEventListen
   fetch('api/rowswap?key='+encodeURIComponent(KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({date:DATE,a:a,b:b})})
   .then(function(r){return r.json()}).then(function(j){if(j.ok)location.reload();else alert(j.error||'실패')}).catch(function(e){alert(e)});
 })});
+$('allout').addEventListener('click',function(e){
+  e.preventDefault();
+  if(!confirm(DATE+' 의 모든 예약을 お帰り(귀가) 처리할까요?\\n마감 정리용입니다.'))return;
+  fetch('api/allout?key='+encodeURIComponent(KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({date:DATE})})
+  .then(function(r){return r.json()}).then(function(j){if(j.ok){alert(j.n+'건 お帰り 처리 완료');location.reload()}else alert(j.error||'실패')}).catch(function(e){alert(e)});
+});
 $('reshuf').addEventListener('click',function(e){
   e.preventDefault();
   if(!confirm('방 배정을 자동으로 다시 정리할까요?\\n(입실 중인 조는 현재 방에 그대로 둡니다)'))return;
@@ -565,6 +571,19 @@ async function apiReshuffle(p) {  // 방 자동 재배치 — 입실 중(in)인 
   const over = evs.filter(ev => ev.room < 0).length;
   return { moved, tight, over };
 }
+async function apiAllOut(p) {   // 일괄 お帰り — 그날 모든 예약의 상태를 out으로 (마감 처리)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(p.date || '')) throw new Error('입력값 부족');
+  const evs = await dayEvents(p.date);
+  let n = 0;
+  for (const ev of evs) {
+    if (ev.st === 'out') continue;
+    const cur = await gcal('GET', '/events/' + encodeURIComponent(ev.id));
+    const priv = { ...(cur.extendedProperties?.private || {}), st: 'out' };
+    await gcal('PATCH', '/events/' + encodeURIComponent(ev.id), { extendedProperties: { private: priv } });
+    n++;
+  }
+  return { n };
+}
 async function apiRowSwap(p) {  // 방 통째 교환 — a행과 b행의 그날 예약 전부를 서로 맞바꿈 (보드 배정 오버레이)
   if (!/^\d{4}-\d{2}-\d{2}$/.test(p.date || '')) throw new Error('입력값 부족');
   const a = Number(p.a), b = Number(p.b);
@@ -605,6 +624,7 @@ http.createServer(async (req, res) => {
     if (req.method === 'POST' && u.pathname === '/api/room') { try { await apiRoom(await readBody(req)); return json(200, { ok: 1 }); } catch (e) { return json(400, { error: e.message }); } }
     if (req.method === 'POST' && u.pathname === '/api/reshuffle') { try { const r = await apiReshuffle(await readBody(req)); return json(200, { ok: 1, ...r }); } catch (e) { return json(400, { error: e.message }); } }
     if (req.method === 'POST' && u.pathname === '/api/rowswap') { try { const r = await apiRowSwap(await readBody(req)); return json(200, { ok: 1, ...r }); } catch (e) { return json(400, { error: e.message }); } }
+    if (req.method === 'POST' && u.pathname === '/api/allout') { try { const r = await apiAllOut(await readBody(req)); return json(200, { ok: 1, ...r }); } catch (e) { return json(400, { error: e.message }); } }
     if (u.searchParams.get('view') === 'month') {
       const ym = /^\d{4}-\d{2}$/.test(u.searchParams.get('ym') || '') ? u.searchParams.get('ym') : new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 7);
       const cells = monthCells(ym);
