@@ -137,7 +137,7 @@ function render(ymd, evs) {
     const lanes = Math.max(1, laneEnds.length);
     for (const ev of rs) ev.warn = lanes > 1 && rs.some(o => o !== ev && o.s < ev.e && ev.s < o.e);
     const hStyle = lanes > 1 ? ` style="height:${lanes * 66}px"` : '';
-    rows += `<div class="row"><div class="rl">room#${i + 1}${lanes > 1 ? ' ⚠️' : ''}</div><div class="tl" data-row="1"${hStyle}>${nowLine}${rs.map(rst).join('')}${rs.map(ev => block(ev, lanes)).join('')}</div></div>`;
+    rows += `<div class="row"><div class="rl" data-ri="${i}">room#${i + 1}${lanes > 1 ? ' ⚠️' : ''}</div><div class="tl" data-row="1"${hStyle}>${nowLine}${rs.map(rst).join('')}${rs.map(ev => block(ev, lanes)).join('')}</div></div>`;
   }
   if (over.length)
     rows += `<div class="row ov"><div class="rl">⚠️ 초과</div><div class="tl">${over.map(block).join('')}</div></div>`;
@@ -171,6 +171,7 @@ header b{font-size:17px}header a{color:#fff;text-decoration:none;background:#2f8
 .st-out{background:#1b8e6f;border:2px solid #1b8e6f;color:#fff}
 .bk.drag{opacity:.75;z-index:5;box-shadow:0 4px 14px rgba(0,0,0,.35);cursor:grabbing}
 .bk[data-src="man"]{touch-action:none}
+.rl[data-ri]{cursor:pointer}
 .rst{position:absolute;top:6px;bottom:6px;background:#e3e6e9;border-radius:0 8px 8px 0;pointer-events:none}
 .ov .tl{background:#fdecea;cursor:default}
 .now{position:absolute;top:-1px;bottom:-1px;width:2px;background:#e02020;z-index:2}
@@ -209,7 +210,7 @@ form.nav{display:inline}input[type=date]{border:0;border-radius:8px;padding:6px 
 <a href="${q(nav(1))}">▶</a><a href="${q(todayYmd)}">오늘</a><a href="#" id="reshuf">🔀 방 재배치</a>
 <span class="stats">${evs.length}조 · ${ppl}명 · 최대 동시 ${mc}조${mc >= ROOMS ? ' 🔴만석' : ''}</span></header>
 <div class="wrap"><div class="grid">${rows}</div></div>
-<div class="legend">빈 칸 탭 = 수동 예약 추가 · 바 탭 = 상태·시각 변경(전 채널) · 바 길게 눌러 좌우 드래그 = 시간 이동 · 정리 ${RESET}분
+<div class="legend">빈 칸 탭 = 수동 예약 추가 · 바 탭 = 상태·시각 변경(전 채널) · 바 길게 눌러 좌우 드래그 = 시간 이동 · 방 이름 탭 = 두 방 통째 교환 · 정리 ${RESET}분
 <br>상태: <span class="lg" style="background:#fff;border:2px solid #3f9dcb"></span>来店待ち <span class="lg" style="background:#3f9dcb"></span>ご来店 <span class="lg" style="background:#1b8e6f"></span>お帰り
  · 채널: 🎨ぐるなび 🟦Square 📞수동(전화·현장)</div>
 <div id="modal"><div class="card">
@@ -260,6 +261,16 @@ $('f_rm').addEventListener('change',function(){
   fetch('/api/room?key='+encodeURIComponent(KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:curId,rm:$('f_rm').value})})
   .then(function(r){return r.json()}).then(function(j){if(j.ok)location.reload();else alert(j.error||'실패')});
 });
+document.querySelectorAll('.rl[data-ri]').forEach(function(rl){rl.addEventListener('click',function(){
+  var a=Number(rl.dataset.ri);
+  var v=prompt('room#'+(a+1)+' 전체를 몇 번 방과 통째로 바꿀까요? (1-${ROOMS})');
+  if(v===null||v==='')return;
+  var b=Number(v)-1;
+  if(!(b>=0&&b<${ROOMS})||b===a){alert('1~${ROOMS} 중 다른 방 번호를 입력하세요');return}
+  if(!confirm('room#'+(a+1)+' ↔ room#'+(b+1)+' 예약을 전부 맞바꿉니다. 진행할까요?'))return;
+  fetch('/api/rowswap?key='+encodeURIComponent(KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({date:DATE,a:a,b:b})})
+  .then(function(r){return r.json()}).then(function(j){if(j.ok)location.reload();else alert(j.error||'실패')}).catch(function(e){alert(e)});
+})});
 $('reshuf').addEventListener('click',function(e){
   e.preventDefault();
   if(!confirm('방 배정을 자동으로 다시 정리할까요?\\n(입실 중인 조는 현재 방에 그대로 둡니다)'))return;
@@ -420,6 +431,21 @@ async function apiReshuffle(p) {  // 방 자동 재배치 — 입실 중(in)인 
   const over = evs.filter(ev => ev.room < 0).length;
   return { moved, tight, over };
 }
+async function apiRowSwap(p) {  // 방 통째 교환 — a행과 b행의 그날 예약 전부를 서로 맞바꿈 (보드 배정 오버레이)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(p.date || '')) throw new Error('입력값 부족');
+  const a = Number(p.a), b = Number(p.b);
+  if (!(a >= 0 && a < ROOMS && b >= 0 && b < ROOMS && a !== b)) throw new Error('방 번호 오류');
+  const evs = assignRooms(await dayEvents(p.date));
+  let moved = 0;
+  for (const ev of evs) {
+    if (ev.room !== a && ev.room !== b) continue;
+    const cur = await gcal('GET', '/events/' + encodeURIComponent(ev.id));
+    const priv = { ...(cur.extendedProperties?.private || {}), rm: String(ev.room === a ? b : a) };
+    await gcal('PATCH', '/events/' + encodeURIComponent(ev.id), { extendedProperties: { private: priv } });
+    moved++;
+  }
+  return { moved };
+}
 async function apiRoom(p) {   // 방 수동 지정 — 전 채널 (우리 화면의 배정 오버레이)
   if (!p.id || !/^-?[0-4]$|^-1$/.test(String(p.rm))) throw new Error('입력값 부족');
   const cur = await gcal('GET', '/events/' + encodeURIComponent(p.id));
@@ -444,6 +470,7 @@ http.createServer(async (req, res) => {
     if (req.method === 'POST' && u.pathname === '/api/move') { try { await apiMove(await readBody(req)); return json(200, { ok: 1 }); } catch (e) { return json(400, { error: e.message }); } }
     if (req.method === 'POST' && u.pathname === '/api/room') { try { await apiRoom(await readBody(req)); return json(200, { ok: 1 }); } catch (e) { return json(400, { error: e.message }); } }
     if (req.method === 'POST' && u.pathname === '/api/reshuffle') { try { const r = await apiReshuffle(await readBody(req)); return json(200, { ok: 1, ...r }); } catch (e) { return json(400, { error: e.message }); } }
+    if (req.method === 'POST' && u.pathname === '/api/rowswap') { try { const r = await apiRowSwap(await readBody(req)); return json(200, { ok: 1, ...r }); } catch (e) { return json(400, { error: e.message }); } }
     const ymd = /^\d{4}-\d{2}-\d{2}$/.test(u.searchParams.get('date') || '') ? u.searchParams.get('date') : new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
     const evs = assignRooms(await dayEvents(ymd));
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
