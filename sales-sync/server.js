@@ -1311,7 +1311,16 @@ function summaryText(r, result, monthTotal) {
 
 // ===== 처리 파이프라인 =====
 async function processReservation(text, sourceHint) {
+  // 고객 메시지 알림 메일: 본문의 희망·문의("12:30로 변경 가능한가요?")가 확정 변경으로 오파싱되지 않게
+  // 확정 정보인 ■予約内容 블록만 파싱에 넘기고, 메시지 원문은 비고로만 남긴다
+  let custMsg = null;
+  if (/メッセージが届きました/.test(text)) {
+    custMsg = ((text.match(/■メッセージ内容([\s\S]*?)(?:■予約内容|$)/) || [])[1] || '').replace(/[━─＿=\-_\s]+/g, ' ').trim().slice(0, 120) || null;
+    const i = text.indexOf('■予約内容');
+    if (i >= 0) text = '（お客様からのメッセージ通知メール。時間・人数は依頼文ではなく以下の確定予約内容を使うこと）\n' + text.slice(i);
+  }
   const r = await parseWithClaude(text, sourceHint);
+  if (custMsg) r.notes = `💬 고객 메시지: ${custMsg}` + (r.notes ? ` / ${r.notes}` : '');
   if (!r.reservation_no) r.reservation_no = 'M' + Date.now(); // 수동 입력용 ID
   if (!r.received_at) r.received_at = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
   await ensureTab();
@@ -1319,6 +1328,7 @@ async function processReservation(text, sourceHint) {
   // 기존 예약이면 이전 매트릭스 칸/캘린더 일정 참조 확보
   const existingRow = await findRowByReservationNo(r.reservation_no);
   const refs = existingRow ? await getExistingRefs(existingRow) : { matrixCell: null, calEventId: null };
+  if (custMsg && existingRow && r.status !== '취소') r.status = '변경'; // 메시지 메일은 확정 내용 기준으로 원장·캘린더 재동기화
 
   if (r.status === '취소') {
     await clearMatrixCell(refs.matrixCell);

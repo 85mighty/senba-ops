@@ -209,7 +209,7 @@ form.nav{display:inline}input[type=date]{border:0;border-radius:8px;padding:6px 
 <a href="${q(nav(1))}">▶</a><a href="${q(todayYmd)}">오늘</a>
 <span class="stats">${evs.length}조 · ${ppl}명 · 최대 동시 ${mc}조${mc >= ROOMS ? ' 🔴만석' : ''}</span></header>
 <div class="wrap"><div class="grid">${rows}</div></div>
-<div class="legend">빈 칸 탭 = 수동 예약 추가 · 바 탭 = 상태 변경(전 채널)/수동은 수정·삭제 · 정리 ${RESET}분
+<div class="legend">빈 칸 탭 = 수동 예약 추가 · 바 탭 = 상태·시각 변경(전 채널) · 바 길게 눌러 좌우 드래그 = 시간 이동 · 정리 ${RESET}분
 <br>상태: <span class="lg" style="background:#fff;border:2px solid #3f9dcb"></span>来店待ち <span class="lg" style="background:#3f9dcb"></span>ご来店 <span class="lg" style="background:#1b8e6f"></span>お帰り
  · 채널: 🎨ぐるなび 🟦Square 📞수동(전화·현장)</div>
 <div id="modal"><div class="card">
@@ -226,7 +226,7 @@ form.nav{display:inline}input[type=date]{border:0;border-radius:8px;padding:6px 
 <div><label>경로</label><select id="f_ch"><option>전화</option><option>현장(워크인)</option><option>인스타DM</option><option>기타</option></select></div></div>
 <label>코스</label><select id="f_co"><option>캔버스 2h</option><option>캔버스 3h</option><option>고양이 석고</option><option>기타</option></select>
 <div id="rodesc" hidden style="white-space:pre-wrap;font-size:13px;background:#f6f5f1;border-radius:8px;padding:10px;margin-top:10px;max-height:180px;overflow-y:auto"></div>
-<div id="roinfo" hidden>🎨/🟦 예약의 시간·정보는 여기서 수정할 수 없습니다 — ぐるなび台帳 / Square 앱에서 변경하세요. (상태 변경은 가능)</div>
+<div id="roinfo" hidden>🎨/🟦 시간·방 변경은 이 보드(캘린더)에만 반영됩니다 — 실제 예약은 ぐるなび台帳 / Square 앱에서 변경하세요. 이름·인원은 여기서 수정 불가.</div>
 <div class="btns"><button id="save">저장</button><button id="del" hidden>삭제</button><button id="close">닫기</button></div>
 </div></div>
 <script>
@@ -237,8 +237,9 @@ function $(i){return document.getElementById(i)}
 function markSt(st){document.querySelectorAll('#strow button').forEach(function(x){x.classList.toggle('on',x.dataset.st===st)})}
 function openNew(startHM){editId=null;curId=null;$('mtitle').textContent='수동 예약 추가';$('f_s').value=startHM;$('f_d').value='120';$('f_nm').value='';$('f_ph').value='';$('f_pp').value='2';$('f_co').selectedIndex=0;$('f_ch').selectedIndex=0;$('del').hidden=true;$('roinfo').hidden=true;$('rodesc').hidden=true;$('strow_wrap').hidden=true;setRO(false);M.style.display='flex'}
 function openEdit(b){editId=b.dataset.id;curId=b.dataset.id;$('mtitle').textContent='예약 수정 (📞수동)';$('f_s').value=b.dataset.s;$('f_d').value=b.dataset.dur;$('f_nm').value=b.dataset.nm;$('f_ph').value=b.dataset.ph;$('f_pp').value=b.dataset.pp||'2';$('f_co').value=b.dataset.co||'캔버스 2h';$('f_ch').value=b.dataset.ch||'전화';$('f_rm').value=b.dataset.rm;$('del').hidden=false;$('roinfo').hidden=true;$('rodesc').hidden=true;$('strow_wrap').hidden=false;markSt(b.dataset.st);setRO(false);M.style.display='flex'}
-function openRO(b){editId=null;curId=b.dataset.id;$('mtitle').textContent=b.dataset.src==='gn'?'ぐるなび 예약':'Square 예약';$('f_s').value=b.dataset.s;$('f_d').value=b.dataset.dur;$('f_nm').value=b.dataset.nm;$('f_ph').value=b.dataset.ph;$('f_pp').value=b.dataset.pp||'2';$('f_rm').value=b.dataset.rm;$('rodesc').textContent=b.dataset.desc||'';$('rodesc').hidden=!b.dataset.desc;$('roinfo').hidden=false;$('del').hidden=true;$('strow_wrap').hidden=false;markSt(b.dataset.st);setRO(true);M.style.display='flex'}
-function setRO(ro){['f_s','f_d','f_nm','f_ph','f_pp','f_co','f_ch'].forEach(function(i){$(i).disabled=ro});$('save').style.display=ro?'none':''}
+function openRO(b){editId=null;curId=b.dataset.id;$('mtitle').textContent=b.dataset.src==='gn'?'ぐるなび 예약':'Square 예약';$('f_s').value=b.dataset.s;setDurOpt(b.dataset.dur);$('f_nm').value=b.dataset.nm;$('f_ph').value=b.dataset.ph;$('f_pp').value=b.dataset.pp||'2';$('f_rm').value=b.dataset.rm;$('rodesc').textContent=b.dataset.desc||'';$('rodesc').hidden=!b.dataset.desc;$('roinfo').hidden=false;$('del').hidden=true;$('strow_wrap').hidden=false;markSt(b.dataset.st);setRO(true);M.style.display='flex'}
+function setRO(ro){['f_nm','f_ph','f_pp','f_co','f_ch'].forEach(function(i){$(i).disabled=ro});$('f_s').disabled=false;$('f_d').disabled=false;$('save').style.display=''}
+function setDurOpt(v){var d=$('f_d');d.querySelectorAll('option[data-tmp]').forEach(function(o){o.remove()});d.value=String(v);if(d.value!==String(v)){var o=document.createElement('option');o.value=String(v);o.dataset.tmp='1';o.textContent=(v/60)+'시간';d.appendChild(o);d.value=String(v)}}
 document.querySelectorAll('.tl[data-row]').forEach(function(tl){tl.addEventListener('click',function(e){
   if(e.target!==tl)return;
   var m=OPEN*60+Math.floor((e.offsetX/tl.clientWidth)*T/15)*15;
@@ -259,19 +260,18 @@ $('f_rm').addEventListener('change',function(){
   fetch('/api/room?key='+encodeURIComponent(KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:curId,rm:$('f_rm').value})})
   .then(function(r){return r.json()}).then(function(j){if(j.ok)location.reload();else alert(j.error||'실패')});
 });
-// 길게 누르면 좌우 드래그로 시간 이동 (📞수동만, 15분 스냅)
+// 길게(0.35초) 누르면 좌우 드래그로 시간 이동 — 전 채널, 15분 스냅 (🎨/🟦는 보드에만 반영)
 (function(){
   var dragEl=null,armed=false,sx=0,orig=0,dur=0,tlW=1,newS=null,lpTimer=null;
   document.querySelectorAll('.bk').forEach(function(b){
     b.addEventListener('pointerdown',function(e){
-      if(b.dataset.src!=='man')return;
       sx=e.clientX;orig=null;newS=null;armed=false;dragEl=b;
       var p=b.parentElement;tlW=p.clientWidth;dur=Number(b.dataset.dur);
       var hmv=b.dataset.s.split(':');orig=Number(hmv[0])*60+Number(hmv[1]);
       try{b.setPointerCapture(e.pointerId)}catch(_){}
       lpTimer=setTimeout(function(){armed=true;b.classList.add('drag');if(navigator.vibrate)navigator.vibrate(30)},350);
     });
-    b.addEventListener('touchmove',function(e){if(dragEl===b)e.preventDefault()},{passive:false});
+    b.addEventListener('touchmove',function(e){if(armed&&dragEl===b)e.preventDefault()},{passive:false});
   });
   document.addEventListener('pointermove',function(e){
     if(!dragEl)return;
@@ -305,6 +305,11 @@ $('f_rm').addEventListener('change',function(){
 $('close').onclick=function(){M.style.display='none'};
 M.addEventListener('click',function(e){if(e.target===M)M.style.display='none'});
 $('save').onclick=function(){
+  if(!editId&&curId){ // 🎨/🟦: 시각·시간만 보드(캘린더)에 반영
+    fetch('/api/move?key='+encodeURIComponent(KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:curId,start:$('f_s').value,dur:Number($('f_d').value)||0})})
+    .then(function(r){return r.json()}).then(function(j){if(j.ok)location.reload();else alert(j.error||'실패')}).catch(function(e){alert(e)});
+    return;
+  }
   if(!$('f_nm').value.trim()){alert('이름을 입력하세요');return}
   fetch('/api/save?key='+encodeURIComponent(KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
     id:editId,date:DATE,start:$('f_s').value,dur:Number($('f_d').value),nm:$('f_nm').value.trim(),ph:$('f_ph').value.trim(),pp:$('f_pp').value,co:$('f_co').value,ch:$('f_ch').value
@@ -363,12 +368,11 @@ async function apiDel(p) {
   if (cur.extendedProperties?.private?.src !== 'manual') throw new Error('수동 예약만 삭제할 수 있습니다');
   await gcal('DELETE', '/events/' + encodeURIComponent(p.id));
 }
-async function apiMove(p) {   // 드래그 시간 이동 — 수동 예약만
+async function apiMove(p) {   // 시간 이동 — 전 채널 (🎨/🟦는 이 보드의 캘린더에만 반영, 台帳·Square 원본은 별도 변경 필요)
   if (!p.id || !/^\d{2}:\d{2}$/.test(p.start || '')) throw new Error('입력값 부족');
   const cur = await gcal('GET', '/events/' + encodeURIComponent(p.id));
-  if (cur.extendedProperties?.private?.src !== 'manual') throw new Error('🎨/🟦 예약은 시간 이동 불가 — 台帳/Square에서 변경하세요');
   const date = (cur.start.dateTime || '').slice(0, 10);
-  const durMin = Math.round((new Date(cur.end.dateTime) - new Date(cur.start.dateTime)) / 60000);
+  const durMin = Number(p.dur) > 0 ? Number(p.dur) : Math.round((new Date(cur.end.dateTime) - new Date(cur.start.dateTime)) / 60000);
   const s = toMin(p.start);
   await gcal('PATCH', '/events/' + encodeURIComponent(p.id), {
     start: { dateTime: `${date}T${p.start}:00`, timeZone: 'Asia/Tokyo' },
