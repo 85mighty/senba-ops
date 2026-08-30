@@ -170,6 +170,7 @@ header b{font-size:17px}header a{color:#fff;text-decoration:none;background:#2f8
 .st-in{background:#3f9dcb;border:2px solid #3f9dcb;color:#fff}
 .st-out{background:#1b8e6f;border:2px solid #1b8e6f;color:#fff}
 .bk.drag{opacity:.75;z-index:5;box-shadow:0 4px 14px rgba(0,0,0,.35);cursor:grabbing}
+.bk[data-src="man"]{touch-action:none}
 .rst{position:absolute;top:6px;bottom:6px;background:#e3e6e9;border-radius:0 8px 8px 0;pointer-events:none}
 .ov .tl{background:#fdecea;cursor:default}
 .now{position:absolute;top:-1px;bottom:-1px;width:2px;background:#e02020;z-index:2}
@@ -267,9 +268,10 @@ $('f_rm').addEventListener('change',function(){
       sx=e.clientX;orig=null;newS=null;armed=false;dragEl=b;
       var p=b.parentElement;tlW=p.clientWidth;dur=Number(b.dataset.dur);
       var hmv=b.dataset.s.split(':');orig=Number(hmv[0])*60+Number(hmv[1]);
-      lpTimer=setTimeout(function(){armed=true;b.classList.add('drag');try{b.setPointerCapture(e.pointerId)}catch(_){}},350);
+      try{b.setPointerCapture(e.pointerId)}catch(_){}
+      lpTimer=setTimeout(function(){armed=true;b.classList.add('drag');if(navigator.vibrate)navigator.vibrate(30)},350);
     });
-    b.addEventListener('touchmove',function(e){if(armed&&dragEl===b)e.preventDefault()},{passive:false});
+    b.addEventListener('touchmove',function(e){if(dragEl===b)e.preventDefault()},{passive:false});
   });
   document.addEventListener('pointermove',function(e){
     if(!dragEl)return;
@@ -291,6 +293,11 @@ $('f_rm').addEventListener('change',function(){
       .then(function(r){return r.json()}).then(function(j){if(j.ok)location.reload();else{alert(j.error||'실패');location.reload()}});
     }else if(dragEl&&armed){location.reload()}
     if(dragEl)dragEl.classList.remove('drag');
+    dragEl=null;armed=false;
+  });
+  document.addEventListener('pointercancel',function(){
+    clearTimeout(lpTimer);
+    if(dragEl){dragEl.classList.remove('drag');if(armed)location.reload()}
     dragEl=null;armed=false;
   });
   function fmtHM(m){return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')}
