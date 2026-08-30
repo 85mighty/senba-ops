@@ -203,6 +203,14 @@ form.nav{display:inline}input[type=date]{border:0;border-radius:8px;padding:6px 
 .strow button[data-st=wait].on{border-color:#3f9dcb;color:#1f78a6}
 .strow button[data-st=in].on{background:#3f9dcb;border-color:#3f9dcb;color:#fff}
 .strow button[data-st=out].on{background:#1b8e6f;border-color:#1b8e6f;color:#fff}
+#alerts{padding:10px 14px 0;display:flex;flex-direction:column;gap:8px}
+.al{border-radius:10px;padding:12px 16px;font-size:16px;line-height:1.45;border:2px solid transparent}
+.al b{font-size:17px}
+.al.lv0{background:#f2f4f6;color:#5a636b;border-color:#dfe3e7}
+.al.lv1{background:#fff6dd;color:#6d4c00;border-color:#eec24a}
+.al.lv2{background:#ffe7dc;color:#8a3000;border-color:#ff8a50;animation:alp 1.1s infinite}
+.al.lv3{background:#ffdcdc;color:#a01010;border-color:#ff4545;animation:alp .7s infinite}
+@keyframes alp{0%,100%{box-shadow:0 0 0 0 rgba(255,90,50,.55)}50%{box-shadow:0 0 0 8px rgba(255,90,50,0)}}
 </style></head><body>
 <header><b>船場美術館 ${ymd.slice(5).replace('-', '/')} (${dow})</b>
 <a href="${q(nav(-1))}">◀</a>
@@ -210,6 +218,7 @@ form.nav{display:inline}input[type=date]{border:0;border-radius:8px;padding:6px 
 <a href="${q(nav(1))}">▶</a><a href="${q(todayYmd)}">오늘</a><a href="#" id="reshuf">🔀 방 재배치</a>
 <span class="stats">${evs.length}조 · ${ppl}명 · 최대 동시 ${mc}조${mc >= ROOMS ? ' 🔴만석' : ''}</span></header>
 <div class="wrap"><div class="grid">${rows}</div></div>
+<div id="alerts"></div>
 <div class="legend">빈 칸 탭 = 수동 예약 추가 · 바 탭 = 상태·시각 변경(전 채널) · 바 길게 눌러 좌우 드래그 = 시간 이동 · 방 이름 탭 = 두 방 통째 교환 · 정리 ${RESET}분
 <br>상태: <span class="lg" style="background:#fff;border:2px solid #3f9dcb"></span>来店待ち <span class="lg" style="background:#3f9dcb"></span>ご来店 <span class="lg" style="background:#1b8e6f"></span>お帰り
  · 채널: 🎨ぐるなび 🟦Square 📞수동(전화·현장)</div>
@@ -355,6 +364,30 @@ function tickNow(){
   var c=document.querySelector('.nowchip');
   if(c){c.style.left=left;c.style.display=vis?'flex':'none';
     c.textContent=String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')}
+  updAlerts(m);
+}
+// 이용 중인 방의 종료 안내 타이머 — 종료 15분 전 "가서 10분 남았다고 안내", 5분 전 마무리, 종료 후 경고
+function updAlerts(m){
+  var el=document.getElementById('alerts');if(!el)return;
+  function f(x){return String(Math.floor(x/60)).padStart(2,'0')+':'+String(x%60).padStart(2,'0')}
+  var items=[];
+  document.querySelectorAll('.bk').forEach(function(b){
+    if(b.dataset.st==='out')return;
+    var hm=(b.dataset.s||'').split(':'),s=Number(hm[0])*60+Number(hm[1]),e=s+Number(b.dataset.dur);
+    if(!(m>=s&&m<e+30))return;   // 진행 중 ~ 종료 30분 경과까지만 표시
+    var row=b.closest('.row'),rl=row?row.querySelector('.rl'):null;
+    var room=(rl?rl.textContent:'?').replace(/⚠️/g,'').trim()||'?';
+    var nm=(b.dataset.nm||'').replace(/[<>&]/g,'').split('(')[0].trim()||'예약';
+    var endS=f(e),lv,msg;
+    if(m>=e){lv=3;msg='🔴 <b>'+room+'</b> '+nm+' — 종료 '+endS+' <b>'+(m-e)+'분 지남</b> · 바로 마무리·정리!';}
+    else if(m>=e-5){lv=2;msg='🧹 <b>'+room+'</b> '+nm+' — <b>'+(e-m)+'분 후 종료</b>('+endS+') · 마무리 도와드리고 정리 준비';}
+    else if(m>=e-15){lv=2;msg='📢 <b>지금 '+room+' 가서 안내</b>: 「앞으로 <b>'+(e-5-m)+'분</b>입니다」 — '+nm+' ('+endS+' 종료)';}
+    else if(m>=e-25){lv=1;msg='⏰ <b>'+(e-15-m)+'분 후</b> '+room+' 안내 가기 — '+f(e-15)+'에 「10분 남음」 전달 ('+nm+', '+endS+' 종료)';}
+    else{lv=0;msg=room+' · '+nm+' · '+endS+' 종료 — '+f(e-15)+' 안내 예정';}
+    items.push({lv:lv,k:e,msg:msg});
+  });
+  items.sort(function(a,b){return b.lv-a.lv||a.k-b.k});
+  el.innerHTML=items.map(function(it){return '<div class="al lv'+it.lv+'">'+it.msg+'</div>'}).join('');
 }
 tickNow();setInterval(tickNow,30000);
 </script></body></html>`;
