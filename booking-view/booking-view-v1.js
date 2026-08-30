@@ -262,12 +262,12 @@ document.querySelectorAll('.bk').forEach(function(b){b.addEventListener('click',
 })});
 document.querySelectorAll('#strow button').forEach(function(x){x.addEventListener('click',function(){
   if(!curId)return;
-  fetch('/api/status?key='+encodeURIComponent(KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:curId,st:x.dataset.st})})
+  fetch('api/status?key='+encodeURIComponent(KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:curId,st:x.dataset.st})})
   .then(function(r){return r.json()}).then(function(j){if(j.ok)location.reload();else alert(j.error||'실패')});
 })});
 $('f_rm').addEventListener('change',function(){
   if(!curId)return;
-  fetch('/api/room?key='+encodeURIComponent(KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:curId,rm:$('f_rm').value})})
+  fetch('api/room?key='+encodeURIComponent(KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:curId,rm:$('f_rm').value})})
   .then(function(r){return r.json()}).then(function(j){if(j.ok)location.reload();else alert(j.error||'실패')});
 });
 document.querySelectorAll('.rl[data-ri]').forEach(function(rl){rl.addEventListener('click',function(){
@@ -277,13 +277,13 @@ document.querySelectorAll('.rl[data-ri]').forEach(function(rl){rl.addEventListen
   var b=Number(v)-1;
   if(!(b>=0&&b<${ROOMS})||b===a){alert('1~${ROOMS} 중 다른 방 번호를 입력하세요');return}
   if(!confirm('room#'+(a+1)+' ↔ room#'+(b+1)+' 예약을 전부 맞바꿉니다. 진행할까요?'))return;
-  fetch('/api/rowswap?key='+encodeURIComponent(KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({date:DATE,a:a,b:b})})
+  fetch('api/rowswap?key='+encodeURIComponent(KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({date:DATE,a:a,b:b})})
   .then(function(r){return r.json()}).then(function(j){if(j.ok)location.reload();else alert(j.error||'실패')}).catch(function(e){alert(e)});
 })});
 $('reshuf').addEventListener('click',function(e){
   e.preventDefault();
   if(!confirm('방 배정을 자동으로 다시 정리할까요?\\n(입실 중인 조는 현재 방에 그대로 둡니다)'))return;
-  fetch('/api/reshuffle?key='+encodeURIComponent(KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({date:DATE})})
+  fetch('api/reshuffle?key='+encodeURIComponent(KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({date:DATE})})
   .then(function(r){return r.json()}).then(function(j){
     if(!j.ok){alert(j.error||'실패');return}
     var m='재배치 완료: '+j.moved+'건 이동';
@@ -321,7 +321,7 @@ $('reshuf').addEventListener('click',function(e){
     if(dragEl&&armed)window.__dragJust=true;
     if(dragEl&&armed&&newS!==null&&newS!==orig){
       var el=dragEl;
-      fetch('/api/move?key='+encodeURIComponent(KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:el.dataset.id,start:fmtHM(newS)})})
+      fetch('api/move?key='+encodeURIComponent(KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:el.dataset.id,start:fmtHM(newS)})})
       .then(function(r){return r.json()}).then(function(j){if(j.ok)location.reload();else{alert(j.error||'실패');location.reload()}});
     }else if(dragEl&&armed){location.reload()}
     if(dragEl)dragEl.classList.remove('drag');
@@ -338,18 +338,18 @@ $('close').onclick=function(){M.style.display='none'};
 M.addEventListener('click',function(e){if(e.target===M)M.style.display='none'});
 $('save').onclick=function(){
   if(!editId&&curId){ // 🎨/🟦: 시각·시간만 보드(캘린더)에 반영
-    fetch('/api/move?key='+encodeURIComponent(KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:curId,start:$('f_s').value,dur:Number($('f_d').value)||0})})
+    fetch('api/move?key='+encodeURIComponent(KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:curId,start:$('f_s').value,dur:Number($('f_d').value)||0})})
     .then(function(r){return r.json()}).then(function(j){if(j.ok)location.reload();else alert(j.error||'실패')}).catch(function(e){alert(e)});
     return;
   }
   if(!$('f_nm').value.trim()){alert('이름을 입력하세요');return}
-  fetch('/api/save?key='+encodeURIComponent(KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+  fetch('api/save?key='+encodeURIComponent(KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
     id:editId,date:DATE,start:$('f_s').value,dur:Number($('f_d').value),nm:$('f_nm').value.trim(),ph:$('f_ph').value.trim(),pp:$('f_pp').value,co:$('f_co').value,ch:$('f_ch').value
   })}).then(function(r){return r.json()}).then(function(j){if(j.ok)location.reload();else alert(j.error||'실패')}).catch(function(e){alert(e)});
 };
 $('del').onclick=function(){
   if(!editId||!confirm('이 예약을 삭제할까요?'))return;
-  fetch('/api/del?key='+encodeURIComponent(KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:editId})})
+  fetch('api/del?key='+encodeURIComponent(KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:editId})})
   .then(function(r){return r.json()}).then(function(j){if(j.ok)location.reload();else alert(j.error||'실패')});
 };
 setTimeout(function(){location.reload()},300000);
