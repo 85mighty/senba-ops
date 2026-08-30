@@ -119,11 +119,17 @@ function monthCells(ym) {   // 월요일 시작, 앞뒤 달 날짜로 채운 완
   for (let i = 0; i < total; i++) { const t = new Date(d0); t.setUTCDate(d0.getUTCDate() + i); cells.push(t.toISOString().slice(0, 10)); }
   return cells;
 }
-function renderMonth(ym, cells, days) {
+function renderMonth(ym, cells, days, mode) {
   const [y, mo] = ym.split('-').map(Number);
   const todayYmd = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
   const kq = `?key=${encodeURIComponent(KEY)}`;
-  const mnav = d => { const t = new Date(Date.UTC(y, mo - 1 + d, 1)); return `${kq}&view=month&ym=${t.toISOString().slice(0, 7)}`; };
+  const mq = `&mode=${mode}`;
+  const mnav = d => { const t = new Date(Date.UTC(y, mo - 1 + d, 1)); return `${kq}&view=month&ym=${t.toISOString().slice(0, 7)}${mq}`; };
+  let mopts = '';   // 가운데 월 드롭다운 (전후 18개월)
+  for (let d = -6; d <= 11; d++) {
+    const t = new Date(Date.UTC(y, mo - 1 + d, 1)); const v = t.toISOString().slice(0, 7);
+    mopts += `<option value="${v}"${v === ym ? ' selected' : ''}>${t.getUTCFullYear()}년 ${t.getUTCMonth() + 1}월</option>`;
+  }
   let html = '', totG = 0, totP = 0;
   cells.forEach((ymd, i) => {
     const inM = ymd.slice(0, 7) === ym;
@@ -132,7 +138,9 @@ function renderMonth(ym, cells, days) {
     if (inM) { totG += g; totP += p; }
     const col = i % 7;
     const numCls = (col === 6 ? ' sun' : col === 5 ? ' sat' : '');
-    const bar = g ? `<span class="mbar${mc >= ROOMS ? ' full' : ''}"><span>${g}조</span><span>${p}명</span></span>` : '';
+    const bar = !g ? '' : mode === 'rate'
+      ? `<span class="mbar rate${mc >= ROOMS ? ' full' : ''}"><span>${Math.min(Math.round(mc / ROOMS * 100), 100)}%</span></span>`
+      : `<span class="mbar${mc >= ROOMS ? ' full' : ''}"><span>${g}조</span><span>${p}명</span></span>`;
     html += `<a class="mc${inM ? '' : ' out'}${ymd === todayYmd ? ' today' : ''}" href="${kq}&date=${ymd}"><i class="d${numCls}">${Number(ymd.slice(8))}</i>${bar}</a>`;
   });
   return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -141,6 +149,15 @@ function renderMonth(ym, cells, days) {
 header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 14px;background:#45a0cc;color:#fff}
 header b{font-size:17px}header a{color:#fff;text-decoration:none;background:#2f86b1;border-radius:8px;padding:6px 14px;font-size:14px}
 .stats{margin-left:auto;font-size:13px}
+.mnav{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#fff;flex-wrap:wrap}
+.pill{border:1px solid #d5dade;border-radius:22px;padding:9px 18px;color:#3a4148;text-decoration:none;font-size:14px;font-weight:700;background:#fff}
+.mid{margin:0 auto;display:flex;align-items:center;gap:2px;border:1px solid #e4e8eb;border-radius:26px;padding:4px 8px;box-shadow:0 1px 4px rgba(0,0,0,.07);background:#fff}
+.arr{color:#2b7bd3;font-size:24px;line-height:1;text-decoration:none;padding:2px 16px;font-weight:700}
+.yr{font-size:15px;color:#555;font-weight:600}
+#msel{border:0;font-size:19px;font-weight:800;color:#222;background:transparent;padding:2px 4px;font-family:inherit}
+.tog{display:flex;align-items:center;gap:2px}
+.tog a{padding:9px 18px;font-size:14px;text-decoration:none;color:#8a949c;font-weight:700;border:2px solid transparent;border-radius:22px}
+.tog a.on{border-color:#2b7bd3;color:#1a66c0;background:#fff}
 .mwrap{padding:0}
 .mhead{display:grid;grid-template-columns:repeat(7,1fr);background:#68727a;color:#fff}
 .mhead div{padding:9px 0;text-align:center;font-weight:700;font-size:15px}
@@ -155,12 +172,19 @@ header b{font-size:17px}header a{color:#fff;text-decoration:none;background:#2f8
 .mc .d.sat{color:#2b7bd3}.mc .d.sun{color:#d63333}
 .mbar{margin-top:auto;background:#8b959d;color:#fff;border-radius:3px;padding:4px 9px;font-size:13px;font-weight:700;display:flex;justify-content:space-between;gap:6px;white-space:nowrap}
 .mbar.full{background:#d63333}
+.mbar.rate{justify-content:center}
 @media(max-width:700px){.mc{min-height:72px;padding:4px 5px}.mbar{font-size:11px;padding:3px 5px}.mc .d{font-size:13.5px}.mhead div{font-size:13px;padding:7px 0}}
 </style></head><body>
 <header><b>船場美術館 ${y}년 ${mo}월</b>
-<a href="${mnav(-1)}">◀</a><a href="${mnav(1)}">▶</a>
-<a href="${kq}&view=month&ym=${todayYmd.slice(0, 7)}">이번달</a><a href="${kq}&date=${todayYmd}">📋 오늘 일별</a>
+<a href="${kq}&date=${todayYmd}">📋 오늘 일별</a>
 <span class="stats">월 합계 ${totG}조 · ${totP}명</span></header>
+<div class="mnav">
+<a class="pill" href="${kq}&view=month&ym=${todayYmd.slice(0, 7)}${mq}">|&lt; 이번달</a>
+<div class="mid"><a class="arr" href="${mnav(-1)}">‹</a><span class="yr">${y}년</span>
+<select id="msel" onchange="location.href='${kq}&view=month${mq}&ym='+this.value">${mopts}</select>
+<a class="arr" href="${mnav(1)}">›</a></div>
+<div class="tog"><a class="${mode === 'count' ? 'on' : ''}" href="${kq}&view=month&ym=${ym}&mode=count">예약수</a><a class="${mode === 'rate' ? 'on' : ''}" href="${kq}&view=month&ym=${ym}&mode=rate">만석률</a></div>
+</div>
 <div class="mwrap"><div class="mhead"><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div class="sat">土</div><div class="sun">日</div></div>
 <div class="mgrid">${html}</div></div>
 <div style="padding:8px 14px;color:#888;font-size:13px">날짜 탭 = 그날 간트(일별) 보기 · <span style="display:inline-block;width:34px;background:#d63333;border-radius:3px;height:12px;vertical-align:middle"></span> 빨간 바 = 만석 시간대 있음</div>
@@ -585,8 +609,9 @@ http.createServer(async (req, res) => {
       const ym = /^\d{4}-\d{2}$/.test(u.searchParams.get('ym') || '') ? u.searchParams.get('ym') : new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 7);
       const cells = monthCells(ym);
       const days = await monthEvents(cells[0], cells[cells.length - 1]);
+      const mode = u.searchParams.get('mode') === 'rate' ? 'rate' : 'count';
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      return res.end(renderMonth(ym, cells, days));
+      return res.end(renderMonth(ym, cells, days, mode));
     }
     const ymd = /^\d{4}-\d{2}-\d{2}$/.test(u.searchParams.get('date') || '') ? u.searchParams.get('date') : new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
     const evs = assignRooms(await dayEvents(ymd));
