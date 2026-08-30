@@ -128,7 +128,7 @@ function renderMonth(ym, cells, days, mode) {
   let mopts = '';   // 가운데 월 드롭다운 (전후 18개월)
   for (let d = -6; d <= 11; d++) {
     const t = new Date(Date.UTC(y, mo - 1 + d, 1)); const v = t.toISOString().slice(0, 7);
-    mopts += `<option value="${v}"${v === ym ? ' selected' : ''}>${t.getUTCFullYear()}년 ${t.getUTCMonth() + 1}월</option>`;
+    mopts += `<option value="${v}"${v === ym ? ' selected' : ''}>${t.getUTCFullYear() === y ? '' : t.getUTCFullYear() + '년 '}${t.getUTCMonth() + 1}월</option>`;
   }
   let html = '', totG = 0, totP = 0;
   cells.forEach((ymd, i) => {
@@ -170,8 +170,8 @@ header b{font-size:17px}header a{color:#fff;text-decoration:none;background:#2f8
 .mc.today{outline:2px solid #45a0cc;outline-offset:-2px;background:#f0f8fc}
 .mc .d{font-style:normal;font-weight:700;font-size:16px;align-self:flex-end;color:#3a4148}
 .mc .d.sat{color:#2b7bd3}.mc .d.sun{color:#d63333}
-.mbar{margin-top:auto;background:#8b959d;color:#fff;border-radius:3px;padding:4px 9px;font-size:13px;font-weight:700;display:flex;justify-content:space-between;gap:6px;white-space:nowrap}
-.mbar.full{background:#d63333}
+.mbar{margin-top:auto;background:#a6adb4;color:#fff;border-radius:2px;padding:2px 8px;font-size:12px;font-weight:600;line-height:1.5;display:flex;justify-content:space-between;gap:6px;white-space:nowrap}
+.mbar.full{background:#e05252}
 .mbar.rate{justify-content:center}
 @media(max-width:700px){.mc{min-height:72px;padding:4px 5px}.mbar{font-size:11px;padding:3px 5px}.mc .d{font-size:13.5px}.mhead div{font-size:13px;padding:7px 0}}
 </style></head><body>
