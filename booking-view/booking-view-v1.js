@@ -150,6 +150,7 @@ header{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:8px;align
 header b{font-size:17px}header a{color:#fff;text-decoration:none;background:#2f86b1;border-radius:8px;padding:6px 14px;font-size:14px}
 .stats{margin-left:auto;font-size:13px}
 .wrap{overflow-x:auto;padding:12px 14px 4px;-webkit-overflow-scrolling:touch}
+.grid,.tl,.bk,.rl,.tlh{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .grid{width:100%;min-width:860px}
 .row{display:flex;align-items:stretch;margin-bottom:0;border-bottom:1px solid #dfe3e6}
 .row.hd{border-bottom:0;margin-bottom:0}
