@@ -64,7 +64,7 @@ async function dayEvents(ymd) {
         title: sum.replace(/🎨|🟦|📞/g, '').trim(),
         desc,
         s: tm(s), e: tm(e),
-        ppl: Number((sum.match(/(\d+)\s*[명名]/) || [])[1] || P.pp || 0),
+        ppl: Number(P.pp || (sum.match(/(\d+)\s*[명名]/) || [])[1] || 0),   // 보드에서 고친 인원(pp)이 제목의 명수보다 우선
         meta: {
           nm: P.nm || '', pp: P.pp || '', co: P.co || '', ch: P.ch || '',
           ph: P.ph || (desc.match(/전화[:：]\s*([\d\-+ ]{8,})/) || [])[1] || '',
@@ -94,11 +94,9 @@ function maxConcurrent(evs) {
 }
 const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-// ── 월 전체 뷰 (구루나비 홈 달력 스타일: 일자별 조수·명수·만석 표시, 탭하면 그날 간트로)
-async function monthEvents(ym) {
-  const [y, mo] = ym.split('-').map(Number);
-  const last = new Date(Date.UTC(y, mo, 0)).getUTCDate();
-  const min = encodeURIComponent(`${ym}-01T00:00:00+09:00`), max = encodeURIComponent(`${ym}-${String(last).padStart(2, '0')}T23:59:59+09:00`);
+// ── 월 전체 뷰 (구루나비 홈 달력 테마: 날짜 우상단, 조/명 좌우 분리 회색 바, 앞뒤 달 포함 풀그리드)
+async function monthEvents(startYmd, endYmd) {
+  const min = encodeURIComponent(`${startYmd}T00:00:00+09:00`), max = encodeURIComponent(`${endYmd}T23:59:59+09:00`);
   const j = await gcal('GET', `/events?singleEvents=true&orderBy=startTime&maxResults=2500&timeMin=${min}&timeMax=${max}`);
   const days = {};
   for (const ev of j.items || []) {
@@ -106,55 +104,66 @@ async function monthEvents(ym) {
     const s = new Date(ev.start.dateTime), e = new Date(ev.end.dateTime);
     const tm = d => Math.round((d.getTime() + 9 * 3600e3) / 60000) % 1440;
     const day = new Date(s.getTime() + 9 * 3600e3).toISOString().slice(0, 10);
-    const ppl = Number(((ev.summary || '').match(/(\d+)\s*[명名]/) || [])[1] || ev.extendedProperties?.private?.pp || 0);
+    const ppl = Number(ev.extendedProperties?.private?.pp || ((ev.summary || '').match(/(\d+)\s*[명名]/) || [])[1] || 0);
     (days[day] = days[day] || []).push({ s: tm(s), e: tm(e), ppl });
   }
-  return { last, days };
+  return days;
 }
-function renderMonth(ym, { last, days }) {
+function monthCells(ym) {   // 월요일 시작, 앞뒤 달 날짜로 채운 완전한 주 단위 그리드
+  const [y, mo] = ym.split('-').map(Number);
+  const last = new Date(Date.UTC(y, mo, 0)).getUTCDate();
+  const lead = (new Date(`${ym}-01T12:00:00`).getDay() + 6) % 7;
+  const total = Math.ceil((lead + last) / 7) * 7;
+  const d0 = new Date(Date.UTC(y, mo - 1, 1 - lead));
+  const cells = [];
+  for (let i = 0; i < total; i++) { const t = new Date(d0); t.setUTCDate(d0.getUTCDate() + i); cells.push(t.toISOString().slice(0, 10)); }
+  return cells;
+}
+function renderMonth(ym, cells, days) {
   const [y, mo] = ym.split('-').map(Number);
   const todayYmd = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
   const kq = `?key=${encodeURIComponent(KEY)}`;
   const mnav = d => { const t = new Date(Date.UTC(y, mo - 1 + d, 1)); return `${kq}&view=month&ym=${t.toISOString().slice(0, 7)}`; };
-  const lead = (new Date(`${ym}-01T12:00:00`).getDay() + 6) % 7;   // 월요일 시작
-  let cells = '', totG = 0, totP = 0;
-  for (let i = 0; i < lead; i++) cells += '<div class="mc off"></div>';
-  for (let d = 1; d <= last; d++) {
-    const ymd = `${ym}-${String(d).padStart(2, '0')}`;
+  let html = '', totG = 0, totP = 0;
+  cells.forEach((ymd, i) => {
+    const inM = ymd.slice(0, 7) === ym;
     const list = days[ymd] || [];
     const g = list.length, p = list.reduce((s, e) => s + e.ppl, 0), mc = maxConcurrent(list);
-    totG += g; totP += p;
-    const col = (lead + d - 1) % 7;   // 0=월 .. 5=토 6=일
-    const numCls = col === 6 ? ' sun' : col === 5 ? ' sat' : '';
-    const bar = g ? `<span class="mbar${mc >= ROOMS ? ' full' : ''}">${g}조 ${p}명${mc >= ROOMS ? ' 🔴' : ''}</span>` : '';
-    cells += `<a class="mc${ymd === todayYmd ? ' today' : ''}" href="${kq}&date=${ymd}"><i class="d${numCls}">${d}</i>${bar}</a>`;
-  }
+    if (inM) { totG += g; totP += p; }
+    const col = i % 7;
+    const numCls = (col === 6 ? ' sun' : col === 5 ? ' sat' : '');
+    const bar = g ? `<span class="mbar${mc >= ROOMS ? ' full' : ''}"><span>${g}조</span><span>${p}명</span></span>` : '';
+    html += `<a class="mc${inM ? '' : ' out'}${ymd === todayYmd ? ' today' : ''}" href="${kq}&date=${ymd}"><i class="d${numCls}">${Number(ymd.slice(8))}</i>${bar}</a>`;
+  });
   return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>센바 예약 ${ym}</title><style>
 *{box-sizing:border-box}body{margin:0;font-family:-apple-system,'Hiragino Sans','Noto Sans KR',sans-serif;background:#fff;color:#222;font-size:14px}
 header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 14px;background:#45a0cc;color:#fff}
 header b{font-size:17px}header a{color:#fff;text-decoration:none;background:#2f86b1;border-radius:8px;padding:6px 14px;font-size:14px}
 .stats{margin-left:auto;font-size:13px}
-.mwrap{padding:10px;max-width:1100px;margin:0 auto}
-.mhead{display:grid;grid-template-columns:repeat(7,1fr);background:#68727a;color:#fff;border-radius:8px 8px 0 0;overflow:hidden}
-.mhead div{padding:8px 0;text-align:center;font-weight:700;font-size:14px}
-.mgrid{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid #dfe3e7;border-top:0}
-.mc{min-height:84px;border-right:1px solid #e8ebee;border-bottom:1px solid #e8ebee;padding:6px;display:flex;flex-direction:column;gap:6px;text-decoration:none;color:#222}
-.mc:hover{background:#eef6fb}.mc.off{background:#f7f8f9}
+.mwrap{padding:0}
+.mhead{display:grid;grid-template-columns:repeat(7,1fr);background:#68727a;color:#fff}
+.mhead div{padding:9px 0;text-align:center;font-weight:700;font-size:15px}
+.mhead .sat{color:#bcd8f5}.mhead .sun{color:#f5c6c6}
+.mgrid{display:grid;grid-template-columns:repeat(7,1fr)}
+.mc{min-height:106px;border-right:1px solid #e4e7ea;border-bottom:1px solid #e4e7ea;padding:7px 9px;display:flex;flex-direction:column;text-decoration:none;color:#222;background:#fff}
+.mc:nth-child(7n){border-right:0}
+.mc:hover{background:#eef6fb}
+.mc.out{background:#fafbfc}.mc.out .d{color:#c4cad0}.mc.out .d.sat{color:#b3cdea}.mc.out .d.sun{color:#e6bcbc}.mc.out .mbar{opacity:.55}
 .mc.today{outline:2px solid #45a0cc;outline-offset:-2px;background:#f0f8fc}
-.mc .d{font-style:normal;font-weight:700;font-size:15px}
+.mc .d{font-style:normal;font-weight:700;font-size:16px;align-self:flex-end;color:#3a4148}
 .mc .d.sat{color:#2b7bd3}.mc .d.sun{color:#d63333}
-.mbar{background:#8a949c;color:#fff;border-radius:4px;padding:3px 6px;font-size:12.5px;font-weight:700;text-align:center;white-space:nowrap}
+.mbar{margin-top:auto;background:#8b959d;color:#fff;border-radius:3px;padding:4px 9px;font-size:13px;font-weight:700;display:flex;justify-content:space-between;gap:6px;white-space:nowrap}
 .mbar.full{background:#d63333}
-@media(max-width:700px){.mc{min-height:64px;padding:4px}.mbar{font-size:11px;padding:2px 3px}.mc .d{font-size:13px}}
+@media(max-width:700px){.mc{min-height:72px;padding:4px 5px}.mbar{font-size:11px;padding:3px 5px}.mc .d{font-size:13.5px}.mhead div{font-size:13px;padding:7px 0}}
 </style></head><body>
 <header><b>船場美術館 ${y}년 ${mo}월</b>
 <a href="${mnav(-1)}">◀</a><a href="${mnav(1)}">▶</a>
 <a href="${kq}&view=month&ym=${todayYmd.slice(0, 7)}">이번달</a><a href="${kq}&date=${todayYmd}">📋 오늘 일별</a>
 <span class="stats">월 합계 ${totG}조 · ${totP}명</span></header>
-<div class="mwrap"><div class="mhead"><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div><div>日</div></div>
-<div class="mgrid">${cells}</div></div>
-<div style="padding:6px 14px;color:#888;font-size:13px">날짜 탭 = 그날 간트(일별) 보기 · 🔴 = 만석 시간대 있음</div>
+<div class="mwrap"><div class="mhead"><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div class="sat">土</div><div class="sun">日</div></div>
+<div class="mgrid">${html}</div></div>
+<div style="padding:8px 14px;color:#888;font-size:13px">날짜 탭 = 그날 간트(일별) 보기 · <span style="display:inline-block;width:34px;background:#d63333;border-radius:3px;height:12px;vertical-align:middle"></span> 빨간 바 = 만석 시간대 있음</div>
 </body></html>`;
 }
 
@@ -311,8 +320,9 @@ function $(i){return document.getElementById(i)}
 function markSt(st){document.querySelectorAll('#strow button').forEach(function(x){x.classList.toggle('on',x.dataset.st===st)})}
 function openNew(startHM){editId=null;curId=null;$('mtitle').textContent='수동 예약 추가';$('f_s').value=startHM;$('f_d').value='120';$('f_nm').value='';$('f_ph').value='';$('f_pp').value='2';$('f_co').selectedIndex=0;$('f_ch').selectedIndex=0;$('del').hidden=true;$('roinfo').hidden=true;$('rodesc').hidden=true;$('strow_wrap').hidden=true;setRO(false);M.style.display='flex'}
 function openEdit(b){editId=b.dataset.id;curId=b.dataset.id;$('mtitle').textContent='예약 수정 (📞수동)';$('f_s').value=b.dataset.s;$('f_d').value=b.dataset.dur;$('f_nm').value=b.dataset.nm;$('f_ph').value=b.dataset.ph;$('f_pp').value=b.dataset.pp||'2';$('f_co').value=b.dataset.co||'캔버스 2h';$('f_ch').value=b.dataset.ch||'전화';$('f_rm').value=b.dataset.rm;$('del').hidden=false;$('roinfo').hidden=true;$('rodesc').hidden=true;$('strow_wrap').hidden=false;markSt(b.dataset.st);setRO(false);M.style.display='flex'}
-function openRO(b){editId=null;curId=b.dataset.id;$('mtitle').textContent=b.dataset.src==='gn'?'ぐるなび 예약':'Square 예약';$('f_s').value=b.dataset.s;setDurOpt(b.dataset.dur);$('f_nm').value=b.dataset.nm;$('f_ph').value=b.dataset.ph;$('f_pp').value=b.dataset.pp||'2';$('f_rm').value=b.dataset.rm;$('rodesc').textContent=b.dataset.desc||'';$('rodesc').hidden=!b.dataset.desc;$('roinfo').hidden=false;$('del').hidden=true;$('strow_wrap').hidden=false;markSt(b.dataset.st);setRO(true);M.style.display='flex'}
-function setRO(ro){['f_nm','f_ph','f_pp','f_co','f_ch'].forEach(function(i){$(i).disabled=ro});$('f_s').disabled=false;$('f_d').disabled=false;$('save').style.display=''}
+function openRO(b){editId=null;curId=b.dataset.id;$('mtitle').textContent=b.dataset.src==='gn'?'ぐるなび 예약':'Square 예약';$('f_s').value=b.dataset.s;setDurOpt(b.dataset.dur);$('f_nm').value=b.dataset.nm;$('f_ph').value=b.dataset.ph;setPpOpt(b.dataset.pp||'2');$('f_rm').value=b.dataset.rm;$('rodesc').textContent=b.dataset.desc||'';$('rodesc').hidden=!b.dataset.desc;$('roinfo').hidden=false;$('del').hidden=true;$('strow_wrap').hidden=false;markSt(b.dataset.st);setRO(true);M.style.display='flex'}
+function setRO(ro){['f_nm','f_ph','f_co','f_ch'].forEach(function(i){$(i).disabled=ro});$('f_s').disabled=false;$('f_d').disabled=false;$('f_pp').disabled=false;$('save').style.display=''}
+function setPpOpt(v){var d=$('f_pp');d.querySelectorAll('option[data-tmp]').forEach(function(o){o.remove()});d.value=String(v);if(d.value!==String(v)){var o=document.createElement('option');o.value=String(v);o.dataset.tmp='1';o.textContent=String(v);d.appendChild(o);d.value=String(v)}}
 function setDurOpt(v){var d=$('f_d');d.querySelectorAll('option[data-tmp]').forEach(function(o){o.remove()});d.value=String(v);if(d.value!==String(v)){var o=document.createElement('option');o.value=String(v);o.dataset.tmp='1';o.textContent=(v/60)+'시간';d.appendChild(o);d.value=String(v)}}
 document.querySelectorAll('.tl[data-row]').forEach(function(tl){tl.addEventListener('click',function(e){
   if(e.target!==tl)return;
@@ -401,8 +411,8 @@ $('reshuf').addEventListener('click',function(e){
 $('close').onclick=function(){M.style.display='none'};
 M.addEventListener('click',function(e){if(e.target===M)M.style.display='none'});
 $('save').onclick=function(){
-  if(!editId&&curId){ // 🎨/🟦: 시각·시간만 보드(캘린더)에 반영
-    fetch('api/move?key='+encodeURIComponent(KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:curId,start:$('f_s').value,dur:Number($('f_d').value)||0})})
+  if(!editId&&curId){ // 🎨/🟦: 시각·시간·인원만 보드(캘린더)에 반영
+    fetch('api/move?key='+encodeURIComponent(KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:curId,start:$('f_s').value,dur:Number($('f_d').value)||0,pp:$('f_pp').value})})
     .then(function(r){return r.json()}).then(function(j){if(j.ok)location.reload();else alert(j.error||'실패')}).catch(function(e){alert(e)});
     return;
   }
@@ -494,10 +504,13 @@ async function apiMove(p) {   // 시간 이동 — 전 채널 (🎨/🟦는 이 
   const date = (cur.start.dateTime || '').slice(0, 10);
   const durMin = Number(p.dur) > 0 ? Number(p.dur) : Math.round((new Date(cur.end.dateTime) - new Date(cur.start.dateTime)) / 60000);
   const s = toMin(p.start);
-  await gcal('PATCH', '/events/' + encodeURIComponent(p.id), {
+  const body = {
     start: { dateTime: `${date}T${p.start}:00`, timeZone: 'Asia/Tokyo' },
     end: { dateTime: `${date}T${hm(Math.min(s + durMin, 1439))}:00`, timeZone: 'Asia/Tokyo' },
-  });
+  };
+  const pp = Number(p.pp);
+  if (pp >= 1 && pp <= 99) body.extendedProperties = { private: { ...(cur.extendedProperties?.private || {}), pp: String(pp) } };
+  await gcal('PATCH', '/events/' + encodeURIComponent(p.id), body);
 }
 async function apiReshuffle(p) {  // 방 자동 재배치 — 입실 중(in)인 조만 현재 방에 고정, 나머지는 시간순 first-fit으로 다시 배정해 저장
   if (!/^\d{4}-\d{2}-\d{2}$/.test(p.date || '')) throw new Error('입력값 부족');
@@ -570,8 +583,10 @@ http.createServer(async (req, res) => {
     if (req.method === 'POST' && u.pathname === '/api/rowswap') { try { const r = await apiRowSwap(await readBody(req)); return json(200, { ok: 1, ...r }); } catch (e) { return json(400, { error: e.message }); } }
     if (u.searchParams.get('view') === 'month') {
       const ym = /^\d{4}-\d{2}$/.test(u.searchParams.get('ym') || '') ? u.searchParams.get('ym') : new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 7);
+      const cells = monthCells(ym);
+      const days = await monthEvents(cells[0], cells[cells.length - 1]);
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      return res.end(renderMonth(ym, await monthEvents(ym)));
+      return res.end(renderMonth(ym, cells, days));
     }
     const ymd = /^\d{4}-\d{2}-\d{2}$/.test(u.searchParams.get('date') || '') ? u.searchParams.get('date') : new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
     const evs = assignRooms(await dayEvents(ymd));
