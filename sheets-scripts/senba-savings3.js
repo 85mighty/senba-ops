@@ -1,12 +1,13 @@
-// 「저금 시나리오 v2 (고베 20만)」 탭 — 고베 고정비 실측 전제(월세·전기·수도 합 20만) 반영판 (2026-09-16)
+// 「저금 시나리오 v2 (고베 20만)」 탭 — 고베 고정비 실측 전제(월세·전기·수도 합 20만) 반영판 (2026-09-16, v2)
 // 고베 운영 체제 2안: 금토일월(주4일) / 금토일월+수·목(주6일, 화 휴무) — 둘 다 알바 기본 4h 체제(사장 철수 → 부업 15만 가능)
-// 저금 목표 10만·20만·30만 역산: 본점 매출별로 고베가 얼마를 벌어야 하는지 표로 제시. 가계 지출 348,745 차감.
+// 저금 목표 10만·20만·30만 역산 + 드롭다운 시뮬레이터(본점·고베 매출, 체제, 부업을 골라 저금액 즉시 계산)
+// v2: 생활비 10만→15만(가계 지출 398,745), 시나리오 표에 부업·가계 지출 열 추가
 const path = require('path');
 const { google } = require(path.join('/opt/senba-sales-sync/node_modules/googleapis'));
 
 const SHEET_ID = '1OiQnj_slGsZvQ8BBQBP6a6eK3_j4J35nCReSTT2HRgc';
 const TAB = '저금 시나리오 v2 (고베 20만)';
-const NCOL = 8;
+const NCOL = 9;
 
 const M = 0.834197;                           // 세후 마진율 (소비세 간이 4.55% 포함)
 const HONTEN_FIX = 459140;                    // 본점: 고정·마케팅 36.5만 + 알바 18일 기본4h + 사장 수·목 통근 (기존 탭과 동일)
@@ -17,7 +18,7 @@ const ALBA4 = 17 * 4 * 1200;                  // 금토일월: 월평균 17일 �
 const FIX6 = KOBE_BASE + KOBE_MKT + ALBA6;    // 344,800
 const FIX4 = KOBE_BASE + KOBE_MKT + ALBA4;    // 301,600
 const SIDE = 150000;                          // 부업 (사장 철수 전제)
-const HOUSE = 100000 + 198745 + 50000;        // 가계 지출 348,745 (기존 탭과 동일)
+const HOUSE = 150000 + 198745 + 50000;        // 가계 지출 398,745 (생활비 15만으로 상향)
 
 const hn = S => Math.round(S * M - HONTEN_FIX);
 const kn = (S, fix) => Math.round(S * M - fix);
@@ -30,7 +31,7 @@ const push = r => { rows.push(r); return rows.length - 1; };
 const blank = () => push([]);
 
 const iTitle = push(['저금 시나리오 v2 — 고베 고정비 20만 전제 (주4일 vs 주6일)']);
-const iSub = push(['고베: 월세·전기·수도 20만 + 마케팅 2만 + 알바 기본4h(주4일 17일 / 주6일 26일) · 사장 철수 → 부업 15만 · 세후(소비세 4.55%) · 소득세·주민세, 라쿠텐카드 변동지출 미반영 · 2026-09-16']);
+const iSub = push(['고베: 월세·전기·수도 20만 + 마케팅 2만 + 알바 기본4h(주4일 17일 / 주6일 26일) · 사장 철수 → 부업 15만 · 생활비 15만 반영 · 세후(소비세 4.55%) · 소득세·주민세, 라쿠텐카드 변동지출 미반영 · 2026-09-16']);
 blank();
 
 const iSec1 = push(['■ 전제 (모두 월 기준)']);
@@ -38,16 +39,28 @@ const p1 = push(['본점 순수익', `매출 × ${M} − 459,140 (기존 「저�
 const p2 = push(['고베 고정비 (주4일)', `월세·전기·수도 200,000 + 마케팅 20,000 + 알바 17일×4h 81,600 = ${FIX4.toLocaleString('ja-JP')} → 손익분기 매출 약 ${(be(FIX4) / 10000).toFixed(1)}만`]);
 const p3 = push(['고베 고정비 (주6일)', `월세·전기·수도 200,000 + 마케팅 20,000 + 알바 26일×4h 124,800 = ${FIX6.toLocaleString('ja-JP')} → 손익분기 매출 약 ${(be(FIX6) / 10000).toFixed(1)}만`]);
 const p4 = push(['부업', '사장이 고베에 상주하지 않으므로 가능 — 15만 고정 (오사카 유모차 등)']);
-const p5 = push(['가계 지출', '생활비 100,000 + 가계 고정비 198,745 + 차량 유지비 50,000 = 348,745']);
-const p6 = push(['저금액', '= 본점 순수익 + 고베 순수익 + 부업 15만 − 348,745']);
+const p5 = push(['가계 지출', '생활비 150,000 + 가계 고정비 198,745 + 차량 유지비 50,000 = 398,745']);
+const p6 = push(['저금액', '본점 순수익 + 고베 순수익 + 부업 − 가계 지출 398,745']);
 blank();
 
-const iSec2 = push(['■ 시나리오 — 고베 체제별']);
-const h2 = push(['체제', '구분', '본점 매출', '고베 매출', '본점 순수익', '고베 순수익', '', '★ 월 저금액']);
+const iSim = push(['★ 시뮬레이터 — 노란 칸을 드롭다운으로 골라보세요 (저금액 즉시 재계산)']);
+const sIn1 = push(['본점 매출', 800000, '드롭다운: 60만~100만 (5만 단위)']);
+const sIn2 = push(['고베 매출', 500000, '드롭다운: 20만~70만 (5만 단위)']);
+const sIn3 = push(['고베 체제', '주4일(금토일월)', '드롭다운: 주4일 / 주6일']);
+const sIn4 = push(['부업', 150000, '드롭다운: 0 / 10만 / 15만 / 20만']);
+const sR1 = push(['본점 순수익', '', '= 본점 매출 × 0.834197 − 459,140']);
+const sFix = push(['고베 고정비', '', '체제에 따라 자동 (주4일 301,600 / 주6일 344,800)']);
+const sR2 = push(['고베 순수익', '', '= 고베 매출 × 0.834197 − 고베 고정비']);
+const sHouse = push(['가계 지출', -HOUSE, '생활 150,000 + 고정 198,745 + 차량 50,000']);
+const sSave = push(['★ 월 저금액', '', '= 본점 + 고베 + 부업 − 가계 지출']);
+blank();
+
+const iSec2 = push(['■ 시나리오 — 고베 체제별 (저금액 = E+F+G+H)']);
+const h2 = push(['체제', '구분', '본점 매출', '고베 매출', '본점 순수익', '고베 순수익', '부업', '가계 지출', '★ 월 저금액']);
 const SC = [['보수', 700000, 400000], ['기본', 800000, 500000], ['낙관', 900000, 600000], ['최상', 1000000, 700000]];
 const scStart = rows.length;
 for (const [label, fix] of [['금토일월 (주4일)', FIX4], ['주6일 (화 휴무)', FIX6]]) {
-  for (const [name, h, k] of SC) push([label, name, h, k, hn(h), kn(k, fix), '', save(h, k, fix)]);
+  for (const [name, h, k] of SC) push([label, name, h, k, hn(h), kn(k, fix), SIDE, -HOUSE, save(h, k, fix)]);
 }
 const scEnd = rows.length;
 blank();
@@ -58,7 +71,7 @@ const tgStart = rows.length;
 for (const T of [100000, 200000, 300000]) {
   for (const h of [700000, 800000, 900000]) {
     const k4 = needKobe(T, h, FIX4), k6 = needKobe(T, h, FIX6);
-    push([T, h, k4, k6, k6 > 700000 ? '△ 고베 70만 초과 — 현실성 낮음' : '']);
+    push([T, h, k4, k6, k4 > 700000 ? '✕ 고베에 70만 이상 요구 — 달성 가능성 낮은 조합' : k6 > 700000 ? '△ 주6일은 고베 70만 초과 — 주4일로' : '']);
   }
 }
 const tgEnd = rows.length;
@@ -80,7 +93,7 @@ const n3 = push(['목표 감각', `기본(본80·고50): 주4일 저금 ${Math.r
 const n4 = push(['저금 20만의 벽', `본점 80만 기준 고베 ${Math.round(needKobe(200000, 800000, FIX4) / 10000)}만(주4)~${Math.round(needKobe(200000, 800000, FIX6) / 10000)}만(주6) 필요 — 본점을 90만으로 올리면 고베 ${Math.round(needKobe(200000, 900000, FIX4) / 10000)}만(주4)이면 충분`]);
 const n5 = push(['미반영 항목', '고베 초기비용 회수·상점가비 별도 확인 · 소득세·주민세 별도 적립 · 라쿠텐카드 변동지출은 월별 차감']);
 blank();
-const iN = push(['※ 마케팅 2만·알바 일수 등 전제가 다르면 senba-savings3.js 상수만 수정 후 재실행 · 기존 「저금 시나리오 (본점+고베)」 탭은 구전제(고정비 32.7만) 참고용']);
+const iN = push(['※ 마케팅 2만·알바 일수 등 전제가 다르면 senba-savings3.js 상수만 수정 후 재실행 · 기존 「저금 시나리오 (본점+고베)」 탭은 구전제(생활비 10만·고정비 32.7만) 참고용']);
 
 (async () => {
   const auth = new google.auth.GoogleAuth({ keyFile: '/opt/senba-sales-sync/service-account.json', scopes: ['https://www.googleapis.com/auth/spreadsheets'] });
@@ -96,11 +109,26 @@ const iN = push(['※ 마케팅 2만·알바 일수 등 전제가 다르면 senb
   await sheets.spreadsheets.values.update({
     spreadsheetId: SHEET_ID, range: `'${TAB}'!A1`, valueInputOption: 'RAW', requestBody: { values: rows },
   });
+  // 시뮬레이터 수식 (행 번호는 1-기준)
+  const F = r => r + 1;
+  await sheets.spreadsheets.values.batchUpdate({
+    spreadsheetId: SHEET_ID,
+    requestBody: {
+      valueInputOption: 'USER_ENTERED',
+      data: [
+        { range: `'${TAB}'!B${F(sR1)}`, values: [[`=ROUND(B${F(sIn1)}*${M}-${HONTEN_FIX},0)`]] },
+        { range: `'${TAB}'!B${F(sFix)}`, values: [[`=IF(B${F(sIn3)}="주6일(화 휴무)",${FIX6},${FIX4})`]] },
+        { range: `'${TAB}'!B${F(sR2)}`, values: [[`=ROUND(B${F(sIn2)}*${M}-B${F(sFix)},0)`]] },
+        { range: `'${TAB}'!B${F(sSave)}`, values: [[`=B${F(sR1)}+B${F(sR2)}+B${F(sIn4)}+B${F(sHouse)}`]] },
+      ],
+    },
+  });
 
   const C = {
     dark: { red: 0.122, green: 0.286, blue: 0.475 }, hdr: { red: 0.267, green: 0.447, blue: 0.769 },
     sec: { red: 0.851, green: 0.882, blue: 0.949 }, gold: { red: 1, green: 0.898, blue: 0.6 },
     band: { red: 0.955, green: 0.960, blue: 0.975 }, white: { red: 1, green: 1, blue: 1 }, note: { red: 0.45, green: 0.45, blue: 0.45 },
+    sim: { red: 1, green: 0.97, blue: 0.85 },
   };
   const R = [];
   const range = (r0, r1, c0 = 0, c1 = NCOL) => ({ sheetId: sid, startRowIndex: r0, endRowIndex: r1, startColumnIndex: c0, endColumnIndex: c1 });
@@ -114,13 +142,29 @@ const iN = push(['※ 마케팅 2만·알바 일수 등 전제가 다르면 senb
   R.push({ updateDimensionProperties: { range: { sheetId: sid, dimension: 'ROWS', startIndex: iTitle, endIndex: iTitle + 1 }, properties: { pixelSize: 36 }, fields: 'pixelSize' } });
   R.push({ mergeCells: { range: range(iSub, iSub + 1), mergeType: 'MERGE_ALL' } });
   cellFmt(range(iSub, iSub + 1), { textFormat: { italic: true, fontSize: 9, foregroundColor: C.note }, horizontalAlignment: 'CENTER' }, 'userEnteredFormat(textFormat,horizontalAlignment)');
-  for (const i of [iSec1, iSec2, iSec3, iSec4, iSec5]) {
+  for (const i of [iSec1, iSim, iSec2, iSec3, iSec4, iSec5]) {
     R.push({ mergeCells: { range: range(i, i + 1), mergeType: 'MERGE_ALL' } });
     cellFmt(range(i, i + 1), { backgroundColor: C.sec, textFormat: { bold: true, fontSize: 11 } }, 'userEnteredFormat(backgroundColor,textFormat)');
   }
   cellFmt(range(p1, p6 + 1, 0, 1), { textFormat: { bold: true } }, 'userEnteredFormat.textFormat.bold');
   for (const i of [p1, p2, p3, p4, p5, p6]) R.push({ mergeCells: { range: range(i, i + 1, 1, NCOL), mergeType: 'MERGE_ALL' } });
   cellFmt(range(p1, p6 + 1, 1, NCOL), { wrapStrategy: 'WRAP', textFormat: { fontSize: 9 } }, 'userEnteredFormat(wrapStrategy,textFormat)');
+
+  // ── 시뮬레이터: 입력 4칸 노란 배경 + 드롭다운, 결과 골드
+  cellFmt(range(sIn1, sSave + 1, 0, 1), { textFormat: { bold: true } }, 'userEnteredFormat.textFormat.bold');
+  cellFmt(range(sIn1, sSave + 1, 1, 2), NUM, 'userEnteredFormat(numberFormat,horizontalAlignment)');
+  cellFmt(range(sIn1, sIn4 + 1, 1, 2), { backgroundColor: C.sim, numberFormat: NUM.numberFormat, horizontalAlignment: 'RIGHT', textFormat: { bold: true } }, 'userEnteredFormat(backgroundColor,numberFormat,horizontalAlignment,textFormat.bold)');
+  cellFmt(range(sIn3, sIn3 + 1, 1, 2), { backgroundColor: C.sim, horizontalAlignment: 'RIGHT', textFormat: { bold: true } }, 'userEnteredFormat(backgroundColor,horizontalAlignment,textFormat.bold)');
+  cellFmt(range(sSave, sSave + 1, 0, 2), { backgroundColor: C.gold, textFormat: { bold: true, fontSize: 12 } }, 'userEnteredFormat(backgroundColor,textFormat)');
+  cellFmt(range(sSave, sSave + 1, 1, 2), { backgroundColor: C.gold, textFormat: { bold: true, fontSize: 12 }, numberFormat: NUM.numberFormat, horizontalAlignment: 'RIGHT' }, 'userEnteredFormat(backgroundColor,textFormat,numberFormat,horizontalAlignment)');
+  for (const i of [sIn1, sIn2, sIn3, sIn4, sR1, sFix, sR2, sHouse, sSave]) R.push({ mergeCells: { range: range(i, i + 1, 2, NCOL), mergeType: 'MERGE_ALL' } });
+  cellFmt(range(sIn1, sSave + 1, 2, NCOL), { textFormat: { fontSize: 9, foregroundColor: C.note } }, 'userEnteredFormat.textFormat');
+  R.push({ updateBorders: { range: range(sIn1, sSave + 1, 0, 2), top: gb, bottom: gb, left: gb, right: gb, innerHorizontal: ib, innerVertical: ib } });
+  const dd = (row, vals) => R.push({ setDataValidation: { range: range(row, row + 1, 1, 2), rule: { condition: { type: 'ONE_OF_LIST', values: vals.map(v => ({ userEnteredValue: String(v) })) }, strict: true, showCustomUi: true } } });
+  dd(sIn1, [600000, 650000, 700000, 750000, 800000, 850000, 900000, 950000, 1000000]);
+  dd(sIn2, [200000, 250000, 300000, 350000, 400000, 450000, 500000, 550000, 600000, 650000, 700000]);
+  dd(sIn3, ['주4일(금토일월)', '주6일(화 휴무)']);
+  dd(sIn4, [0, 100000, 150000, 200000]);
 
   const table = (hRow, nData, cols, { numFrom = 1 } = {}) => {
     const d0 = hRow + 1, d1 = hRow + 1 + nData;
@@ -132,11 +176,11 @@ const iN = push(['※ 마케팅 2만·알바 일수 등 전제가 다르면 senb
   };
 
   // 시나리오 표 — 체제 4행씩 세로 병합, 저금액 골드
-  table(h2, scEnd - scStart, 8, { numFrom: 2 });
+  table(h2, scEnd - scStart, 9, { numFrom: 2 });
   cellFmt(range(scStart, scEnd, 1, 2), { textFormat: { bold: true } }, 'userEnteredFormat.textFormat.bold');
   R.push({ mergeCells: { range: range(scStart, scStart + 4, 0, 1), mergeType: 'MERGE_ALL' } });
   R.push({ mergeCells: { range: range(scStart + 4, scEnd, 0, 1), mergeType: 'MERGE_ALL' } });
-  cellFmt(range(scStart, scEnd, 7, 8), { backgroundColor: C.gold, textFormat: { bold: true }, numberFormat: NUM.numberFormat, horizontalAlignment: 'RIGHT' }, 'userEnteredFormat(backgroundColor,textFormat.bold,numberFormat,horizontalAlignment)');
+  cellFmt(range(scStart, scEnd, 8, 9), { backgroundColor: C.gold, textFormat: { bold: true }, numberFormat: NUM.numberFormat, horizontalAlignment: 'RIGHT' }, 'userEnteredFormat(backgroundColor,textFormat.bold,numberFormat,horizontalAlignment)');
 
   // 목표 역산 표 — 목표 3행씩 세로 병합, 필요 고베 매출 골드
   table(h3, tgEnd - tgStart, 5, { numFrom: 0 });
@@ -158,10 +202,10 @@ const iN = push(['※ 마케팅 2만·알바 일수 등 전제가 다르면 senb
   R.push({ mergeCells: { range: range(iN, iN + 1), mergeType: 'MERGE_ALL' } });
   cellFmt(range(iN, iN + 1), { textFormat: { italic: true, fontSize: 9, foregroundColor: C.note } }, 'userEnteredFormat.textFormat');
   R.push({ updateDimensionProperties: { range: { sheetId: sid, dimension: 'COLUMNS', startIndex: 0, endIndex: 1 }, properties: { pixelSize: 190 }, fields: 'pixelSize' } });
-  R.push({ updateDimensionProperties: { range: { sheetId: sid, dimension: 'COLUMNS', startIndex: 1, endIndex: NCOL }, properties: { pixelSize: 128 }, fields: 'pixelSize' } });
+  R.push({ updateDimensionProperties: { range: { sheetId: sid, dimension: 'COLUMNS', startIndex: 1, endIndex: NCOL }, properties: { pixelSize: 122 }, fields: 'pixelSize' } });
   await sheets.spreadsheets.batchUpdate({ spreadsheetId: SHEET_ID, requestBody: { requests: R } });
 
-  console.log('[저금 시나리오 v2 탭 완료] 고베 BE 주4', be(FIX4).toLocaleString('ja-JP'), '/ 주6', be(FIX6).toLocaleString('ja-JP'));
+  console.log('[저금 시나리오 v2 탭 완료] 가계 지출', HOUSE.toLocaleString('ja-JP'), '/ 고베 BE 주4', be(FIX4).toLocaleString('ja-JP'), '/ 주6', be(FIX6).toLocaleString('ja-JP'));
   for (const [label, fix] of [['주4', FIX4], ['주6', FIX6]]) for (const [name, h, k] of SC) console.log(' ', label, name, '→ 저금', save(h, k, fix).toLocaleString('ja-JP'));
   for (const T of [100000, 200000]) console.log('  목표', T / 10000 + '만, 본80 → 고베 필요(주4)', needKobe(T, 800000, FIX4).toLocaleString('ja-JP'), '(주6)', needKobe(T, 800000, FIX6).toLocaleString('ja-JP'));
 })().catch(e => { console.error('ERROR:', e.response?.data?.error?.message || e.message); process.exit(1); });
