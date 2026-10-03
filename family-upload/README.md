@@ -22,6 +22,13 @@ bash family-upload/deploy.sh
 - `GET /download/파일명?key=토큰` — 다운로드.
 - 저장 위치: `/opt/family-upload/videos/` (파일명 앞에 올린 일시가 붙음)
 
+## 텔레그램 알림
+
+`.env`에 `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`가 있으면 5MB 넘는 업로드에 대해
+"올리는 중 N%" 메시지 하나를 보내고 10%p 단위로 수정 → 완료 시 파일명·용량·남은 공간으로
+바뀐다. deploy.sh가 다른 senba 앱 .env에서 토큰을 자동으로 찾아 연결하고, 없으면 꺼진 채 동작한다.
+디스크 부족으로 업로드를 거부할 때도 알림을 보낸다.
+
 ## 관리
 
 - 상태: `pm2 status family-upload` / 로그: `pm2 logs family-upload`

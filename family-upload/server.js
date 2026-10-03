@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const https = require('https');
 const { execSync } = require('child_process');
 const express = require('express');
 const multer = require('multer');
@@ -25,6 +26,32 @@ if (!TOKEN) {
 
 const VIDEO_DIR = path.join(__dirname, 'videos');
 fs.mkdirSync(VIDEO_DIR, { recursive: true });
+
+// 텔레그램 알림 (.env에 TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID 없으면 조용히 꺼짐)
+const TG_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
+const TG_CHAT = process.env.TELEGRAM_CHAT_ID || '';
+
+function tgApi(method, payload) {
+  return new Promise((resolve) => {
+    if (!TG_TOKEN || !TG_CHAT) return resolve(null);
+    const data = JSON.stringify(payload);
+    const r = https.request({
+      hostname: 'api.telegram.org',
+      path: `/bot${TG_TOKEN}/${method}`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) },
+      timeout: 10000,
+    }, (res) => {
+      let body = '';
+      res.on('data', (c) => { body += c; });
+      res.on('end', () => { try { resolve(JSON.parse(body)); } catch { resolve(null); } });
+    });
+    r.on('error', () => resolve(null));
+    r.on('timeout', () => { r.destroy(); resolve(null); });
+    r.write(data);
+    r.end();
+  });
+}
 
 const ALLOWED_EXT = new Set([
   'mp4', 'mov', 'avi', 'mkv', 'webm', '3gp', 'm4v', 'mts',
@@ -286,16 +313,55 @@ app.get('/', (req, res) => {
 app.post('/upload', (req, res) => {
   if (!keyOk(req)) return res.status(403).send('주소가 올바르지 않아요.');
   if (diskFreeKb() < MIN_FREE_KB) {
+    tgApi('sendMessage', { chat_id: TG_CHAT, text: '⚠️ 가족 보관함: 디스크 여유 10GB 미만이라 업로드를 거부했어요. videos/ 정리 필요!' });
     return res.status(507).send('서버 저장공간이 부족해요. 관리자(아들)에게 알려주세요!');
   }
+
+  // 텔레그램 진행 알림: 메시지 하나를 보내고 10%p 단위로 수정 (사진 몇 장 수준은 조용히)
+  const total = parseInt(req.headers['content-length'] || '0', 10);
+  const notify = total > 5 * 1024 * 1024;
+  let received = 0;
+  let msgId = null;
+  let lastPct = 0;
+  let lastEdit = 0;
+  let finished = false;
+  const progressText = (pct) => `📤 가족 보관함에 올리는 중… ${pct}% (전체 ${fmtSize(total)})`;
+  if (notify) {
+    tgApi('sendMessage', { chat_id: TG_CHAT, text: progressText(0) }).then((r) => {
+      if (r && r.ok) { msgId = r.result.message_id; maybeEdit(); }
+    });
+    req.on('data', (chunk) => { received += chunk.length; maybeEdit(); });
+  }
+  function maybeEdit() {
+    if (finished || msgId === null || !total) return;
+    const pct = Math.min(99, Math.round((received / total) * 100));
+    const now = Date.now();
+    if (pct >= lastPct + 10 && now - lastEdit > 3000) {
+      lastPct = pct;
+      lastEdit = now;
+      tgApi('editMessageText', { chat_id: TG_CHAT, message_id: msgId, text: progressText(pct) });
+    }
+  }
+  function finalNote(text) {
+    if (!notify) return;
+    finished = true;
+    if (msgId !== null) tgApi('editMessageText', { chat_id: TG_CHAT, message_id: msgId, text });
+    else tgApi('sendMessage', { chat_id: TG_CHAT, text });
+  }
+
   upload.array('files', 10)(req, res, (err) => {
     if (err) {
       const msg = err.code === 'LIMIT_FILE_SIZE'
         ? '파일 하나가 4GB를 넘어서 올릴 수 없어요.'
         : err.message || '올리기에 실패했어요.';
+      finalNote(`❌ 가족 보관함 업로드 실패: ${msg}`);
       return res.status(400).send(msg);
     }
-    console.log(`[upload] ${(req.files || []).map((f) => `${f.filename} (${fmtSize(f.size)})`).join(', ')}`);
+    const files = (req.files || []).map((f) => `${f.filename.replace(/^\d{8}-\d{6}-/, '')} (${fmtSize(f.size)})`);
+    console.log(`[upload] ${files.join(', ')}`);
+    const free = diskFreeKb();
+    const freeNote = Number.isFinite(free) ? `\n(서버 남은 공간 ${fmtSize(free * 1024)})` : '';
+    finalNote(`✅ 가족 보관함에 새 영상 도착!\n${files.join('\n')}${freeNote}`);
     res.send('ok');
   });
 });

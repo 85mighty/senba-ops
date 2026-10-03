@@ -31,9 +31,25 @@ TOKEN=""
 if [ -z "$TOKEN" ] || [ ${#TOKEN} -gt 10 ]; then
   TOKEN=$(tr -dc 'a-z0-9' </dev/urandom | head -c 6)
 fi
+
+# 텔레그램 알림 설정: 기존 .env 값 유지, 없으면 다른 senba 앱의 .env에서 자동으로 찾아온다
+TG_TOKEN=""
+TG_CHAT=""
+if [ -f .env ]; then
+  TG_TOKEN=$(grep '^TELEGRAM_BOT_TOKEN=' .env | cut -d= -f2-)
+  TG_CHAT=$(grep '^TELEGRAM_CHAT_ID=' .env | cut -d= -f2-)
+fi
+for f in /opt/senba-square/.env /opt/senba-blog-auto/.env; do
+  [ -f "$f" ] || continue
+  [ -z "$TG_TOKEN" ] && TG_TOKEN=$(grep -iE '^[A-Z_]*TELEGRAM[A-Z_]*(BOT_)?TOKEN=' "$f" | head -1 | cut -d= -f2-)
+  [ -z "$TG_CHAT" ] && TG_CHAT=$(grep -iE '^[A-Z_]*TELEGRAM[A-Z_]*CHAT' "$f" | head -1 | cut -d= -f2-)
+done
+
 {
   echo "PORT=$PORT"
   echo "UPLOAD_TOKEN=$TOKEN"
+  [ -n "$TG_TOKEN" ] && echo "TELEGRAM_BOT_TOKEN=$TG_TOKEN"
+  [ -n "$TG_CHAT" ] && echo "TELEGRAM_CHAT_ID=$TG_CHAT"
 } > .env
 chmod 600 .env
 
@@ -61,6 +77,12 @@ if [ "$CODE" = "200" ]; then
   echo ""
   echo " 이 링크로 아빠는 올리고, 가족 누구나 내려받아요."
   echo " 링크가 밖에서 안 열리면 Vultr 방화벽에서 ${PORT} 포트를 허용하세요."
+  if [ -n "$TG_TOKEN" ] && [ -n "$TG_CHAT" ]; then
+    echo " 텔레그램 알림: 켜짐 (업로드 시작/진행률/완료가 전송됩니다)"
+  else
+    echo " 텔레그램 알림: 꺼짐 — 켜려면 /opt/family-upload/.env 에"
+    echo "   TELEGRAM_BOT_TOKEN=... / TELEGRAM_CHAT_ID=... 추가 후 pm2 restart family-upload"
+  fi
 else
   echo " 앱이 정상 응답하지 않습니다 (HTTP $CODE)."
   echo " pm2 logs family-upload --lines 20 --nostream 결과를 확인하세요."
