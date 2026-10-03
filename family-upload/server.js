@@ -42,10 +42,29 @@ function diskFreeKb() {
   }
 }
 
-function keyOk(req) {
-  const key = Buffer.from(String(req.query.key || ''));
+// 짧은 토큰을 쓰므로 무작위 대입 방어: IP당 10분에 30회 실패하면 10분 차단
+const fails = new Map();
+function rateLimited(ip) {
+  const f = fails.get(ip);
+  return f && f.count >= 30 && Date.now() < f.until;
+}
+function recordFail(ip) {
+  const f = fails.get(ip) || { count: 0, until: 0 };
+  f.count += 1;
+  f.until = Date.now() + 10 * 60 * 1000;
+  fails.set(ip, f);
+  if (fails.size > 10000) fails.clear();
+}
+
+// 토큰은 쿼리(?key=) 또는 경로(/토큰) 어느 쪽으로 와도 인정
+function keyOk(req, pathKey) {
+  const raw = String(req.query.key || pathKey || '');
+  const key = Buffer.from(raw);
   const tok = Buffer.from(TOKEN);
-  return key.length === tok.length && crypto.timingSafeEqual(key, tok);
+  const ok = key.length === tok.length && crypto.timingSafeEqual(key, tok);
+  if (!ok) recordFail(req.ip);
+  else fails.delete(req.ip);
+  return ok;
 }
 
 // multer는 원본 파일명을 latin1으로 주므로 한글 복원
@@ -222,6 +241,12 @@ function page(key) {
 const app = express();
 app.disable('x-powered-by');
 
+app.use((req, res, next) => {
+  if (rateLimited(req.ip)) return res.status(429).send('시도가 너무 많아요. 10분 뒤에 다시 열어주세요.');
+  next();
+});
+app.get('/favicon.ico', (req, res) => res.status(204).end());
+
 app.get('/', (req, res) => {
   if (!keyOk(req)) return res.status(403).send('주소가 올바르지 않아요. 카톡으로 받은 링크를 그대로 눌러주세요.');
   res.send(page(String(req.query.key)));
@@ -250,6 +275,14 @@ app.get('/download/:name', (req, res) => {
   const file = path.join(VIDEO_DIR, name);
   if (!fs.existsSync(file)) return res.status(404).send('파일을 찾을 수 없어요.');
   res.download(file, name.replace(/^\d{8}-\d{6}-/, ''));
+});
+
+// 짧은 주소 지원: http://서버IP:포트/토큰
+app.get('/:key', (req, res) => {
+  if (!keyOk(req, req.params.key)) {
+    return res.status(403).send('주소가 올바르지 않아요. 카톡으로 받은 링크를 그대로 눌러주세요.');
+  }
+  res.send(page(req.params.key));
 });
 
 // 도메인/nginx 없이 서버 IP:포트로 바로 접속하는 구성이라 모든 인터페이스에서 수신
