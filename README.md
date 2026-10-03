@@ -13,6 +13,7 @@
 | `sheets-scripts/` | 자산현황 스프레드시트 탭 생성 스크립트(수익계산·저금계산기·방향·고베·2호점) | scratchpad |
 | `dashboard/` | biz-dashboard(:3014) → 자산현황 '경영 대시보드' 탭 시간별 동기화 | `/opt/biz-dashboard/` |
 | `nginx/` | 블로그 nginx 설정 | `/etc/nginx/sites-available/` |
+| `family-upload/` | 가족 영상 보관함: 토큰 링크로 업로드/다운로드 (:3015, pm2 family-upload, 배포는 `deploy.sh`) | `/opt/family-upload/` |
 
 ## 시크릿 위치 (커밋 금지, 서버에만)
 - `/opt/senba-square/.env` — Square 토큰·로케이션·웹훅 서명키·블록용 ID
