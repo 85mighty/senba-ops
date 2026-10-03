@@ -186,10 +186,15 @@ function page(key) {
   <div id="progwrap">
     <div id="ptext">올리는 중… 0%</div>
     <div id="bar"><div id="fill"></div></div>
-    <div id="pwarn">⚠️ 다 될 때까지 화면을 끄지 말고 기다려 주세요</div>
+    <div id="pwarn">📱 올리는 동안 화면이 저절로 꺼지지 않아요. 전원 버튼만 누르지 말고 그대로 두세요</div>
   </div>
   <div id="done">✅ 올리기 완료!</div>
   <div id="err"></div>
+
+  <!-- 업로드 중 화면 꺼짐 방지용 초소형 무음 영상 (NoSleep 기법, 외부 의존 없음) -->
+  <video id="nosleep" playsinline style="position:fixed;left:-9999px;width:2px;height:2px">
+    <source type="video/mp4" src="data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAANNbW9vdgAAAGxtdmhkAAAAAAAAAAAAAAAAAAAD6AAAA+gAAQAAAQAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAnd0cmFrAAAAXHRraGQAAAADAAAAAAAAAAAAAAABAAAAAAAAA+gAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAAIAAAACAAAAAAAkZWR0cwAAABxlbHN0AAAAAAAAAAEAAAPoAAAAAAABAAAAAAHvbWRpYQAAACBtZGhkAAAAAAAAAAAAAAAAAAAoAAAAKABVxAAAAAAALWhkbHIAAAAAAAAAAHZpZGUAAAAAAAAAAAAAAABWaWRlb0hhbmRsZXIAAAABmm1pbmYAAAAUdm1oZAAAAAEAAAAAAAAAAAAAACRkaW5mAAAAHGRyZWYAAAAAAAAAAQAAAAx1cmwgAAAAAQAAAVpzdGJsAAAAunN0c2QAAAAAAAAAAQAAAKphdmMxAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAIAAgBIAAAASAAAAAAAAAABFUxhdmM2MC4zMS4xMDIgbGlieDI2NAAAAAAAAAAAAAAAGP//AAAAMGF2Y0MBQsAK/+EAGGdCwArZH4iIwEQAAAMABAAAAwBQPEiZIAEABWjLg8sgAAAAEHBhc3AAAAABAAAAAQAAABRidHJ0AAAAAAAAFqgAABaoAAAAGHN0dHMAAAAAAAAAAQAAAAoAAAQAAAAAFHN0c3MAAAAAAAAAAQAAAAEAAAAcc3RzYwAAAAAAAAABAAAAAQAAAAoAAAABAAAAPHN0c3oAAAAAAAAAAAAAAAoAAAKDAAAACQAAAAoAAAAJAAAACQAAAAkAAAAJAAAACQAAAAkAAAAJAAAAFHN0Y28AAAAAAAAAAQAAA30AAABidWR0YQAAAFptZXRhAAAAAAAAACFoZGxyAAAAAAAAAABtZGlyYXBwbAAAAAAAAAAAAAAAAC1pbHN0AAAAJal0b28AAAAdZGF0YQAAAAEAAAAATGF2ZjYwLjE2LjEwMAAAAAhmcmVlAAAC3W1kYXQAAAJxBgX//23cRem95tlIt5Ys2CDZI+7veDI2NCAtIGNvcmUgMTY0IHIzMTA4IDMxZTE5ZjkgLSBILjI2NC9NUEVHLTQgQVZDIGNvZGVjIC0gQ29weWxlZnQgMjAwMy0yMDIzIC0gaHR0cDovL3d3dy52aWRlb2xhbi5vcmcveDI2NC5odG1sIC0gb3B0aW9uczogY2FiYWM9MCByZWY9MyBkZWJsb2NrPTE6MDowIGFuYWx5c2U9MHgxOjB4MTExIG1lPWhleCBzdWJtZT03IHBzeT0xIHBzeV9yZD0xLjAwOjAuMDAgbWl4ZWRfcmVmPTEgbWVfcmFuZ2U9MTYgY2hyb21hX21lPTEgdHJlbGxpcz0xIDh4OGRjdD0wIGNxbT0wIGRlYWR6b25lPTIxLDExIGZhc3RfcHNraXA9MSBjaHJvbWFfcXBfb2Zmc2V0PS0yIHRocmVhZHM9MSBsb29rYWhlYWRfdGhyZWFkcz0xIHNsaWNlZF90aHJlYWRzPTAgbnI9MCBkZWNpbWF0ZT0xIGludGVybGFjZWQ9MCBibHVyYXlfY29tcGF0PTAgY29uc3RyYWluZWRfaW50cmE9MCBiZnJhbWVzPTAgd2VpZ2h0cD0wIGtleWludD0yNTAga2V5aW50X21pbj0xMCBzY2VuZWN1dD00MCBpbnRyYV9yZWZyZXNoPTAgcmNfbG9va2FoZWFkPTQwIHJjPWNyZiBtYnRyZWU9MSBjcmY9MjMuMCBxY29tcD0wLjYwIHFwbWluPTAgcXBtYXg9NjkgcXBzdGVwPTQgaXBfcmF0aW89MS40MCBhcT0xOjEuMDAAgAAAAApliIQP8mKAAMPuAAAABUGaOB/qAAAABkGaVAf6gAAAAAVBmmA/1AAAAAVBmoA/1AAAAAVBmqA/1AAAAAVBmsA/1AAAAAVBmuA/1AAAAAVBmwA71AAAAAVBmyA31A==">
+  </video>
 
   <h2>올라온 파일 (누르면 받아져요)</h2>
   <ul>${rows || '<li class="empty">아직 올라온 파일이 없어요</li>'}</ul>
@@ -197,14 +202,38 @@ function page(key) {
 <script>
   var pick = document.getElementById('pick');
   var input = document.getElementById('file');
-  pick.onclick = function () { input.click(); };
+  // 업로드 중 화면 꺼짐 방지: Wake Lock API(지원 기기) + 무음 영상 재생(그 외 기기)
+  var wakeVideo = document.getElementById('nosleep');
+  var wakeLock = null;
+  // loop 속성 대신 되감기 — 일부 기기는 loop 재생을 '유휴'로 보고 화면을 꺼버림
+  wakeVideo.addEventListener('timeupdate', function () {
+    if (wakeVideo.currentTime > 0.5) wakeVideo.currentTime = 0.1;
+  });
+  function keepAwake(on) {
+    if (on) {
+      if (navigator.wakeLock) {
+        navigator.wakeLock.request('screen').then(function (l) { wakeLock = l; }).catch(function () {});
+      }
+      try { wakeVideo.play().catch(function () {}); } catch (e) {}
+    } else {
+      if (wakeLock) { try { wakeLock.release(); } catch (e) {} wakeLock = null; }
+      try { wakeVideo.pause(); } catch (e) {}
+    }
+  }
+  pick.onclick = function () {
+    // iOS는 사용자 터치 안에서만 영상 재생 허용 → 버튼 누르는 순간 미리 켠다
+    keepAwake(true);
+    input.click();
+  };
+  input.addEventListener('cancel', function () { keepAwake(false); });
   input.onchange = function () {
-    if (!input.files.length) return;
+    if (!input.files.length) { keepAwake(false); return; }
     var fd = new FormData();
     for (var i = 0; i < input.files.length; i++) fd.append('files', input.files[i]);
     pick.style.display = 'none';
     document.getElementById('err').style.display = 'none';
     document.getElementById('progwrap').style.display = 'block';
+    keepAwake(true); // 버튼 터치(사용자 동작) 직후라 모바일에서도 허용됨
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '/upload?key=${k}');
     xhr.upload.onprogress = function (e) {
@@ -214,6 +243,7 @@ function page(key) {
       document.getElementById('fill').style.width = pct + '%';
     };
     xhr.onload = function () {
+      keepAwake(false);
       document.getElementById('progwrap').style.display = 'none';
       if (xhr.status === 200) {
         document.getElementById('done').style.display = 'block';
@@ -221,6 +251,7 @@ function page(key) {
       } else { fail(xhr.responseText || '올리기에 실패했어요. 다시 시도해 주세요.'); }
     };
     xhr.onerror = function () {
+      keepAwake(false);
       document.getElementById('progwrap').style.display = 'none';
       fail('인터넷 연결이 불안정해요. 와이파이 상태를 확인하고 다시 시도해 주세요.');
     };
