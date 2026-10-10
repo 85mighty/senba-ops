@@ -17,7 +17,7 @@ const hhmm = m => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m %
 const ceil15 = min => Math.ceil(min / 15) * 15;
 const courseHours = c => { const m = String(c || '').match(/(\d+)\s*(時間|시간|h)/i); const h = m ? Number(m[1]) : 2; return h >= 1 && h <= 8 ? h : 2; };
 
-function dayCost(bks, lead, tail, gap) {   // bks: [{s,e}] 분 단위 → 알바비·시간
+function dayCost(bks, lead, tail, gap, wage = WAGE) {   // bks: [{s,e}] 분 단위 → 알바비·시간
   const iv = bks.map(b => [b.s - lead, b.e + tail]).sort((a, b) => a[0] - b[0]);
   const merged = [];
   for (const x of iv) {
@@ -25,7 +25,7 @@ function dayCost(bks, lead, tail, gap) {   // bks: [{s,e}] 분 단위 → 알바
     if (last && x[0] - last[1] < gap) last[1] = Math.max(last[1], x[1]); else merged.push([...x]);
   }
   const mins = merged.reduce((s, [a, b]) => s + ceil15(b - a), 0);
-  return { mins, pay: Math.round(mins / 60 * WAGE), shifts: merged.length };
+  return { mins, pay: Math.round(mins / 60 * wage), shifts: merged.length };
 }
 
 (async () => {
@@ -61,6 +61,20 @@ function dayCost(bks, lead, tail, gap) {   // bks: [{s,e}] 분 단위 → 알바
     byWd[w].n++; byWd[w].pay += c.pay;
   }
   const A = calc(LEAD, TAIL, 99999), B = calc(LEAD, TAIL, GAP), A45 = calc(45, TAIL, 99999);
+  // 금토일월(현행 근무일) vs 화수목(신규) 그룹 비교 + 시급 1,300 시나리오
+  const grp = d => ('金土日月'.includes(WD[new Date(d + 'T12:00:00').getDay()]) ? 'FM' : 'TWT');
+  const G = (lead, tail, gap, wage) => { const o = { FM: { n: 0, pay: 0 }, TWT: { n: 0, pay: 0 } }; for (const d of dates) { const c = dayCost(days[d], lead, tail, gap, wage); const k = o[grp(d)]; k.n++; k.pay += c.pay; } return o; };
+  const S1200 = G(LEAD, TAIL, 99999, 1200), S1300 = G(LEAD, TAIL, 99999, 1300), S1300b = G(45, TAIL, 99999, 1300), S1300s = G(LEAD, TAIL, GAP, 1300);
+  const mv = await sheets.spreadsheets.values.get({ spreadsheetId: SHEET_ID, range: `'알바비 계산'!A6:E65`, valueRenderOption: 'FORMATTED_VALUE' });
+  const act = { FM: { n: 0, pay: 0 }, TWT: { n: 0, pay: 0 } };
+  for (const r of mv.data.values || []) {
+    const dm = String(r[0] || '').match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
+    const pay = Number(String(r[4] || '').replace(/[^\d]/g, '')) || 0;
+    if (!dm || !pay) continue;
+    const d = `${dm[1]}-${dm[2].padStart(2, '0')}-${dm[3].padStart(2, '0')}`;
+    if (!d.startsWith(MONTH)) continue;
+    const k = act[grp(d)]; k.n++; k.pay += pay;
+  }
 
   // ── 3) 탭 구성
   const rows = [];
@@ -103,6 +117,17 @@ function dayCost(bks, lead, tail, gap) {   // bks: [{s,e}] 분 단위 → 알바
   const w0 = rows.length;
   for (const w of '月火水木金土日') if (byWd[w]) push([w, byWd[w].n, byWd[w].pay, Math.round(byWd[w].pay / byWd[w].n)]);
   const w1 = rows.length;
+  push([]);
+  const iCmp = push(['■ 방식·시급 비교 (9월, 고정값)']);
+  const hCmp = push(['방식', '금토일월 일수', '금토일월 알바비', '화수목 일수', '화수목 알바비', '합계']);
+  const c0 = rows.length;
+  const cmp = (name, o) => push([name, o.FM.n, o.FM.pay, o.TWT.n, o.TWT.pay, o.FM.pay + o.TWT.pay]);
+  push(['현행: 금토일월 고정 근무 (1,200엔, 실제 입력분)', act.FM.n, act.FM.pay, 0, 0, act.FM.pay]);
+  cmp('예약일만 출근 · 1,200엔 · 앞/뒤 15분', S1200);
+  cmp('예약일만 출근 · 1,300엔 · 앞/뒤 15분', S1300);
+  cmp('예약일만 출근 · 1,300엔 · 앞 45분/뒤 15분', S1300b);
+  cmp(`예약일만 출근 · 1,300엔 · 분할(공백 ${GAP}분↑ 재출근)`, S1300s);
+  const c1 = rows.length;
 
   // 요약 수식
   rows[rN][1] = `=COUNT(A${d0 + 1}:A${d1})`;
@@ -171,6 +196,14 @@ function dayCost(bks, lead, tail, gap) {   // bks: [{s,e}] 분 단위 → 알바
   fmt(rng(w0, w1, 0, 2), { horizontalAlignment: 'CENTER', textFormat: { bold: true } }, 'userEnteredFormat(horizontalAlignment,textFormat)');
   fmt(rng(w0, w1, 2, 4), YEN, 'userEnteredFormat(numberFormat,horizontalAlignment)');
   R.push({ updateBorders: { range: rng(hWd, w1, 0, 4), top: gb, bottom: gb, left: gb, right: gb, innerHorizontal: ib, innerVertical: ib } });
+  merge(iCmp, iCmp + 1, 0, NCOL); fmt(rng(iCmp, iCmp + 1), { backgroundColor: C.sec, textFormat: { bold: true, fontSize: 11 } }, 'userEnteredFormat(backgroundColor,textFormat)');
+  fmt(rng(hCmp, hCmp + 1, 0, 6), { backgroundColor: C.hdr, textFormat: { bold: true, foregroundColor: C.white }, horizontalAlignment: 'CENTER', wrapStrategy: 'WRAP' }, 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,wrapStrategy)');
+  fmt(rng(c0, c1, 0, 1), { textFormat: { bold: true }, wrapStrategy: 'WRAP' }, 'userEnteredFormat(textFormat,wrapStrategy)');
+  fmt(rng(c0, c1, 1, 2), { horizontalAlignment: 'CENTER', numberFormat: { type: 'NUMBER', pattern: '0"일"' } }, 'userEnteredFormat(horizontalAlignment,numberFormat)');
+  fmt(rng(c0, c1, 3, 4), { horizontalAlignment: 'CENTER', numberFormat: { type: 'NUMBER', pattern: '0"일"' } }, 'userEnteredFormat(horizontalAlignment,numberFormat)');
+  for (const c of [2, 4]) fmt(rng(c0, c1, c, c + 1), YEN, 'userEnteredFormat(numberFormat,horizontalAlignment)');
+  fmt(rng(c0, c1, 5, 6), { backgroundColor: C.gold, textFormat: { bold: true }, numberFormat: YEN.numberFormat, horizontalAlignment: 'RIGHT' }, 'userEnteredFormat(backgroundColor,textFormat,numberFormat,horizontalAlignment)');
+  R.push({ updateBorders: { range: rng(hCmp, c1, 0, 6), top: gb, bottom: gb, left: gb, right: gb, innerHorizontal: ib, innerVertical: ib } });
   R.push({ updateDimensionProperties: { range: { sheetId: sid, dimension: 'COLUMNS', startIndex: 0, endIndex: 1 }, properties: { pixelSize: 250 }, fields: 'pixelSize' } });
   R.push({ updateDimensionProperties: { range: { sheetId: sid, dimension: 'COLUMNS', startIndex: 1, endIndex: NCOL }, properties: { pixelSize: 100 }, fields: 'pixelSize' } });
   await sheets.spreadsheets.batchUpdate({ spreadsheetId: SHEET_ID, requestBody: { requests: R } });
@@ -178,5 +211,7 @@ function dayCost(bks, lead, tail, gap) {   // bks: [{s,e}] 분 단위 → 알바
   // ── 5) 로그 → 텔레그램 (runner 가 끝 1200자 전송)
   console.log(`[알바 시뮬 완료] ${MONTH} 예약 ${used}건 / 출근일 ${dates.length}일 (건너뜀 ${skipped})`);
   console.log(`연속안(앞${LEAD}/뒤${TAIL}) ${A.pay.toLocaleString('ja-JP')}엔 (${(A.mins / 60).toFixed(1)}h) | 앞45분안 ${A45.pay.toLocaleString('ja-JP')}엔 | 분할안 ${B.pay.toLocaleString('ja-JP')}엔`);
+  const T = o => (o.FM.pay + o.TWT.pay).toLocaleString('ja-JP');
+  console.log(`현행(실제) 금토일월 ${act.FM.n}일 ${act.FM.pay.toLocaleString('ja-JP')}엔 | 예약일만출근 1200엔 ${T(S1200)}엔(금토일월 ${S1200.FM.n}일 ${S1200.FM.pay.toLocaleString('ja-JP')} + 화수목 ${S1200.TWT.n}일 ${S1200.TWT.pay.toLocaleString('ja-JP')}) | 1300엔 ${T(S1300)}엔(금토일월 ${S1300.FM.pay.toLocaleString('ja-JP')} + 화수목 ${S1300.TWT.pay.toLocaleString('ja-JP')}) | 1300·분할 ${T(S1300s)}엔`);
   console.log('요일별: ' + '月火水木金土日'.split('').filter(w => byWd[w]).map(w => `${w} ${byWd[w].n}일 ${byWd[w].pay.toLocaleString('ja-JP')}엔`).join(' / '));
 })().catch(e => { console.error('ERROR:', e.response?.data?.error?.message || e.message); process.exit(1); });
