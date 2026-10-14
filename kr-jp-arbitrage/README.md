@@ -61,10 +61,20 @@ key는 점 표기 경로: 예) `kr_domestic_ship_krw`, `intl_ship.over_per_kg_jp
 
 ## Phase 진행 상황
 
+코드는 전 Phase 구현 완료. **서버 배포 시에는 Phase 순서대로 검증**할 것 — brands.json의 각 브랜드 `enabled` 플래그로 단계적 활성화 가능.
+
 - [x] Phase 1 — XEXYMIX 공식몰↔공식몰: 수집→매칭→마진→Sheets/Telegram, PM2 (**서버에서 동작 확인 필요: brands.json 셀렉터 검증**)
-- [ ] Phase 2 — Mardi 추가 + 라쿠텐/Yahoo 일본 시장 최저가 보강
-- [ ] Phase 3 — TNF + 승인 UI + LLM 보조 매칭 + 네이버 한국 시장가 보강
-- [ ] Phase 4 — 가격 추세(재고 처분 신호) 알림
+- [x] Phase 2 — Mardi 추가 + 라쿠텐/Yahoo 일본 시장 최저가 보강 (공식몰가와 시장가 중 낮은 쪽 기준)
+- [x] Phase 3 — TNF(수동 쌍 등록) + `/review` 승인 UI + LLM 보조 매칭 + 네이버 한국 시장가 보강
+- [x] Phase 4 — 가격 추세 알림 (2주 이상 하락 = 재고 처분 신호, 일일 보고에 포함)
+
+### TNF 수동 쌍 등록 (자동 매칭 비활성 브랜드)
+
+```bash
+# 수집 후 DB에서 양쪽 상품 id 확인 → 쌍 등록 (A등급 확정, weight_g 지정 권장 — 패딩 900g 등)
+curl -X POST "http://localhost:3016/api/master?token=$UI_TOKEN" -H 'content-type: application/json' \
+  -d '{"brand":"tnf","kr_product_id":12,"jp_product_id":34,"weight_g":900,"note":"눕시 자켓"}'
+```
 
 ## 법·운영 주의
 
