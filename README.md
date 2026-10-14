@@ -13,11 +13,13 @@
 | `sheets-scripts/` | 자산현황 스프레드시트 탭 생성 스크립트(수익계산·저금계산기·방향·고베·2호점) | scratchpad |
 | `dashboard/` | biz-dashboard(:3014) → 자산현황 '경영 대시보드' 탭 시간별 동기화 | `/opt/biz-dashboard/` |
 | `nginx/` | 블로그 nginx 설정 | `/etc/nginx/sites-available/` |
+| `kr-jp-arbitrage/` | KR→JP 아비트라지 리서치 도구 (:3016, pm2 kr-jp-arbitrage, 매일 09:00 JST 수집→매칭→마진→Sheets/Telegram) — 이 저장소가 원본, 배포 절차는 폴더 README | `/root/kr-jp-arbitrage/` |
 
 ## 시크릿 위치 (커밋 금지, 서버에만)
 - `/opt/senba-square/.env` — Square 토큰·로케이션·웹훅 서명키·블록용 ID
 - `/opt/senba-blog-auto/.env` — WP 앱패스워드·Anthropic·Brave·텔레그램·시트
 - `/root/.senba-blog-dbpass`, `/root/.senba-blog-wppass`
+- `/root/kr-jp-arbitrage/.env`, `/root/kr-jp-arbitrage/sa.json` — UI 토큰·네이버·라쿠텐·Yahoo·시트·텔레그램·Anthropic
 
 ## 주요 결정 기록
 - 예약: Square 무료 플랜 + 전액 사전결제, 방 5개 = 스태프 10명(平日/土日祝 분리)로 요일별 가격 강제
