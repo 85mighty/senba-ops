@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KR→JP 아비트라지 — 통과 목록</title>
+<style>
+  :root { --bg:#fff; --fg:#1a1a1a; --muted:#777; --line:#e3e3e3; --accent:#0a7cff; --pass:#0a8f3c; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#161718; --fg:#eee; --muted:#999; --line:#333; } }
+  body { margin:0; padding:16px; background:var(--bg); color:var(--fg); font:14px/1.5 -apple-system, 'Noto Sans KR', sans-serif; }
+  h1 { font-size:18px; margin:0 0 4px; }
+  .sub { color:var(--muted); font-size:12px; margin-bottom:12px; }
+  .bar { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+  input, button { font:inherit; padding:6px 10px; border:1px solid var(--line); border-radius:6px; background:var(--bg); color:var(--fg); }
+  button { cursor:pointer; } button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+  table { border-collapse:collapse; width:100%; }
+  th, td { border-bottom:1px solid var(--line); padding:6px 8px; text-align:left; white-space:nowrap; }
+  th { cursor:pointer; user-select:none; color:var(--muted); font-weight:600; }
+  td.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .margin { color:var(--pass); font-weight:700; }
+  .name { max-width:360px; overflow:hidden; text-overflow:ellipsis; }
+  a { color:var(--accent); text-decoration:none; }
+  .empty { color:var(--muted); padding:24px 0; }
+</style>
+</head>
+<body>
+<h1>KR→JP 아비트라지 — 최신 통과 목록</h1>
+<div class="sub">리서치 도구 (선매입 후보 선정용). 메루카리Shops 무재고 판매 금지. <a href="/review">검토 대기 →</a></div>
+<div class="bar">
+  <input id="token" type="password" placeholder="UI_TOKEN" size="24">
+  <button class="primary" onclick="saveTokenAndLoad()">조회</button>
+  <label><input type="checkbox" id="all" onchange="load()"> 미통과 포함</label>
+</div>
+<div id="out" class="empty">토큰을 입력하고 조회하세요.</div>
+<script>
+let rows = [], sortKey = 'net_margin_jpy', sortDesc = true;
+const $ = (id) => document.getElementById(id);
+$('token').value = localStorage.getItem('ui_token') || '';
+
+function saveTokenAndLoad(){ localStorage.setItem('ui_token', $('token').value); load(); }
+
+async function load(){
+  const token = $('token').value;
+  if (!token) return;
+  const all = $('all').checked ? '&all=1' : '';
+  const res = await fetch(`/api/top?limit=200${all}&token=${encodeURIComponent(token)}`);
+  if (!res.ok) { $('out').textContent = `오류: ${res.status} ${(await res.json().catch(()=>({}))).error||''}`; return; }
+  rows = (await res.json()).rows;
+  render();
+}
+
+function sortBy(k){ sortDesc = sortKey === k ? !sortDesc : true; sortKey = k; render(); }
+
+function render(){
+  if (!rows.length) { $('out').innerHTML = '<div class="empty">데이터 없음 — 파이프라인 실행 후 확인</div>'; return; }
+  const sorted = [...rows].sort((a,b) => {
+    const va = a[sortKey] ?? '', vb = b[sortKey] ?? '';
+    return (va < vb ? -1 : va > vb ? 1 : 0) * (sortDesc ? -1 : 1);
+  });
+  const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  $('out').innerHTML = `<table><thead><tr>
+    <th onclick="sortBy('date')">날짜</th><th onclick="sortBy('brand')">브랜드</th>
+    <th onclick="sortBy('kr_name')">상품명</th><th onclick="sortBy('kr_price_krw')">한국가</th>
+    <th onclick="sortBy('jp_price_jpy')">일본 판매가</th><th onclick="sortBy('net_margin_jpy')">순마진</th>
+    <th onclick="sortBy('margin_rate')">마진율</th><th onclick="sortBy('confidence')">등급</th><th>링크</th>
+  </tr></thead><tbody>` + sorted.map(r => `<tr>
+    <td>${esc(r.date)}</td><td>${esc(r.brand)}</td>
+    <td class="name" title="${esc(r.kr_name||r.jp_name)}">${esc(r.kr_name||r.jp_name)}</td>
+    <td class="num">₩${(r.kr_price_krw||0).toLocaleString()}</td>
+    <td class="num">¥${(r.jp_price_jpy||0).toLocaleString()}</td>
+    <td class="num margin">¥${(r.net_margin_jpy||0).toLocaleString()}</td>
+    <td class="num">${((r.margin_rate||0)*100).toFixed(1)}%</td>
+    <td>${esc(r.confidence)}</td>
+    <td>${r.kr_url?`<a href="${esc(r.kr_url)}" target="_blank">KR</a>`:''} ${r.jp_url?`<a href="${esc(r.jp_url)}" target="_blank">JP</a>`:''}</td>
+  </tr>`).join('') + '</tbody></table>';
+}
+if ($('token').value) load();
+</script>
+</body>
+</html>

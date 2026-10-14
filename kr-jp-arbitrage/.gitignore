@@ -1,0 +1,8 @@
+# 시크릿·런타임 산출물은 커밋하지 않는다
+.env
+sa.json
+node_modules/
+data/
+logs/
+# 저장소 루트의 .env* 패턴에서 예시 파일만 예외
+!.env.example

@@ -1,0 +1,90 @@
+{
+  "_comment": "브랜드별 수집 소스·URL·셀렉터. 사이트 개편 시 코드가 아니라 이 파일만 고친다. 셀렉터·URL은 전부 '확인 필요' — 첫 실행 때 --limit=5 소량 실행으로 검증할 것.",
+  "_global": {
+    "color_map": {
+      "black": ["블랙", "ブラック", "black", "bk", "먹색"],
+      "white": ["화이트", "ホワイト", "white", "wh", "아이보리", "アイボリー", "ivory", "크림", "クリーム", "cream"],
+      "gray": ["그레이", "グレー", "gray", "grey", "차콜", "チャコール", "charcoal", "멜란지", "メランジ"],
+      "navy": ["네이비", "ネイビー", "navy", "곤색"],
+      "blue": ["블루", "ブルー", "blue", "스카이", "スカイ", "sky"],
+      "red": ["레드", "レッド", "red", "버건디", "バーガンディ", "burgundy", "와인", "ワイン", "wine"],
+      "pink": ["핑크", "ピンク", "pink", "로즈", "ローズ", "rose", "코랄", "コーラル", "coral"],
+      "green": ["그린", "グリーン", "green", "카키", "カーキ", "khaki", "올리브", "オリーブ", "olive", "민트", "ミント", "mint"],
+      "beige": ["베이지", "ベージュ", "beige", "오트밀", "オートミール", "oatmeal", "샌드", "サンド", "sand"],
+      "brown": ["브라운", "ブラウン", "brown", "모카", "モカ", "mocha", "카멜", "キャメル", "camel"],
+      "purple": ["퍼플", "パープル", "purple", "라벤더", "ラベンダー", "lavender", "라일락", "ライラック", "lilac"],
+      "yellow": ["옐로우", "イエロー", "yellow", "머스타드", "マスタード", "mustard"],
+      "orange": ["오렌지", "オレンジ", "orange"]
+    },
+    "weight_keywords": {
+      "leggings": ["레깅스", "レギンス", "leggings", "팬츠", "パンツ", "pants", "쇼츠", "ショーツ"],
+      "padding": ["패딩", "다운", "눕시", "ダウン", "ヌプシ", "nuptse", "puffer", "점퍼"],
+      "top": []
+    }
+  },
+  "xexymix": {
+    "enabled": true,
+    "phase": 1,
+    "display_name": "XEXYMIX",
+    "brand_words": ["젝시믹스", "xexymix", "ゼクシィミックス", "ゼクシーミックス"],
+    "product_code_regex": "\\bX[A-Z]{1,2}\\d{4}[A-Z]{0,2}\\b",
+    "kr": {
+      "brand_site": {
+        "enabled": true,
+        "_comment": "한국 공식몰. 세일·쿠폰이 커서 네이버 가격보다 실결제가가 낮은 경우가 많음 → 세일가 기준 수집. Cafe24 계열 셀렉터 추정치 — 확인 필요",
+        "base_url": "https://www.xexymix.com",
+        "list_urls": [
+          "https://www.xexymix.com/product/list.html?cate_no=24&page={page}"
+        ],
+        "max_pages": 5,
+        "selectors": {
+          "item": "ul.prdList > li[id^='anchorBoxId']",
+          "name": ".name a",
+          "price": "li[rel='판매가'] span, .xans-product-listitem li:nth-child(1) span",
+          "sale_price": "li[rel='할인판매가'] span, .sale-price",
+          "link": ".thumbnail a, .name a",
+          "image": ".thumbnail img, .prdImg img",
+          "sold_out": ".icon img[alt*='품절'], .promotion img[alt*='품절']"
+        }
+      },
+      "naver": {
+        "enabled": true,
+        "_comment": "Phase 3. 브랜드 공식 스토어 mallName 우선, sort=asc 최저가",
+        "query": "젝시믹스 레깅스",
+        "mall_names": ["젝시믹스", "XEXYMIX"]
+      }
+    },
+    "jp": {
+      "brand_site": {
+        "enabled": true,
+        "_comment": "일본 공식몰 (정가 기준). 셀렉터 추정치 — 확인 필요",
+        "base_url": "https://xexymix.jp",
+        "list_urls": [
+          "https://xexymix.jp/shop/shopbrand.html?search=&sort=&page={page}"
+        ],
+        "max_pages": 5,
+        "selectors": {
+          "item": ".item-list li, ul.prdList > li",
+          "name": ".item-name, .name a",
+          "price": ".item-price, li[rel='販売価格'] span",
+          "sale_price": ".item-sale-price, li[rel='割引販売価格'] span",
+          "link": "a",
+          "image": "img",
+          "sold_out": ".soldout, img[alt*='SOLD']"
+        }
+      },
+      "rakuten": {
+        "enabled": true,
+        "_comment": "Phase 2. 공식 라쿠텐점 있으면 shop_code 지정(확인 필요)",
+        "keyword": "XEXYMIX レギンス",
+        "shop_code": ""
+      },
+      "yahoo": {
+        "enabled": true,
+        "_comment": "Phase 2",
+        "query": "XEXYMIX レギンス",
+        "seller_id": ""
+      }
+    }
+  }
+}
