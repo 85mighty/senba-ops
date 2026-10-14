@@ -177,6 +177,17 @@ export function jpLowestByCode(brand, code) {
     .get(brand, code)?.p;
 }
 
+// 같은 품번의 한국 상품들(공식몰 세일가 + 네이버 시장가) 중 최저 매입가
+export function krLowestByCode(brand, code) {
+  if (!code) return null;
+  return db
+    .prepare(
+      `SELECT MIN(CASE WHEN sale_price_krw > 0 AND sale_price_krw < price_krw THEN sale_price_krw ELSE price_krw END) AS p
+       FROM products_kr WHERE brand=? AND product_code=? AND in_stock=1 AND price_krw > 0`
+    )
+    .get(brand, code)?.p;
+}
+
 // ---------- product_master ----------
 export function upsertMaster({ brand, krId, krUrl, jpId, jpUrl, confidence, note }) {
   const existing = db
@@ -232,6 +243,10 @@ export function setMasterReview(id, action, by = 'ui') {
   } else {
     db.prepare(`UPDATE product_master SET confidence='X', approved_by_user=1, updated_at=?, note=COALESCE(note,'') || ' [거부:' || ? || ']' WHERE id=?`).run(now, by, id);
   }
+}
+
+export function setMasterWeight(id, weightG) {
+  db.prepare(`UPDATE product_master SET weight_g=?, updated_at=? WHERE id=?`).run(weightG, nowIso(), id);
 }
 
 export function updateMasterLlm(id, { confidence, note }) {

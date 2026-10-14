@@ -37,8 +37,66 @@ export function extractCode(text, regexStr) {
   return m ? m[0].toUpperCase() : null;
 }
 
-// 문자 bigram Dice 계수 — 한글·가나·영문 혼합 상품명에 무난
+// ---------- 경량 로마자화: 한글(국어의 로마자 표기법 근사) + 가타카나(헵번 근사) ----------
+// 한·일 상품명이 같은 발음의 다른 문자(플라워마르디 ↔ フラワーマルディ)인 경우를 잡기 위함
+const CHO = ['g','kk','n','d','tt','r','m','b','pp','s','ss','','j','jj','ch','k','t','p','h'];
+const JUNG = ['a','ae','ya','yae','eo','e','yeo','ye','o','wa','wae','oe','yo','u','wo','we','wi','yu','eu','ui','i'];
+const JONG = ['','g','kk','gs','n','nj','nh','d','l','lg','lm','lb','ls','lt','lp','lh','m','b','bs','s','ss','ng','j','ch','k','t','p','h'];
+const KATA = {
+  'キャ':'kya','キュ':'kyu','キョ':'kyo','シャ':'sha','シュ':'shu','ショ':'sho','チャ':'cha','チュ':'chu','チョ':'cho',
+  'ニャ':'nya','ニュ':'nyu','ニョ':'nyo','ヒャ':'hya','ヒュ':'hyu','ヒョ':'hyo','ミャ':'mya','ミュ':'myu','ミョ':'myo',
+  'リャ':'rya','リュ':'ryu','リョ':'ryo','ギャ':'gya','ギュ':'gyu','ギョ':'gyo','ジャ':'ja','ジュ':'ju','ジョ':'jo',
+  'ビャ':'bya','ビュ':'byu','ビョ':'byo','ピャ':'pya','ピュ':'pyu','ピョ':'pyo','ウィ':'wi','ウェ':'we','ウォ':'wo',
+  'ファ':'fa','フィ':'fi','フェ':'fe','フォ':'fo','ティ':'ti','ディ':'di','デュ':'dyu','トゥ':'tu','ドゥ':'du','シェ':'she','ジェ':'je','チェ':'che','ツァ':'tsa','ツェ':'tse','ツォ':'tso','ヴァ':'va','ヴィ':'vi','ヴェ':'ve','ヴォ':'vo',
+  'ア':'a','イ':'i','ウ':'u','エ':'e','オ':'o','カ':'ka','キ':'ki','ク':'ku','ケ':'ke','コ':'ko',
+  'サ':'sa','シ':'shi','ス':'su','セ':'se','ソ':'so','タ':'ta','チ':'chi','ツ':'tsu','テ':'te','ト':'to',
+  'ナ':'na','ニ':'ni','ヌ':'nu','ネ':'ne','ノ':'no','ハ':'ha','ヒ':'hi','フ':'fu','ヘ':'he','ホ':'ho',
+  'マ':'ma','ミ':'mi','ム':'mu','メ':'me','モ':'mo','ヤ':'ya','ユ':'yu','ヨ':'yo',
+  'ラ':'ra','リ':'ri','ル':'ru','レ':'re','ロ':'ro','ワ':'wa','ヲ':'o','ン':'n','ヴ':'vu',
+  'ガ':'ga','ギ':'gi','グ':'gu','ゲ':'ge','ゴ':'go','ザ':'za','ジ':'ji','ズ':'zu','ゼ':'ze','ゾ':'zo',
+  'ダ':'da','ヂ':'ji','ヅ':'zu','デ':'de','ド':'do','バ':'ba','ビ':'bi','ブ':'bu','ベ':'be','ボ':'bo',
+  'パ':'pa','ピ':'pi','プ':'pu','ペ':'pe','ポ':'po','ッ':'','ー':'','・':' ','ァ':'a','ィ':'i','ゥ':'u','ェ':'e','ォ':'o','ャ':'ya','ュ':'yu','ョ':'yo',
+};
+
+export function romanize(s) {
+  // 히라가나 → 가타카나 통일 후 한 번에 처리
+  const t = s.replace(/[ぁ-ゖ]/g, (c) => String.fromCharCode(c.charCodeAt(0) + 0x60));
+  let out = '';
+  for (let i = 0; i < t.length; i++) {
+    const code = t.charCodeAt(i);
+    if (code >= 0xac00 && code <= 0xd7a3) {
+      // 한글 음절 분해 → 초성·중성·종성 로마자
+      const idx = code - 0xac00;
+      out += CHO[Math.floor(idx / 588)] + JUNG[Math.floor((idx % 588) / 28)] + JONG[idx % 28];
+    } else if (code >= 0x30a0 && code <= 0x30ff) {
+      const two = t.slice(i, i + 2);
+      if (two.length === 2 && KATA[two] !== undefined) { out += KATA[two]; i++; }
+      else out += KATA[t[i]] ?? t[i];
+    } else {
+      out += t[i];
+    }
+  }
+  return out;
+}
+
+// 로마자 음운 폴딩 — 한국어 RR(ㅡ 삽입모음, l/p)과 일본어 헵번(촉음, f/r)의 체계 차이를 접는다
+export function phoneticFold(s) {
+  return s
+    .replace(/eu/g, '')      // 한국어 ㅡ 삽입모음 제거 (peulrawo→plrawo)
+    .replace(/sh/g, 's').replace(/ch/g, 'c').replace(/ts/g, 's')
+    .replace(/l/g, 'r').replace(/f/g, 'p').replace(/v/g, 'b').replace(/z/g, 'j')
+    .replace(/(.)\1+/g, '$1'); // 겹자음·장음 축약 (burakku→buraku)
+}
+
+// 문자 bigram Dice 계수. 직접·로마자화·음운폴딩 비교 중 가장 높은 점수 —
+// 같은 발음의 한·일 표기(플라워마르디 ↔ フラワーマルディ)도 잡는다.
 export function nameSimilarity(a, b) {
+  const ra = romanize(a);
+  const rb = romanize(b);
+  return Math.max(bigramDice(a, b), bigramDice(ra, rb), bigramDice(phoneticFold(ra), phoneticFold(rb)));
+}
+
+function bigramDice(a, b) {
   const grams = (s) => {
     const t = s.replace(/\s+/g, '');
     const set = new Map();
@@ -78,6 +136,8 @@ export function matchBrand(brandKey, brandCfg, globalCfg, krItems, jpItems) {
   const brandWords = brandCfg.brand_words || [];
   const colorIndex = buildColorIndex(globalCfg.color_map);
   const codeRegex = brandCfg.product_code_regex;
+  const thB = globalCfg.match_thresholds?.b ?? 0.85;
+  const thC = globalCfg.match_thresholds?.c ?? 0.6;
 
   for (const it of krItems) {
     it._code = it.product_code || extractCode(`${it.name} ${it.url}`, codeRegex);
@@ -132,8 +192,8 @@ export function matchBrand(brandKey, brandCfg, globalCfg, krItems, jpItems) {
         best = jp;
       }
     }
-    if (!best || bestScore < 0.6) continue;
-    const grade = bestScore >= 0.85 ? 'B' : 'C';
+    if (!best || bestScore < thC) continue;
+    const grade = bestScore >= thB ? 'B' : 'C';
     const masterId = upsertMaster({
       brand: brandKey,
       krId: kr.id,

@@ -105,6 +105,19 @@ function startServer() {
     res.json({ ok: true });
   });
 
+  // 수동 쌍 등록 (TNF처럼 자동 매칭이 안 되는 브랜드용) — 승인된 A등급으로 생성
+  app.post('/api/master', auth, (req, res) => {
+    const { brand, kr_product_id, jp_product_id, weight_g, note } = req.body || {};
+    const kr = kr_product_id && db.getProductById('kr', kr_product_id);
+    const jp = jp_product_id && db.getProductById('jp', jp_product_id);
+    if (!brand || !kr || !jp) return res.status(400).json({ error: 'brand, kr_product_id, jp_product_id 필요 (상품이 DB에 있어야 함)' });
+    const id = db.upsertMaster({ brand, krId: kr.id, krUrl: kr.url, jpId: jp.id, jpUrl: jp.url, confidence: 'C', note: note || '수동 등록' });
+    db.setMasterReview(id, 'approve', 'manual');
+    if (weight_g) db.setMasterWeight(id, weight_g);
+    info(`[master] 수동 쌍 등록 #${id} (${brand})`);
+    res.json({ ok: true, id });
+  });
+
   // 수동 트리거 (전체 또는 특정 단계)
   app.post('/api/run', auth, (req, res) => {
     const steps = req.body?.steps;

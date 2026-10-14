@@ -122,11 +122,14 @@ async function stepPrice({ brand } = {}) {
     const jp = db.getProductById('jp', m.jp_product_id);
     if (!kr || !jp || !kr.in_stock || !jp.in_stock) continue;
 
-    const krPrice = kr.sale_price_krw && kr.sale_price_krw < kr.price_krw ? kr.sale_price_krw : kr.price_krw;
+    // 한국 매입가: 공식몰 실결제가(세일가 우선)와 같은 품번 네이버 시장가 중 낮은 쪽
+    const krEffective = kr.sale_price_krw && kr.sale_price_krw < kr.price_krw ? kr.sale_price_krw : kr.price_krw;
+    const krMarketLow = db.krLowestByCode(m.brand, kr.product_code);
+    const krPrice = Math.min(...[krEffective, krMarketLow].filter((v) => v > 0));
     // 일본 최저가: 매칭된 공식몰가와 같은 품번의 시장가(라쿠텐/Yahoo) 중 낮은 쪽
     const marketLow = db.jpLowestByCode(m.brand, jp.product_code);
     const jpLowest = Math.min(...[jp.price_jpy, marketLow].filter((v) => v > 0));
-    if (!krPrice || !jpLowest || !isFinite(jpLowest)) continue;
+    if (!krPrice || !jpLowest || !isFinite(krPrice) || !isFinite(jpLowest)) continue;
 
     const weightG = m.weight_g || estimateWeightG(kr.name, costs, weightKeywords);
     const bd = computeMargin({ krPriceKrw: krPrice, jpLowestJpy: jpLowest, fx: fx.rate, weightG }, costs);
