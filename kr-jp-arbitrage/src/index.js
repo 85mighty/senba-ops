@@ -10,7 +10,8 @@ import * as db from './db.js';
 import { runPipeline, STEP_ORDER } from './pipeline.js';
 import { rankCandidates, sourcingCandidates, buildCards } from './discover.js';
 import { buildStatus } from './status.js';
-import { lookup } from './lookup.js';
+import { lookup, toQuote } from './lookup.js';
+import { compareProducts } from './matcher/llm.js';
 import { startCommandBot } from './outputs/telegram.js';
 
 // ---------- CLI 인자 ----------
@@ -116,26 +117,54 @@ function startServer() {
   // 시세 찾기: 상품 하나의 반대편 나라 시세·구입처를 즉석 검색하고 판매처별 마진 계산
   app.get('/api/lookup', auth, async (req, res) => {
     try {
-      res.json(await lookup({ side: req.query.side === 'jp' ? 'jp' : 'kr', id: parseInt(req.query.id, 10) }));
+      const sd = req.query.side === 'jp' ? 'jp' : 'kr';
+      const id = parseInt(req.query.id, 10);
+      const r = await lookup({ side: sd, id });
+      db.saveQuote(sd, id, toQuote(r)); // 방금 찾은 결과를 목록에도 반영
+      res.json(r);
     } catch (e) {
       error(`[lookup] ${e.message}`);
       res.status(e.status || 500).json({ error: e.message });
     }
   });
 
-  // 수집된 상품 둘러보기
+  // 같은 상품인지 AI가 이미지·상품명으로 비교 (결과가 목록의 대표 시세와 같은 상품이면 목록에도 저장)
+  app.post('/api/compare', auth, async (req, res) => {
+    try {
+      const { side, id, name, image, url } = req.body || {};
+      const sd = side === 'jp' ? 'jp' : 'kr';
+      const p = db.getProductById(sd, parseInt(id, 10));
+      if (!p) return res.status(404).json({ error: '없는 상품' });
+      const v = await compareProducts({ name: p.name, image: p.image_url }, { name: name || '', image });
+      const q = db.getQuote(sd, p.id);
+      if (q && url && q.best_url === url) db.setQuoteVerdict(sd, p.id, v.verdict, v.reason);
+      res.json(v);
+    } catch (e) {
+      error(`[compare] ${e.message}`);
+      res.status(e.status || 500).json({ error: e.message });
+    }
+  });
+
+  // 수집된 상품 둘러보기 (+ 반대편 시세·예상 마진)
   app.get('/api/products', auth, (req, res) => {
-    res.json({
-      rows: db.listProducts({
+    const rows = db.listProducts({
         side: req.query.side === 'jp' ? 'jp' : 'kr',
         brand: req.query.brand || undefined,
         source: req.query.source || undefined,
         q: req.query.q || undefined,
         minPrice: req.query.side === 'jp' && req.query.all !== '1' ? loadCostsBase().market_min_price_jpy || 0 : 0,
+        sort: req.query.sort === 'recent' ? 'recent' : 'margin',
+        profit: req.query.profit || '',
         limit: parseInt(req.query.limit || '60', 10),
         offset: parseInt(req.query.offset || '0', 10),
-      }),
-    });
+      });
+    for (const r of rows) {
+      r.quote = r.q_checked
+        ? { kind: r.q_kind, price: r.q_price, name: r.q_name, url: r.q_url, image: r.q_image, source: r.q_source, net: r.q_net, rate: r.q_rate, passed: !!r.q_passed, verified: r.q_verified, reason: r.q_reason, checked: r.q_checked }
+        : null;
+      for (const k of Object.keys(r)) if (k.startsWith('q_')) delete r[k];
+    }
+    res.json({ rows });
   });
 
   // 발굴: 주시 후보 + 소싱 후보

@@ -90,6 +90,24 @@ CREATE TABLE IF NOT EXISTS kv (
   key TEXT PRIMARY KEY,
   value TEXT
 );
+-- 상품마다 반대편 나라에서 찾은 가장 싼 같은 상품과 예상 마진 (목록에서 한눈에 보기 위함)
+CREATE TABLE IF NOT EXISTS quotes (
+  side TEXT NOT NULL,              -- 기준 상품이 어느 나라 것인지 'kr' | 'jp'
+  product_id INTEGER NOT NULL,
+  kind TEXT,                       -- 'code' 품번 일치 | 'search' 이름 검색(추정) | 'none' 못 찾음
+  best_name TEXT,
+  best_price INTEGER,
+  best_url TEXT,
+  best_image TEXT,
+  best_source TEXT,
+  margin_net INTEGER,
+  margin_rate REAL,
+  passed INTEGER DEFAULT 0,
+  verified TEXT,                   -- AI 이미지 비교: 'same' | 'different' | 'unsure'
+  verified_reason TEXT,
+  checked_at TEXT,
+  PRIMARY KEY (side, product_id)
+);
 CREATE INDEX IF NOT EXISTS idx_kr_brand ON products_kr(brand, in_stock);
 CREATE INDEX IF NOT EXISTS idx_jp_brand ON products_jp(brand, in_stock);
 CREATE INDEX IF NOT EXISTS idx_hist ON price_history(product_side, product_id, fetched_date);
@@ -415,24 +433,87 @@ export function recentRuns(limit = 8) {
   return db.prepare(`SELECT run_id, step, status, message, started_at, finished_at FROM run_log ORDER BY id DESC LIMIT ?`).all(limit);
 }
 
-// 수집된 상품 둘러보기 (이미지 포함). 같은 이름·가격의 색상별 중복은 1건으로 묶고 variants로 개수 표시
-export function listProducts({ side = 'kr', brand, source, q, minPrice = 0, limit = 60, offset = 0 } = {}) {
+// 수집된 상품 둘러보기 (이미지 포함). 같은 이름·가격의 색상별 중복은 1건으로 묶고 variants로 개수 표시.
+// 각 상품에는 quotes(반대편 시세·예상 마진)가 붙는다. sort: 'margin'(마진 높은 순) | 'recent'(최근 수집순)
+// profit: 'plus'(마진 +만) | 'pass'(통과 기준 충족만) | 그 외 전체
+export function listProducts({ side = 'kr', brand, source, q, minPrice = 0, sort = 'margin', profit = '', limit = 60, offset = 0 } = {}) {
   const table = side === 'jp' ? 'products_jp' : 'products_kr';
   const price = side === 'jp' ? 'price_jpy' : 'COALESCE(NULLIF(sale_price_krw,0), price_krw)';
   const extra = side === 'jp' ? ', MAX(review_count) AS review_count' : ', price_krw, sale_price_krw';
-  let sql = `SELECT MIN(id) AS id, brand, source, product_code, name, ${price} AS price, url, image_url, in_stock,
-                    MAX(fetched_at) AS fetched_at, COUNT(*) AS variants${extra}
-             FROM ${table} WHERE 1=1`;
+  let inner = `SELECT MIN(id) AS id, brand, source, product_code, name, ${price} AS price, url, image_url, in_stock,
+                      MAX(fetched_at) AS fetched_at, COUNT(*) AS variants${extra}
+               FROM ${table} WHERE 1=1`;
   const args = [];
-  if (brand) { sql += ` AND brand=?`; args.push(brand); }
-  if (source) { sql += ` AND source=?`; args.push(source); }
-  if (q) { sql += ` AND name LIKE ?`; args.push(`%${q}%`); }
-  if (minPrice) { sql += ` AND ${price} >= ?`; args.push(minPrice); }
-  sql += ` GROUP BY brand, source, name, price`;
-  sql += side === 'jp' ? ` ORDER BY review_count DESC, fetched_at DESC` : ` ORDER BY fetched_at DESC, id DESC`;
+  if (brand) { inner += ` AND brand=?`; args.push(brand); }
+  if (source) { inner += ` AND source=?`; args.push(source); }
+  if (q) { inner += ` AND name LIKE ?`; args.push(`%${q}%`); }
+  if (minPrice) { inner += ` AND ${price} >= ?`; args.push(minPrice); }
+  inner += ` GROUP BY brand, source, name, price`;
+
+  let sql = `SELECT t.*, q.kind AS q_kind, q.best_name AS q_name, q.best_price AS q_price, q.best_url AS q_url, q.best_image AS q_image,
+                    q.best_source AS q_source, q.margin_net AS q_net, q.margin_rate AS q_rate, q.passed AS q_passed,
+                    q.verified AS q_verified, q.verified_reason AS q_reason, q.checked_at AS q_checked
+             FROM (${inner}) t LEFT JOIN quotes q ON q.side='${side === 'jp' ? 'jp' : 'kr'}' AND q.product_id = t.id WHERE 1=1`;
+  // AI가 '다른 상품'이라고 판정한 시세는 마진이 +여도 필터·상위 정렬에서 제외
+  if (profit === 'plus') sql += ` AND q.margin_net > 0 AND COALESCE(q.verified,'') != 'different'`;
+  if (profit === 'pass') sql += ` AND q.passed = 1 AND COALESCE(q.verified,'') != 'different'`;
+  if (sort === 'margin') sql += ` ORDER BY (q.margin_net IS NULL OR q.best_price IS NULL), COALESCE(q.verified = 'different', 0), q.margin_net DESC, t.fetched_at DESC`;
+  else sql += side === 'jp' ? ` ORDER BY t.review_count DESC, t.fetched_at DESC` : ` ORDER BY t.fetched_at DESC, t.id DESC`;
   sql += ` LIMIT ? OFFSET ?`;
   args.push(Math.min(limit, 200), offset);
   return db.prepare(sql).all(...args);
+}
+
+// 시세 확인 대상: 같은 이름·가격의 색상 묶음당 1건(MIN id). 오늘 이미 확인한 것은 제외
+export function quoteTargets(side, { brand, minPrice = 0, limit = 400, force = false } = {}) {
+  const table = side === 'jp' ? 'products_jp' : 'products_kr';
+  const price = side === 'jp' ? 'price_jpy' : 'COALESCE(NULLIF(sale_price_krw,0), price_krw)';
+  let sql = `SELECT MIN(id) AS id, brand, source, name, ${price} AS price
+             FROM ${table} WHERE in_stock=1 AND ${price} > 0`;
+  const args = [];
+  if (brand) { sql += ` AND brand=?`; args.push(brand); }
+  if (minPrice) { sql += ` AND ${price} >= ?`; args.push(minPrice); }
+  // 공식몰 상품을 먼저 (시장 수집분은 양이 많아 뒤로)
+  sql += ` GROUP BY brand, source, name, price ORDER BY (source='brand_site') DESC, MAX(fetched_at) DESC`;
+  const rows = db.prepare(sql).all(...args);
+  if (force) return rows.slice(0, limit);
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const done = new Set(
+    db.prepare(`SELECT product_id FROM quotes WHERE side=? AND substr(checked_at,1,10)=?`).all(side, todayStr).map((r) => r.product_id)
+  );
+  return rows.filter((r) => !done.has(r.id)).slice(0, limit);
+}
+
+export function saveQuote(side, productId, q) {
+  db.prepare(
+    `INSERT INTO quotes (side, product_id, kind, best_name, best_price, best_url, best_image, best_source, margin_net, margin_rate, passed, checked_at)
+     VALUES (@side, @product_id, @kind, @best_name, @best_price, @best_url, @best_image, @best_source, @margin_net, @margin_rate, @passed, @checked_at)
+     ON CONFLICT(side, product_id) DO UPDATE SET
+       kind=excluded.kind, best_name=excluded.best_name, best_price=excluded.best_price, best_url=excluded.best_url,
+       best_image=excluded.best_image, best_source=excluded.best_source, margin_net=excluded.margin_net,
+       margin_rate=excluded.margin_rate, passed=excluded.passed, checked_at=excluded.checked_at,
+       verified = CASE WHEN quotes.best_url = excluded.best_url THEN quotes.verified ELSE NULL END,
+       verified_reason = CASE WHEN quotes.best_url = excluded.best_url THEN quotes.verified_reason ELSE NULL END`
+  ).run({
+    side, product_id: productId, kind: q.kind || 'none', best_name: q.name ?? null, best_price: q.price ?? null,
+    best_url: q.url ?? null, best_image: q.image ?? null, best_source: q.source ?? null, margin_net: q.net ?? null,
+    margin_rate: q.rate ?? null, passed: q.passed ? 1 : 0, checked_at: nowIso(),
+  });
+}
+
+export function getQuote(side, productId) {
+  return db.prepare(`SELECT * FROM quotes WHERE side=? AND product_id=?`).get(side, productId);
+}
+
+export function setQuoteVerdict(side, productId, verdict, reason) {
+  db.prepare(`UPDATE quotes SET verified=?, verified_reason=? WHERE side=? AND product_id=?`).run(verdict, reason || null, side, productId);
+}
+
+// AI 이미지 비교 대상: 이름 검색으로 찾은(품번 일치가 아닌) 결과 중 마진이 + 이고 아직 확인 안 한 것
+export function quotesToVerify(limit = 30) {
+  return db
+    .prepare(`SELECT * FROM quotes WHERE margin_net > 0 AND kind='search' AND verified IS NULL AND best_image IS NOT NULL ORDER BY margin_net DESC LIMIT ?`)
+    .all(limit);
 }
 
 // 같은 품번의 반대편(또는 같은 편) 상품들 — 시세 찾기에서 DB에 이미 있는 가격을 함께 보여주기 위함

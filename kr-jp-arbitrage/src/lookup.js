@@ -1,7 +1,8 @@
-// 시세 찾기 — 상품 하나를 골라 반대편 나라의 같은 상품을 즉석 검색하고, 판매처마다 마진을 계산한다.
+// 시세 찾기 — 상품 하나의 반대편 나라 같은 상품을 찾고, 판매처마다 마진을 계산한다.
 //  · 한국 상품 → 일본 라쿠텐/Yahoo 시세 (이 가격에 팔 수 있다면 마진은?)
-//  · 일본 상품 → 한국 네이버/쿠팡/공식몰 가격 (어디서 사오면 마진이 남나?)
-// 검색 결과에는 다른 상품이 섞일 수 있으므로 화면에서 이미지로 확인하게 한다.
+//  · 일본 상품 → 한국 공식몰/쿠팡/11번가 가격 (어디서 사오면 마진이 남나?)
+// 같은 로직을 화면의 "시세 찾기" 버튼과 매일 자동 확인(quote 단계)이 함께 쓴다.
+// 검색 결과에는 다른 상품이 섞일 수 있어서, 품번이 일치한 결과(byCode)를 우선하고 아니면 '추정'으로 표시한다.
 import { loadBrands, loadCostsBase, features, warn } from './util.js';
 import { getProductById, productsByCode } from './db.js';
 import { getFxKrwPerJpy } from './pricing/fx.js';
@@ -31,18 +32,22 @@ const latinTokens = (n) => (String(n || '').match(/[A-Za-z0-9][A-Za-z0-9-]{2,}/g
 
 const effectiveKr = (p) => (p.sale_price_krw && p.sale_price_krw < p.price_krw ? p.sale_price_krw : p.price_krw);
 
+const norm = (s) => String(s || '').toUpperCase().replace(/[\s-]/g, '');
+const hasCode = (name, code) => !!code && norm(name).includes(norm(code));
+
 function uniqByUrl(list) {
   const seen = new Set();
   return list.filter((r) => (seen.has(r.url) ? false : seen.add(r.url)));
 }
 
-export async function lookup({ side, id }) {
-  const p = getProductById(side === 'jp' ? 'jp' : 'kr', id);
-  if (!p) {
-    const e = new Error('없는 상품');
-    e.status = 404;
-    throw e;
-  }
+/**
+ * 반대편 시세 찾기.
+ * @param {object} p        기준 상품(DB 행)
+ * @param {'kr'|'jp'} side  기준 상품의 나라
+ * @param {object} opt      online=false면 외부 API를 부르지 않고 DB에 있는 같은 품번만 사용
+ * @returns {{results, best, kind, query, fx, weightG, base, notes, searched}}
+ */
+export async function findCounterparts(p, side, { online = true } = {}) {
   const brands = loadBrands();
   const brandCfg = brands[p.brand] || {};
   const costs = loadCostsBase();
@@ -50,75 +55,100 @@ export async function lookup({ side, id }) {
   const fx = (await getFxKrwPerJpy()).rate;
   const weightG = estimateWeightG(p.name, costs, brands._global?.weight_keywords);
   const code = p.product_code || extractCode(p.name, brandCfg.product_code_regex);
+  const floor = costs.market_min_price_jpy || 0;
   const notes = [];
   const calc = (krPriceKrw, jpLowestJpy) => {
     const bd = computeMargin({ krPriceKrw, jpLowestJpy, fx, weightG }, costs);
     return { net: bd.netMarginJpy, rate: bd.marginRate, passed: bd.passed, sell: bd.jpSellPriceJpy };
   };
-
-  // ---------- 한국 상품 → 일본 시세 ----------
-  if (side !== 'jp') {
-    const buy = effectiveKr(p);
-    const query = code || `${brandWord(brandCfg, 'jp')} ${cleanName(p.name)}`.trim();
-    const jobs = [];
-    if (feats.rakuten) jobs.push(searchRakuten(query, { hits: 30 }).then((r) => r.map((x) => ({ ...x, source: '라쿠텐' }))));
-    else notes.push('라쿠텐 키가 없어 라쿠텐 검색을 건너뛰었습니다.');
-    if (feats.yahoo) jobs.push(searchYahoo(query, { results: 30 }).then((r) => r.map((x) => ({ ...x, source: 'Yahoo!쇼핑' }))));
-    else notes.push('Yahoo 키가 없어 Yahoo 검색을 건너뛰었습니다.');
-    const settled = await Promise.allSettled(jobs);
+  const settle = async (jobs) => {
     let list = [];
-    for (const s of settled) {
+    for (const s of await Promise.allSettled(jobs)) {
       if (s.status === 'fulfilled') list = list.concat(s.value);
       else {
         warn(`[lookup] ${s.reason?.message}`);
         notes.push(`일부 검색 실패: ${s.reason?.message}`);
       }
     }
-    // 이미 수집해 둔 일본 상품 중 같은 품번
+    return list;
+  };
+  let searched = false;
+  let results;
+  let query;
+  let base;
+
+  if (side !== 'jp') {
+    // ---------- 한국 상품 → 일본 시세 ----------
+    const buy = effectiveKr(p);
+    query = code || `${brandWord(brandCfg, 'jp')} ${cleanName(p.name)}`.trim();
+    base = { name: p.name, price: buy, image: p.image_url, url: p.url, label: `한국 매입가 ₩${buy.toLocaleString()}` };
+    let list = [];
+    // DB에 이미 있는 같은 품번 일본 상품 (무료·즉시)
     for (const j of productsByCode('jp', p.brand, code)) {
-      list.push({ name: j.name, price: j.price_jpy, url: j.url, image_url: j.image_url, review_count: j.review_count || 0, source: j.source === 'brand_site' ? '일본 공식몰' : j.source });
+      list.push({ name: j.name, price: j.price_jpy, url: j.url, image_url: j.image_url, review_count: j.review_count || 0, source: j.source === 'brand_site' ? '일본 공식몰' : j.source, byCode: true });
     }
-    list = uniqByUrl(list.filter((r) => r.price > 0 && !USED.test(r.name))).sort((a, b) => a.price - b.price).slice(0, 14);
-    if (!code) notes.push('품번이 없어 상품명으로 검색했습니다. 다른 상품이 섞일 수 있으니 이미지를 꼭 확인하세요.');
-    return {
-      side: 'kr', query, fx, weightG,
-      base: { name: p.name, price: buy, image: p.image_url, url: p.url, label: `한국 매입가 ₩${buy.toLocaleString()}` },
-      results: list.map((r) => ({ ...r, margin: calc(buy, r.price) })),
-      notes,
-    };
+    if (online) {
+      const jobs = [];
+      if (feats.rakuten) jobs.push(searchRakuten(query, { hits: 30 }).then((r) => r.map((x) => ({ ...x, source: '라쿠텐' }))));
+      else notes.push('라쿠텐 키가 없어 라쿠텐 검색을 건너뛰었습니다.');
+      if (feats.yahoo) jobs.push(searchYahoo(query, { results: 30 }).then((r) => r.map((x) => ({ ...x, source: 'Yahoo!쇼핑' }))));
+      else notes.push('Yahoo 키가 없어 Yahoo 검색을 건너뛰었습니다.');
+      searched = jobs.length > 0;
+      list = list.concat((await settle(jobs)).map((r) => ({ ...r, byCode: hasCode(r.name, code) })));
+      if (!code) notes.push('품번이 없어 상품명으로 검색했습니다. 다른 상품이 섞일 수 있으니 이미지를 꼭 확인하세요.');
+    }
+    results = uniqByUrl(list.filter((r) => r.price >= Math.max(floor, 1) && !USED.test(r.name)))
+      .sort((a, b) => a.price - b.price).slice(0, 14)
+      .map((r) => ({ ...r, margin: calc(buy, r.price) }));
+  } else {
+    // ---------- 일본 상품 → 한국 구입처 ----------
+    const sellRef = p.price_jpy;
+    const tokens = code || latinTokens(p.name);
+    query = tokens ? `${tokens}` : `${brandWord(brandCfg, 'kr')} ${cleanName(p.name)}`.trim();
+    base = { name: p.name, price: sellRef, image: p.image_url, url: p.url, label: `일본 판매 기준 ¥${sellRef.toLocaleString()}` };
+    let list = [];
+    // DB에 이미 있는 같은 품번 한국 상품 (공식몰 세일가 포함)
+    for (const k of productsByCode('kr', p.brand, code)) {
+      list.push({ name: k.name, price: effectiveKr(k), url: k.url, image_url: k.image_url, source: k.source === 'brand_site' ? '한국 공식몰' : k.source, byCode: true });
+    }
+    if (online) {
+      const jobs = [];
+      if (feats.naver) jobs.push(searchNaver(query, { display: 30 }).then((r) => r.map((x) => ({ ...x, source: x.mall ? `네이버·${x.mall}` : '네이버' }))));
+      else notes.push('네이버 쇼핑 검색 API가 2026-07-31에 종료되어 자동 검색되지 않습니다. 다른 한국 쇼핑몰은 아래 "직접 찾기" 링크로 확인하세요.');
+      if (feats.coupang) jobs.push(searchCoupang(query).then((r) => r.map((x) => ({ ...x, source: x.mall || '쿠팡' }))));
+      else notes.push('쿠팡 파트너스 키를 넣으면 쿠팡 가격도 함께 나옵니다.');
+      if (feats.coupang && coupangStatus().limited) notes.push('쿠팡 호출 한도에 가까워 이번에는 쿠팡 검색을 건너뛰었습니다. 잠시 뒤 다시 시도하세요.');
+      if (feats.elevenst) jobs.push(searchElevenst(query).then((r) => r.map((x) => ({ ...x, source: x.mall || '11번가' }))));
+      else notes.push('11번가 키(ELEVENST_API_KEY)를 넣으면 11번가 가격도 함께 나옵니다.');
+      searched = jobs.length > 0;
+      list = list.concat((await settle(jobs)).map((r) => ({ ...r, byCode: hasCode(r.name, code) })));
+      if (!tokens) notes.push('품번을 찾지 못해 상품명으로 검색했습니다. 일본어 상품명은 한국 검색에 잘 안 걸리니 아래 링크로 직접 찾아보세요.');
+    }
+    results = uniqByUrl(list.filter((r) => r.price > 0))
+      .sort((a, b) => a.price - b.price).slice(0, 14)
+      .map((r) => ({ ...r, margin: calc(r.price, sellRef) }));
   }
 
-  // ---------- 일본 상품 → 한국 구입처 ----------
-  const sellRef = p.price_jpy;
-  const tokens = code || latinTokens(p.name);
-  const query = tokens ? `${tokens}` : `${brandWord(brandCfg, 'kr')} ${cleanName(p.name)}`.trim();
-  const jobs = [];
-  if (feats.naver) jobs.push(searchNaver(query, { display: 30 }).then((r) => r.map((x) => ({ ...x, source: x.mall ? `네이버·${x.mall}` : '네이버' }))));
-  else notes.push('네이버 쇼핑 검색 API가 2026-07-31에 종료되어 한국 시장 가격은 자동 검색되지 않습니다. 아래에는 수집해 둔 한국 공식몰 가격만 나옵니다. 다른 한국 쇼핑몰은 아래 "직접 찾기" 링크로 확인하세요.');
-  if (feats.coupang) jobs.push(searchCoupang(query).then((r) => r.map((x) => ({ ...x, source: x.mall || '쿠팡' }))));
-  if (feats.elevenst) jobs.push(searchElevenst(query).then((r) => r.map((x) => ({ ...x, source: x.mall || '11번가' }))));
-  else notes.push('11번가 키(ELEVENST_API_KEY)를 넣으면 11번가 가격도 함께 나옵니다.');
-  if (!feats.coupang) notes.push('쿠팡 파트너스 키를 넣으면 쿠팡 가격도 함께 나옵니다.');
-  else if (coupangStatus().limited) notes.push('쿠팡 호출 한도에 가까워 이번에는 쿠팡 검색을 건너뛰었습니다. 잠시 뒤 다시 시도하세요.');
-  const settled = await Promise.allSettled(jobs);
-  let list = [];
-  for (const s of settled) {
-    if (s.status === 'fulfilled') list = list.concat(s.value);
-    else {
-      warn(`[lookup] ${s.reason?.message}`);
-      notes.push(`일부 검색 실패: ${s.reason?.message}`);
-    }
+  // 대표 결과: 품번이 일치한 것 중 가장 싼 것, 없으면 전체 중 가장 싼 것(추정)
+  const coded = results.filter((r) => r.byCode);
+  const best = coded[0] || results[0] || null;
+  return { side: side === 'jp' ? 'jp' : 'kr', query, fx, weightG, base, results, best, kind: best ? (best.byCode ? 'code' : 'search') : 'none', notes, searched };
+}
+
+export async function lookup({ side, id }) {
+  const sd = side === 'jp' ? 'jp' : 'kr';
+  const p = getProductById(sd, id);
+  if (!p) {
+    const e = new Error('없는 상품');
+    e.status = 404;
+    throw e;
   }
-  // 이미 수집해 둔 한국 상품 중 같은 품번 (공식몰 세일가 포함)
-  for (const k of productsByCode('kr', p.brand, code)) {
-    list.push({ name: k.name, price: effectiveKr(k), url: k.url, image_url: k.image_url, source: k.source === 'brand_site' ? '한국 공식몰' : k.source });
-  }
-  list = uniqByUrl(list.filter((r) => r.price > 0)).sort((a, b) => a.price - b.price).slice(0, 14);
-  if (!tokens) notes.push('품번을 찾지 못해 상품명으로 검색했습니다. 일본어 상품명은 한국 검색에 잘 안 걸리니 아래 링크로 직접 찾아보세요.');
-  return {
-    side: 'jp', query, fx, weightG,
-    base: { name: p.name, price: sellRef, image: p.image_url, url: p.url, label: `일본 판매 기준 ¥${sellRef.toLocaleString()}` },
-    results: list.map((r) => ({ ...r, margin: calc(r.price, sellRef) })),
-    notes,
-  };
+  return findCounterparts(p, sd, { online: true });
+}
+
+// 목록용 요약 (quotes 테이블에 저장하는 형태)
+export function toQuote(r) {
+  if (!r.best) return { kind: 'none' };
+  const b = r.best;
+  return { kind: r.kind, name: b.name, price: b.price, url: b.url, image: b.image_url, source: b.source, net: b.margin.net, rate: b.margin.rate, passed: b.margin.passed };
 }

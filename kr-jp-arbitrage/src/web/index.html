@@ -102,6 +102,22 @@
   .res .t { min-width:0; flex:1; } .res .t .n { overflow-wrap:anywhere; font-weight:500; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
   .res .r { text-align:right; flex:none; font-variant-numeric:tabular-nums; } .res .r b { display:block; font-size:16px; }
   .mg { font-size:12.5px; font-weight:700; }
+  .qb { display:flex; gap:10px; align-items:center; width:100%; text-align:left; border:0; border-radius:12px; padding:9px 10px; background:var(--surface2); }
+  .qb.pos { background:var(--good-soft); } .qb.neg { background:var(--bad-soft); }
+  .qb img, .qb .qimg { width:48px; height:48px; border-radius:8px; object-fit:cover; flex:none; background:var(--surface); }
+  .qb .main { min-width:0; flex:1; }
+  .qb .big { font-size:21px; font-weight:900; letter-spacing:-.02em; font-variant-numeric:tabular-nums; line-height:1.2; }
+  .qb .big small { font-size:12px; font-weight:700; margin-left:4px; }
+  .qb.pos .big { color:var(--good); } .qb.neg .big { color:var(--bad); }
+  .qb .meta { font-size:12px; color:var(--ink2); overflow-wrap:anywhere; }
+  .qb .main > span { display:block; }
+  .qb.none { color:var(--muted); font-size:12.5px; }
+  .tg { display:inline-block; font-size:11px; font-weight:700; border-radius:6px; padding:0 6px; margin-right:3px; background:var(--surface); color:var(--ink2); }
+  .tg.code { background:var(--good-soft); color:var(--good); } .tg.guess { background:var(--warn-soft); color:var(--warn); }
+  .tg.same { background:var(--good-soft); color:var(--good); } .tg.different { background:var(--bad-soft); color:var(--bad); } .tg.unsure { background:var(--warn-soft); color:var(--warn); }
+  .tg.pass { background:var(--accent); color:var(--accent-ink); }
+  .sumline { color:var(--ink2); font-size:13px; margin:0 0 12px; }
+  .sumline b { color:var(--ink); }
   @media (max-width:560px){ .grid { grid-template-columns:repeat(2,1fr); gap:10px; } .grid.wide { grid-template-columns:1fr; } .price { font-size:18px; } .tok input { width:120px; } }
 </style>
 </head>
@@ -130,7 +146,7 @@ const won = (n) => '₩' + Math.round(n || 0).toLocaleString();
 const yen = (n) => '¥' + Math.round(n || 0).toLocaleString();
 const signYen = (n) => (n >= 0 ? '+' : '−') + '¥' + Math.abs(Math.round(n)).toLocaleString();
 const enc = encodeURIComponent;
-let tab = 'cards', brandFilter = '', levelFilter = '', side = 'kr', exBrand = '', exQ = '', brandList = [], products = [];
+let tab = 'cards', brandFilter = '', levelFilter = '', side = 'kr', exBrand = '', exQ = '', exSort = 'margin', exProfit = '', brandList = [], products = [], lastLookup = null;
 try { $('token').value = localStorage.getItem('ui_token') || ''; } catch {}
 
 async function api(path) {
@@ -199,6 +215,25 @@ async function renderCards() {
 }
 
 /* ---------- 상품 탐색 ---------- */
+const KIND_TAG = { code: '<span class="tg code">품번 일치</span>', search: '<span class="tg guess">이름 검색(추정)</span>' };
+const AI_TAG = { same: '<span class="tg same">AI 같은 상품</span>', different: '<span class="tg different">AI 다른 상품</span>', unsure: '<span class="tg unsure">AI 불확실</span>' };
+
+// 반대편 나라 최저 시세와 예상 마진을 카드에서 바로 보여준다
+function quoteBand(p, isKr) {
+  const q = p.quote;
+  const btn = `data-lookup="${side}:${p.id}"`;
+  if (!q) return `<button class="qb none" ${btn}>${isKr ? '🇯🇵 일본' : '🇰🇷 한국'} 시세 확인 전 · 눌러서 찾기</button>`;
+  if (!q.price) return `<button class="qb none" ${btn}>${isKr ? '🇯🇵 일본' : '🇰🇷 한국'}에서 같은 상품을 못 찾았어요 · 다시 찾기</button>`;
+  const net = q.net ?? 0;
+  const cls = net > 0 ? 'pos' : 'neg';
+  const price = isKr ? yen(q.price) : won(q.price);
+  return `<button class="qb ${cls}" ${btn} title="${esc(q.name || '')}">
+    ${q.image ? `<img src="${esc(q.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : '<div class="qimg"></div>'}
+    <span class="main"><span class="big">${signYen(net)}<small>${((q.rate || 0) * 100).toFixed(0)}% ${q.passed ? '· 통과' : ''}</small></span>
+    <span class="meta">${isKr ? '🇯🇵 일본' : '🇰🇷 한국'} ${price} · ${esc(q.source || '')}</span>
+    <span class="meta">${KIND_TAG[q.kind] || ''}${AI_TAG[q.verified] || ''}</span></span></button>`;
+}
+
 function productHtml(p) {
   const q = p.product_code || p.name.replace(/\[[^\]]*\]/g, ' ').trim();
   const isKr = side === 'kr';
@@ -208,20 +243,28 @@ function productHtml(p) {
       <div class="sub">${esc(p.brand)}${p.product_code ? ' · ' + esc(p.product_code) : ''}${p.review_count ? ' · 리뷰 ' + p.review_count : ''}</div>
       <div class="nm">${esc(p.name)}</div>
       <div class="price">${isKr ? won(p.price) : yen(p.price)}${isKr && p.sale_price_krw && p.sale_price_krw < p.price_krw ? `<small><s>${won(p.price_krw)}</s></small>` : ''}</div>
-      <div class="acts"><button class="btn pri sm" data-lookup="${side}:${p.id}">${isKr ? '일본 시세 찾기' : '한국 구입처 찾기'}</button><a class="btn sm" href="${esc(p.url)}" target="_blank" rel="noopener">원본 보기 ↗</a></div>
+      ${quoteBand(p, isKr)}
+      <div class="acts"><a class="btn sm" href="${esc(p.url)}" target="_blank" rel="noopener">원본 보기 ↗</a></div>
       <div class="quick">${linkRow(isKr ? jpLinks(q) : krLinks(q))}</div>
     </div></article>`;
 }
 async function renderExplore() {
   if (!brandList.length) { try { brandList = (await api('/api/status')).brands.map((b) => [b.key, b.name]); } catch {} }
-  const d = await api(`/api/products?side=${side}&limit=96${exBrand ? '&brand=' + enc(exBrand) : ''}${exQ ? '&q=' + enc(exQ) : ''}`);
+  const d = await api(`/api/products?side=${side}&limit=96&sort=${exSort}${exProfit ? '&profit=' + exProfit : ''}${exBrand ? '&brand=' + enc(exBrand) : ''}${exQ ? '&q=' + enc(exQ) : ''}`);
   products = d.rows;
+  const quoted = d.rows.filter((r) => r.quote && r.quote.price);
+  const plus = quoted.filter((r) => r.quote.net > 0).length;
+  const pass = quoted.filter((r) => r.quote.passed).length;
+  const profits = [['', '전체'], ['plus', '마진 + 만'], ['pass', '통과 기준 충족만']];
   $('out').innerHTML =
-    `<div class="hint">상품을 고르고 <b>${side === 'kr' ? '"일본 시세 찾기"' : '"한국 구입처 찾기"'}</b>를 누르면, ${side === 'kr' ? '일본 쇼핑몰(라쿠텐·Yahoo)에서 같은 상품의 판매가를 찾아' : '한국 쇼핑몰(네이버·쿠팡·공식몰)에서 같은 상품의 가격을 찾아'} <b>판매처마다 순마진</b>을 계산해 줍니다.</div>` +
     `<div class="bar"><div class="seg"><button data-side="kr" aria-pressed="${side === 'kr'}">🇰🇷 한국 상품</button><button data-side="jp" aria-pressed="${side === 'jp'}">🇯🇵 일본 상품</button></div>
       <select id="exBrand"><option value="">모든 브랜드</option>${brandList.map(([k, n]) => `<option value="${esc(k)}"${k === exBrand ? ' selected' : ''}>${esc(n)}</option>`).join('')}</select>
-      <input id="exQ" placeholder="상품명 검색" value="${esc(exQ)}"><button class="btn" id="exGo">검색</button></div>` +
-    (d.rows.length ? `<div class="grid">${d.rows.map(productHtml).join('')}</div>` : '<div class="empty">수집된 상품이 없습니다.</div>');
+      <select id="exSort"><option value="margin"${exSort === 'margin' ? ' selected' : ''}>마진 높은 순</option><option value="recent"${exSort === 'recent' ? ' selected' : ''}>최근 수집순</option></select>
+      <input id="exQ" placeholder="상품명 검색" value="${esc(exQ)}"><button class="btn" id="exGo">검색</button></div>
+    <div class="chips">${profits.map(([v, l]) => `<button class="chip" data-profit="${v}" aria-pressed="${exProfit === v}">${l}</button>`).join('')}</div>
+    <p class="sumline">${side === 'kr' ? '한국 상품을 사서 일본에 팔 때' : '일본 상품과 같은 걸 한국에서 사 올 때'}의 예상 순마진입니다. 이 화면 상품 중 시세 확인 <b>${quoted.length}건</b> · 마진 + <b>${plus}건</b> · 통과 <b>${pass}건</b>.
+      <b>품번 일치</b>는 같은 상품일 가능성이 높고, <b>이름 검색(추정)</b>은 이미지로 확인이 필요합니다.</p>` +
+    (d.rows.length ? `<div class="grid">${d.rows.map(productHtml).join('')}</div>` : '<div class="empty">조건에 맞는 상품이 없습니다.</div>');
 }
 
 /* ---------- 시세 찾기 창 ---------- */
@@ -231,6 +274,7 @@ async function openLookup(sd, id) {
   dlg.showModal();
   try {
     const d = await api(`/api/lookup?side=${sd}&id=${id}`);
+    lastLookup = { side: sd, id, d };
     const best = d.results[0];
     const isKr = d.side === 'kr';
     let sum = '';
@@ -241,14 +285,35 @@ async function openLookup(sd, id) {
     dlg.innerHTML = `<div class="dh"><img src="${esc(d.base.image || '')}" alt="" referrerpolicy="no-referrer" onerror="this.style.visibility='hidden'"><div class="t"><div class="sub">${isKr ? '한국 상품' : '일본 상품'}</div><b id="dlgTitle">${esc(d.base.name)}</b><div class="sub">${esc(d.base.label)} · <a href="${esc(d.base.url)}" target="_blank" rel="noopener">원본 ↗</a></div></div><button class="btn sm" data-close>닫기</button></div>
       <div class="dbody">${sum}${d.notes.map((n) => `<div class="note">${esc(n)}</div>`).join('')}
       ${d.results.length ? d.results.map((r) => `<div class="res">${r.image_url ? `<img src="${esc(r.image_url)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : '<div class="noimg"></div>'}
-        <div class="t"><div class="n">${esc(r.name)}</div><div class="sub">${esc(r.source)}${r.review_count ? ' · 리뷰 ' + r.review_count : ''}</div></div>
+        <div class="t"><div class="n">${esc(r.name)}</div><div class="sub">${r.byCode ? '<span class="tg code">품번 일치</span>' : ''}${esc(r.source)}${r.review_count ? ' · 리뷰 ' + r.review_count : ''} <span id="cmp-${d.results.indexOf(r)}"></span></div></div>
         <div class="r"><b>${isKr ? yen(r.price) : won(r.price)}</b><span class="mg ${r.margin.net >= 0 ? 'pos' : 'neg'}">${signYen(r.margin.net)}${r.margin.passed ? ' ✓통과' : ''}</span></div>
-        <a class="btn sm" href="${esc(r.url)}" target="_blank" rel="noopener">보기 ↗</a></div>`).join('') : '<div class="empty">자동 검색 결과가 없습니다. 아래 링크로 직접 찾아보세요.</div>'}
+        <div style="display:flex;flex-direction:column;gap:4px"><a class="btn sm" href="${esc(r.url)}" target="_blank" rel="noopener">보기 ↗</a><button class="btn sm" data-compare="${d.results.indexOf(r)}">AI 이미지 비교</button></div></div>`).join('') : '<div class="empty">자동 검색 결과가 없습니다. 아래 링크로 직접 찾아보세요.</div>'}
       <div class="sub">직접 찾기: <span class="quick" style="display:inline-flex">${linkRow(isKr ? jpLinks(d.query) : krLinks(d.query))}</span></div>
       <div class="sub">같은 상품인지 이미지로 꼭 확인하세요. 검색 결과에는 비슷한 다른 상품이 섞일 수 있습니다.</div></div>`;
   } catch (e) {
     dlg.innerHTML = `<div class="dh"><b>시세를 찾지 못했습니다</b><span class="spacer"></span><button class="btn sm" data-close>닫기</button></div><div class="dbody"><div class="note">${esc(e.message)}</div></div>`;
   }
+}
+
+async function runCompare(i, btn) {
+  const { side: sd, id, d } = lastLookup;
+  const r = d.results[i];
+  const slot = $(`cmp-${i}`);
+  btn.disabled = true; btn.textContent = '비교 중…';
+  try {
+    const res = await fetch(`/api/compare?token=${enc($('token').value)}`, {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ side: sd, id, name: r.name, image: r.image_url, url: r.url }),
+    });
+    const v = await res.json();
+    if (!res.ok) throw new Error(v.error || res.status);
+    slot.innerHTML = `${AI_TAG[v.verdict] || ''}<span class="sub"> ${esc(v.reason)}</span>`;
+    btn.textContent = '다시 비교';
+  } catch (e) {
+    slot.innerHTML = `<span class="tg unsure">${esc(e.message)}</span>`;
+    btn.textContent = 'AI 이미지 비교';
+  }
+  btn.disabled = false;
 }
 
 /* ---------- 연결 현황 ---------- */
@@ -287,13 +352,17 @@ document.addEventListener('click', (e) => {
   else if (chip && chip.dataset.brand !== undefined) { brandFilter = chip.dataset.brand; load(); }
   const sg = t.closest('[data-side]');
   if (sg) { side = sg.dataset.side; load(); }
-  if (t.closest('#exGo')) { exBrand = $('exBrand').value; exQ = $('exQ').value.trim(); load(); }
+  if (t.closest('#exGo')) { exBrand = $('exBrand').value; exSort = $('exSort').value; exQ = $('exQ').value.trim(); load(); }
   const lk = t.closest('[data-lookup]');
   if (lk) { const [sd, id] = lk.dataset.lookup.split(':'); openLookup(sd, id); }
   if (t.closest('[data-close]')) $('dlg').close();
+  const pf = t.closest('[data-profit]');
+  if (pf) { exProfit = pf.dataset.profit; load(); }
+  const cp = t.closest('[data-compare]');
+  if (cp && lastLookup) runCompare(parseInt(cp.dataset.compare, 10), cp);
   if (t === $('dlg')) $('dlg').close();
 });
-document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.id === 'exQ') { exBrand = $('exBrand').value; exQ = $('exQ').value.trim(); load(); } });
+document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.id === 'exQ') { exBrand = $('exBrand').value; exSort = $('exSort').value; exQ = $('exQ').value.trim(); load(); } });
 if ($('token').value) load();
 </script>
 </body>

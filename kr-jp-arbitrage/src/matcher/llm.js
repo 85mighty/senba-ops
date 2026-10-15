@@ -96,3 +96,69 @@ export async function judgeCandidates(cPairs) {
   if (judged) info(`[llm] ${judged}건 판정 완료`);
   return judged;
 }
+
+// ---------- 이미지·상품명 비교 (같은 상품인지 AI가 판단) ----------
+// 서버가 이미지를 직접 내려받아 base64로 보낸다(사이트가 외부 접근을 막아도 동작).
+// 모델: LLM_VISION_MODEL (기본 claude-sonnet-5-5). 하루 호출 상한은 judgeCandidates와 같은 LLM_DAILY_LIMIT을 공유한다.
+const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36';
+const MEDIA = { 'image/jpeg': 'image/jpeg', 'image/jpg': 'image/jpeg', 'image/png': 'image/png', 'image/gif': 'image/gif', 'image/webp': 'image/webp' };
+
+async function imageBlock(url) {
+  if (!url) return null;
+  try {
+    if (url.startsWith('data:')) {
+      const m = /^data:(image\/[a-z+]+);base64,(.+)$/i.exec(url);
+      return m && MEDIA[m[1].toLowerCase()] ? { type: 'image', source: { type: 'base64', media_type: MEDIA[m[1].toLowerCase()], data: m[2] } } : null;
+    }
+    const abs = url.startsWith('//') ? `https:${url}` : url;
+    const res = await fetch(abs, { headers: { 'user-agent': UA }, signal: AbortSignal.timeout(15000) });
+    if (!res.ok) return null;
+    const type = MEDIA[(res.headers.get('content-type') || '').split(';')[0].trim().toLowerCase()];
+    const buf = Buffer.from(await res.arrayBuffer());
+    if (!type || buf.length > 4_500_000) return null;
+    return { type: 'image', source: { type: 'base64', media_type: type, data: buf.toString('base64') } };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * @param {{name, image}} a 기준 상품   @param {{name, image}} b 비교할 상품
+ * @returns {{verdict: 'same'|'different'|'unsure', reason: string}}
+ */
+export async function compareProducts(a, b) {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    const e = new Error('ANTHROPIC_API_KEY가 없어 AI 비교를 쓸 수 없습니다');
+    e.status = 503;
+    throw e;
+  }
+  const limit = parseInt(process.env.LLM_DAILY_LIMIT || '200', 10);
+  if (parseInt(kvGet(dailyKey()) || '0', 10) >= limit) {
+    const e = new Error(`AI 호출 하루 상한(${limit}건)에 도달했습니다`);
+    e.status = 429;
+    throw e;
+  }
+  const [imgA, imgB] = await Promise.all([imageBlock(a.image), imageBlock(b.image)]);
+  const content = [{ type: 'text', text: `두 쇼핑몰 상품이 같은 상품인지 판단해줘. 같은 모델이라도 색상·디자인·구성(세트 여부)이 다르면 different로 한다. 이미지로 판단이 어려우면 unsure.\n\n[상품 A] ${a.name}` }];
+  if (imgA) content.push(imgA);
+  content.push({ type: 'text', text: `[상품 B] ${b.name}` });
+  if (imgB) content.push(imgB);
+  content.push({ type: 'text', text: 'JSON만 출력: {"verdict":"same|different|unsure","reason":"근거 1문장(한국어)"}' });
+  if (!imgA && !imgB) content.push({ type: 'text', text: '(이미지를 가져오지 못해 상품명만으로 판단. 확실하지 않으면 unsure)' });
+
+  kvIncr(dailyKey());
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+    body: JSON.stringify({ model: process.env.LLM_VISION_MODEL || 'claude-sonnet-5-5', max_tokens: 300, messages: [{ role: 'user', content }] }),
+    signal: AbortSignal.timeout(60000),
+  });
+  if (!res.ok) throw new Error(`Anthropic API HTTP ${res.status}`);
+  const data = await res.json();
+  const text = data.content?.find((c) => c.type === 'text')?.text || '';
+  const m = text.match(/\{[\s\S]*\}/);
+  if (!m) throw new Error('AI 응답에 JSON이 없습니다');
+  const parsed = JSON.parse(m[0]);
+  const verdict = ['same', 'different', 'unsure'].includes(parsed.verdict) ? parsed.verdict : 'unsure';
+  return { verdict, reason: String(parsed.reason || '').slice(0, 200), usedImages: !!(imgA && imgB) };
+}

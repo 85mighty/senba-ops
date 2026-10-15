@@ -1,9 +1,9 @@
-// 파이프라인: collect-kr → collect-jp → match → price → report
+// 파이프라인: collect-kr → collect-jp → match → quote → price → report
 // 각 단계는 독립 실행 가능. 한 단계 실패가 전체를 죽이지 않는다 — 실패는 로그 + Telegram 경고.
 import crypto from 'node:crypto';
 import {
   enabledBrands, loadCostsBase, loadBrands, features,
-  info, warn, error, nowIso, today,
+  info, warn, error, nowIso, today, sleep,
 } from './util.js';
 import * as db from './db.js';
 import { matchBrand } from './matcher/rules.js';
@@ -15,8 +15,10 @@ import { closeBrowser } from './collectors/browser.js';
 import { appendDailyPicks, writeReviewQueue, writeCandidates, readConfigOverride } from './outputs/sheets.js';
 import { sendDailyReport, sendStepFailure } from './outputs/telegram.js';
 import { rankCandidates, sourcingCandidates } from './discover.js';
+import { findCounterparts, toQuote } from './lookup.js';
+import { compareProducts } from './matcher/llm.js';
 
-export const STEP_ORDER = ['collect-kr', 'collect-jp', 'match', 'price', 'report'];
+export const STEP_ORDER = ['collect-kr', 'collect-jp', 'match', 'quote', 'price', 'report'];
 
 // 뒤 Phase에서 추가되는 수집기·LLM 모듈은 없으면 조용히 건너뛴다
 async function optionalModule(spec) {
@@ -107,6 +109,53 @@ async function stepMatch({ brand } = {}) {
     }
   }
   return summary.join(' / ') || '매칭 대상 없음';
+}
+
+// ---------- 3.5 시세 확인: 모든 상품의 반대편 시세와 예상 마진을 미리 계산해 목록에서 한눈에 보이게 ----------
+// 1) DB에 있는 같은 품번(무료·즉시) → 2) 못 찾으면 예산 안에서 외부 API 검색 → 3) 이름 검색 결과는 AI가 이미지 비교
+async function stepQuote({ brand, limit } = {}) {
+  const feats = features();
+  const floor = loadCostsBase().market_min_price_jpy || 0;
+  const budget = {
+    kr: feats.rakuten || feats.yahoo ? parseInt(process.env.QUOTE_SEARCH_BUDGET || '60', 10) : 0,
+    jp: feats.coupang || feats.elevenst ? parseInt(process.env.QUOTE_SEARCH_BUDGET_JP || '15', 10) : 0,
+  };
+  let done = 0, found = 0, searched = 0;
+  for (const side of ['kr', 'jp']) {
+    const targets = db.quoteTargets(side, { brand, minPrice: side === 'jp' ? floor : 0, limit: limit || 600 });
+    for (const t of targets) {
+      try {
+        const p = db.getProductById(side, t.id);
+        let r = await findCounterparts(p, side, { online: false });
+        if (!r.best && budget[side] > 0) {
+          budget[side]--;
+          searched++;
+          r = await findCounterparts(p, side, { online: true });
+          await sleep(1200); // 라쿠텐 API 예절(초당 1회)
+        }
+        db.saveQuote(side, t.id, toQuote(r));
+        done++;
+        if (r.best) found++;
+      } catch (e) {
+        warn(`[quote] ${side}#${t.id} 실패: ${e.message}`);
+      }
+    }
+  }
+  let verified = 0;
+  if (feats.llm) {
+    for (const q of db.quotesToVerify(parseInt(process.env.LLM_VERIFY_LIMIT || '30', 10))) {
+      try {
+        const p = db.getProductById(q.side, q.product_id);
+        const v = await compareProducts({ name: p.name, image: p.image_url }, { name: q.best_name, image: q.best_image });
+        db.setQuoteVerdict(q.side, q.product_id, v.verdict, v.reason);
+        verified++;
+      } catch (e) {
+        warn(`[quote] AI 비교 중단: ${e.message}`);
+        break;
+      }
+    }
+  }
+  return `시세 확인 ${done}건 (반대편 찾음 ${found}건, 외부 검색 ${searched}건, AI 이미지 비교 ${verified}건)`;
 }
 
 // ---------- 4. 마진 계산 ----------
@@ -209,6 +258,7 @@ const STEP_FNS = {
   'collect-kr': (o) => stepCollect('kr', o),
   'collect-jp': (o) => stepCollect('jp', o),
   match: stepMatch,
+  quote: stepQuote,
   price: stepPrice,
   report: stepReport,
 };
