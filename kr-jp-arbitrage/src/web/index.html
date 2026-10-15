@@ -107,10 +107,19 @@
   .qb img, .qb .qimg { width:48px; height:48px; border-radius:8px; object-fit:cover; flex:none; background:var(--surface); }
   .qb .main { min-width:0; flex:1; }
   .qb .big { font-size:21px; font-weight:900; letter-spacing:-.02em; font-variant-numeric:tabular-nums; line-height:1.2; }
-  .qb .big small { font-size:12px; font-weight:700; margin-left:4px; }
+  .qb .big small { display:block; font-size:12px; font-weight:700; margin-left:0; }
   .qb.pos .big { color:var(--good); } .qb.neg .big { color:var(--bad); }
   .qb .meta { font-size:12px; color:var(--ink2); overflow-wrap:anywhere; }
   .qb .main > span { display:block; }
+  .qb .lab { font-size:11px; font-weight:700; color:var(--ink2); }
+  .flag { margin-right:4px; }
+  .dirbar { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:0 0 12px; }
+  .dirbar button { border:2px solid var(--line); background:var(--surface); border-radius:14px; padding:11px 12px; text-align:left; font-weight:700; line-height:1.35; }
+  .dirbar button small { display:block; font-weight:400; color:var(--ink2); font-size:12px; }
+  .dirbar button[aria-pressed="true"] { border-color:var(--accent); background:var(--accent-soft); }
+  @media (max-width:560px){ .dirbar { grid-template-columns:1fr; } }
+  .legend { display:flex; gap:14px; flex-wrap:wrap; font-size:12.5px; color:var(--ink2); background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:7px 12px; margin:0 0 10px; }
+  .legend b { color:var(--ink); }
   .qb.none { color:var(--muted); font-size:12.5px; }
   .tg { display:inline-block; font-size:11px; font-weight:700; border-radius:6px; padding:0 6px; margin-right:3px; background:var(--surface); color:var(--ink2); }
   .tg.code { background:var(--good-soft); color:var(--good); } .tg.guess { background:var(--warn-soft); color:var(--warn); }
@@ -144,8 +153,18 @@ const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const won = (n) => '₩' + Math.round(n || 0).toLocaleString();
 const yen = (n) => '¥' + Math.round(n || 0).toLocaleString();
+let fxRate = null; // 1엔 = fxRate 원
+const toYenStr = (krw) => (fxRate ? '≈ ' + yen(krw / fxRate) : '');
+const toWonStr = (jpy) => (fxRate ? '≈ ' + won(Math.round((jpy * fxRate) / 10) * 10) : '');
+const signWon = (jpy) => (fxRate ? (jpy >= 0 ? '+' : '−') + '₩' + (Math.round((Math.abs(jpy) * fxRate) / 10) * 10).toLocaleString() : '');
+const signKrw = (krw) => (krw >= 0 ? '+' : '−') + '₩' + (Math.round(Math.abs(krw) / 10) * 10).toLocaleString();
+const signYenFromWon = (krw) => (fxRate ? (krw >= 0 ? '+' : '−') + '¥' + Math.abs(Math.round(krw / fxRate)).toLocaleString() : '');
+const marginOf = (r) => (dir === 'jp2kr' ? r.reverse : r.margin);
+const marginMain = (m) => (dir === 'jp2kr' ? signKrw(m.net) : signYen(m.net));
+const marginSub = (m) => (dir === 'jp2kr' ? signYenFromWon(m.net) : signWon(m.net));
 const signYen = (n) => (n >= 0 ? '+' : '−') + '¥' + Math.abs(Math.round(n)).toLocaleString();
 const enc = encodeURIComponent;
+let dir = 'kr2jp'; // 'kr2jp' 한국에서 사서 일본에 팔기 | 'jp2kr' 일본에서 사서 한국에 팔기
 let tab = 'cards', brandFilter = '', levelFilter = '', side = 'kr', exBrand = '', exQ = '', exSort = 'margin', exProfit = '', brandList = [], products = [], lastLookup = null;
 try { $('token').value = localStorage.getItem('ui_token') || ''; } catch {}
 
@@ -222,16 +241,25 @@ const AI_TAG = { same: '<span class="tg same">AI 같은 상품</span>', differen
 function quoteBand(p, isKr) {
   const q = p.quote;
   const btn = `data-lookup="${side}:${p.id}"`;
-  if (!q) return `<button class="qb none" ${btn}>${isKr ? '🇯🇵 일본' : '🇰🇷 한국'} 시세 확인 전 · 눌러서 찾기</button>`;
-  if (!q.price) return `<button class="qb none" ${btn}>${isKr ? '🇯🇵 일본' : '🇰🇷 한국'}에서 같은 상품을 못 찾았어요 · 다시 찾기</button>`;
-  const net = q.net ?? 0;
-  const cls = net > 0 ? 'pos' : 'neg';
-  const price = isKr ? yen(q.price) : won(q.price);
+  const other = isKr ? '🇯🇵 일본' : '🇰🇷 한국';
+  if (!q) return `<button class="qb none" ${btn}>${other} 시세 확인 전 · 눌러서 찾기</button>`;
+  if (!q.price) return `<button class="qb none" ${btn}>${other}에서 같은 상품을 못 찾았어요 · 다시 찾기</button>`;
+  const rev = dir === 'jp2kr';
+  const m = rev ? q.rev : { net: q.net, rate: q.rate, passed: q.passed };
+  if (!m || m.net == null) return `<button class="qb none" ${btn}>이 방향 마진은 아직 계산 전이에요 · 눌러서 계산</button>`;
+  const krPrice = isKr ? p.price : q.price;
+  const jpPrice = isKr ? q.price : p.price;
+  const cls = m.net > 0 ? 'pos' : 'neg';
+  const lab = rev ? '예상 순마진 (한국에서 팔아 남는 돈)' : '예상 순마진 (일본에서 팔아 남는 돈)';
+  const flow = rev
+    ? `🇯🇵 사는 값 <b>${yen(jpPrice)}</b> <span class="sub">${toWonStr(jpPrice)}</span> → 🇰🇷 한국 시세 <b>${won(krPrice)}</b>`
+    : `🇰🇷 사는 값 <b>${won(krPrice)}</b> <span class="sub">${toYenStr(krPrice)}</span> → 🇯🇵 일본 시세 <b>${yen(jpPrice)}</b>`;
   return `<button class="qb ${cls}" ${btn} title="${esc(q.name || '')}">
     ${q.image ? `<img src="${esc(q.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : '<div class="qimg"></div>'}
-    <span class="main"><span class="big">${signYen(net)}<small>${((q.rate || 0) * 100).toFixed(0)}% ${q.passed ? '· 통과' : ''}</small></span>
-    <span class="meta">${isKr ? '🇯🇵 일본' : '🇰🇷 한국'} ${price} · ${esc(q.source || '')}</span>
-    <span class="meta">${KIND_TAG[q.kind] || ''}${AI_TAG[q.verified] || ''}</span></span></button>`;
+    <span class="main"><span class="lab">${lab}</span>
+    <span class="big">${rev ? signKrw(m.net) : signYen(m.net)}<small>${rev ? signYenFromWon(m.net) : signWon(m.net)} · 마진율 ${((m.rate || 0) * 100).toFixed(0)}%${m.passed ? ' · 통과' : ''}</small></span>
+    <span class="meta">${flow}</span>
+    <span class="meta">상대편 ${esc(q.source || '')} ${KIND_TAG[q.kind] || ''}${AI_TAG[q.verified] || ''}</span></span></button>`;
 }
 
 function productHtml(p) {
@@ -242,7 +270,7 @@ function productHtml(p) {
     <div class="body">
       <div class="sub">${esc(p.brand)}${p.product_code ? ' · ' + esc(p.product_code) : ''}${p.review_count ? ' · 리뷰 ' + p.review_count : ''}</div>
       <div class="nm">${esc(p.name)}</div>
-      <div class="price">${isKr ? won(p.price) : yen(p.price)}${isKr && p.sale_price_krw && p.sale_price_krw < p.price_krw ? `<small><s>${won(p.price_krw)}</s></small>` : ''}</div>
+      <div class="price"><span class="flag">${isKr ? '🇰🇷' : '🇯🇵'}</span>${isKr ? won(p.price) : yen(p.price)}<small>${isKr ? toYenStr(p.price) : toWonStr(p.price)}</small>${isKr && p.sale_price_krw && p.sale_price_krw < p.price_krw ? `<small><s>${won(p.price_krw)}</s></small>` : ''}</div>
       ${quoteBand(p, isKr)}
       <div class="acts"><a class="btn sm" href="${esc(p.url)}" target="_blank" rel="noopener">원본 보기 ↗</a></div>
       <div class="quick">${linkRow(isKr ? jpLinks(q) : krLinks(q))}</div>
@@ -250,19 +278,23 @@ function productHtml(p) {
 }
 async function renderExplore() {
   if (!brandList.length) { try { brandList = (await api('/api/status')).brands.map((b) => [b.key, b.name]); } catch {} }
-  const d = await api(`/api/products?side=${side}&limit=96&sort=${exSort}${exProfit ? '&profit=' + exProfit : ''}${exBrand ? '&brand=' + enc(exBrand) : ''}${exQ ? '&q=' + enc(exQ) : ''}`);
+  const d = await api(`/api/products?side=${side}&dir=${dir}&limit=96&sort=${exSort}${exProfit ? '&profit=' + exProfit : ''}${exBrand ? '&brand=' + enc(exBrand) : ''}${exQ ? '&q=' + enc(exQ) : ''}`);
   products = d.rows;
-  const quoted = d.rows.filter((r) => r.quote && r.quote.price);
-  const plus = quoted.filter((r) => r.quote.net > 0).length;
-  const pass = quoted.filter((r) => r.quote.passed).length;
+  if (d.fx) fxRate = d.fx;
+  const mOf = (r) => (dir === 'jp2kr' ? r.quote.rev : r.quote);
+  const quoted = d.rows.filter((r) => r.quote && r.quote.price && mOf(r) && mOf(r).net != null);
+  const plus = quoted.filter((r) => mOf(r).net > 0).length;
+  const pass = quoted.filter((r) => mOf(r).passed).length;
   const profits = [['', '전체'], ['plus', '마진 + 만'], ['pass', '통과 기준 충족만']];
   $('out').innerHTML =
-    `<div class="bar"><div class="seg"><button data-side="kr" aria-pressed="${side === 'kr'}">🇰🇷 한국 상품</button><button data-side="jp" aria-pressed="${side === 'jp'}">🇯🇵 일본 상품</button></div>
+    `<div class="dirbar"><button data-dir="kr2jp" aria-pressed="${dir === 'kr2jp'}">🇰🇷 → 🇯🇵 한국에서 사서 일본에 팔기<small>마진은 엔(¥) 기준 · 메루카리Shops 등 일본에서 판매</small></button><button data-dir="jp2kr" aria-pressed="${dir === 'jp2kr'}">🇯🇵 → 🇰🇷 일본에서 사서 한국에 팔기<small>마진은 원(₩) 기준 · 쿠팡·스마트스토어 등 한국에서 판매</small></button></div>
+    <div class="bar"><div class="seg"><button data-side="kr" aria-pressed="${side === 'kr'}">보기: 🇰🇷 한국 상품</button><button data-side="jp" aria-pressed="${side === 'jp'}">🇯🇵 일본 상품</button></div>
       <select id="exBrand"><option value="">모든 브랜드</option>${brandList.map(([k, n]) => `<option value="${esc(k)}"${k === exBrand ? ' selected' : ''}>${esc(n)}</option>`).join('')}</select>
       <select id="exSort"><option value="margin"${exSort === 'margin' ? ' selected' : ''}>마진 높은 순</option><option value="recent"${exSort === 'recent' ? ' selected' : ''}>최근 수집순</option></select>
       <input id="exQ" placeholder="상품명 검색" value="${esc(exQ)}"><button class="btn" id="exGo">검색</button></div>
     <div class="chips">${profits.map(([v, l]) => `<button class="chip" data-profit="${v}" aria-pressed="${exProfit === v}">${l}</button>`).join('')}</div>
-    <p class="sumline">${side === 'kr' ? '한국 상품을 사서 일본에 팔 때' : '일본 상품과 같은 걸 한국에서 사 올 때'}의 예상 순마진입니다. 이 화면 상품 중 시세 확인 <b>${quoted.length}건</b> · 마진 + <b>${plus}건</b> · 통과 <b>${pass}건</b>.
+    <div class="legend"><span>🇰🇷 <b>₩ 원</b> = 한국 가격</span><span>🇯🇵 <b>¥ 엔</b> = 일본 가격</span><span>${dir === 'jp2kr' ? '<b>순마진은 원(₩)</b> 기준 — 일본에서 사서 한국에 팔아 남는 돈 (한국 관세·부가세·판매 수수료 반영, 가정치라 실제 요율로 교체 필요)' : '<b>순마진은 엔(¥)</b> 기준 — 한국에서 사서 일본에 팔아 남는 돈 (배송비·관세·소비세·수수료 반영)'}</span>${fxRate ? `<span>환율 <b>1엔 = ${fxRate.toFixed(2)}원</b></span>` : ''}</div>
+    <p class="sumline">${dir === 'jp2kr' ? '일본에서 사서 한국에 팔 때' : '한국에서 사서 일본에 팔 때'}의 예상 순마진입니다. 이 화면 상품 중 시세 확인 <b>${quoted.length}건</b> · 마진 + <b>${plus}건</b> · 통과 <b>${pass}건</b>.
       <b>품번 일치</b>는 같은 상품일 가능성이 높고, <b>이름 검색(추정)</b>은 이미지로 확인이 필요합니다.</p>` +
     (d.rows.length ? `<div class="grid">${d.rows.map(productHtml).join('')}</div>` : '<div class="empty">조건에 맞는 상품이 없습니다.</div>');
 }
@@ -275,18 +307,21 @@ async function openLookup(sd, id, google = false) {
   try {
     const d = await api(`/api/lookup?side=${sd}&id=${id}${google ? '&google=1' : ''}`);
     lastLookup = { side: sd, id, d };
+    fxRate = d.fx || fxRate;
     const best = d.results[0];
     const isKr = d.side === 'kr';
     let sum = '';
     if (best) {
-      const ok = best.margin.passed, bad = best.margin.net < 0;
-      sum = `<div class="sum ${ok ? 'ok' : bad ? 'bad' : ''}"><b>${isKr ? `일본에서 가장 싼 결과 ${yen(best.price)}` : `한국에서 가장 싼 결과 ${won(best.price)}`}</b> (${esc(best.source)}) 기준 → 순마진 <b class="${best.margin.net >= 0 ? 'pos' : 'neg'}">${signYen(best.margin.net)}</b> (${(best.margin.rate * 100).toFixed(0)}%) · ${ok ? '통과 기준 충족' : '통과 기준 미달 (¥2,200 · 25%)'}<br><span class="sub">환율 ${d.fx.toFixed(2)}원/엔 · 무게 ${d.weightG}g 가정 · 검색어 "${esc(d.query)}"</span></div>`;
+      const bm = marginOf(best);
+      const ok = bm.passed, bad = bm.net < 0;
+      const bp = isKr ? `일본에서 가장 싼 결과 <b>${yen(best.price)}</b> <span class="sub">${toWonStr(best.price)}</span>` : `한국에서 가장 싼 결과 <b>${won(best.price)}</b> <span class="sub">${toYenStr(best.price)}</span>`;
+      sum = `<div class="sum ${ok ? 'ok' : bad ? 'bad' : ''}">${bp} (${esc(best.source)}) 기준 → ${dir === 'jp2kr' ? '(일본에서 사서 한국에 팔 때) ' : '(한국에서 사서 일본에 팔 때) '}예상 순마진 <b class="${bm.net >= 0 ? 'pos' : 'neg'}">${marginMain(bm)}</b> <span class="sub">${marginSub(bm)}</span> (마진율 ${(bm.rate * 100).toFixed(0)}%) · ${ok ? '통과 기준 충족' : (dir === 'jp2kr' ? '통과 기준 미달 (₩20,000 · 25%)' : '통과 기준 미달 (¥2,200 · 25%)')}<br><span class="sub">환율 1엔 = ${d.fx.toFixed(2)}원 · 무게 ${d.weightG}g 가정 · 검색어 "${esc(d.query)}"</span></div>`;
     }
     dlg.innerHTML = `<div class="dh"><img src="${esc(d.base.image || '')}" alt="" referrerpolicy="no-referrer" onerror="this.style.visibility='hidden'"><div class="t"><div class="sub">${isKr ? '한국 상품' : '일본 상품'}</div><b id="dlgTitle">${esc(d.base.name)}</b><div class="sub">${esc(d.base.label)} · <a href="${esc(d.base.url)}" target="_blank" rel="noopener">원본 ↗</a></div></div><button class="btn sm" data-close>닫기</button></div>
       <div class="dbody">${sum}${d.notes.map((n) => `<div class="note">${esc(n)}</div>`).join('')}
       ${d.results.length ? d.results.map((r) => `<div class="res">${r.image_url ? `<img src="${esc(r.image_url)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : '<div class="noimg"></div>'}
         <div class="t"><div class="n">${esc(r.name)}</div><div class="sub">${r.byCode ? '<span class="tg code">품번 일치</span>' : ''}${esc(r.source)}${r.review_count ? ' · 리뷰 ' + r.review_count : ''} <span id="cmp-${d.results.indexOf(r)}"></span></div></div>
-        <div class="r"><b>${isKr ? yen(r.price) : won(r.price)}</b><span class="mg ${r.margin.net >= 0 ? 'pos' : 'neg'}">${signYen(r.margin.net)}${r.margin.passed ? ' ✓통과' : ''}</span></div>
+        <div class="r"><b>${isKr ? yen(r.price) : won(r.price)}</b><span class="sub">${isKr ? toWonStr(r.price) : toYenStr(r.price)}</span><span class="mg ${marginOf(r).net >= 0 ? 'pos' : 'neg'}">마진 ${marginMain(marginOf(r))}${marginOf(r).passed ? ' ✓통과' : ''}</span></div>
         <div style="display:flex;flex-direction:column;gap:4px"><a class="btn sm" href="${esc(r.url)}" target="_blank" rel="noopener">보기 ↗</a><button class="btn sm" data-compare="${d.results.indexOf(r)}">AI 이미지 비교</button></div></div>`).join('') : '<div class="empty">자동 검색 결과가 없습니다. 아래 링크로 직접 찾아보세요.</div>'}
       ${isKr && d.googleAvailable && !d.google ? `<button class="btn sm" data-google="${sd}:${id}">구글 쇼핑(일본)에서도 찾기 · 아마존·요도바시 등 포함, 1~2분</button>` : ''}
       <div class="sub">직접 찾기: <span class="quick" style="display:inline-flex">${linkRow(isKr ? jpLinks(d.query) : krLinks(d.query))}</span></div>
@@ -323,7 +358,7 @@ async function renderStatus() {
   const d = await api('/api/status');
   const f = d.features;
   $('out').innerHTML =
-    `<div class="chips">${Object.entries({ naver:'네이버', coupang:'쿠팡', rakuten:'라쿠텐', yahoo:'Yahoo', sheets:'구글시트', telegram:'텔레그램', llm:'Claude(LLM)' })
+    `<div class="chips">${Object.entries({ naver:'네이버', coupang:'쿠팡', elevenst:'11번가', rakuten:'라쿠텐', yahoo:'Yahoo', dataforseo:'구글쇼핑(DataForSEO)', sheets:'구글시트', telegram:'텔레그램', llm:'Claude(LLM)' })
       .map(([k, n]) => `<span class="chip" style="${f[k] ? '' : 'opacity:.55'}">${f[k] ? '● ' : '○ '}${n}</span>`).join('')}</div>` +
     d.brands.map((b) => `<section class="bc"><h3>${esc(b.name)} <span class="sub">${b.enabled ? '' : '(꺼짐) '}· 총 ${b.total}건</span></h3>
       <div class="cm">${esc(b.comment).slice(0, 160)}</div>
@@ -359,6 +394,8 @@ document.addEventListener('click', (e) => {
   const gg = t.closest('[data-google]');
   if (gg) { const [sd2, id2] = gg.dataset.google.split(':'); openLookup(sd2, id2, true); }
   if (t.closest('[data-close]')) $('dlg').close();
+  const dr = t.closest('[data-dir]');
+  if (dr) { dir = dr.dataset.dir; load(); }
   const pf = t.closest('[data-profit]');
   if (pf) { exProfit = pf.dataset.profit; load(); }
   const cp = t.closest('[data-compare]');

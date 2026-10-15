@@ -11,6 +11,7 @@ import { runPipeline, STEP_ORDER } from './pipeline.js';
 import { rankCandidates, sourcingCandidates, buildCards } from './discover.js';
 import { buildStatus } from './status.js';
 import { lookup, toQuote } from './lookup.js';
+import { getFxKrwPerJpy } from './pricing/fx.js';
 import { compareProducts } from './matcher/llm.js';
 import { startCommandBot } from './outputs/telegram.js';
 
@@ -146,7 +147,7 @@ function startServer() {
   });
 
   // 수집된 상품 둘러보기 (+ 반대편 시세·예상 마진)
-  app.get('/api/products', auth, (req, res) => {
+  app.get('/api/products', auth, async (req, res) => {
     const rows = db.listProducts({
         side: req.query.side === 'jp' ? 'jp' : 'kr',
         brand: req.query.brand || undefined,
@@ -155,16 +156,19 @@ function startServer() {
         minPrice: req.query.side === 'jp' && req.query.all !== '1' ? loadCostsBase().market_min_price_jpy || 0 : 0,
         sort: req.query.sort === 'recent' ? 'recent' : 'margin',
         profit: req.query.profit || '',
+        dir: req.query.dir === 'jp2kr' ? 'jp2kr' : 'kr2jp',
         limit: parseInt(req.query.limit || '60', 10),
         offset: parseInt(req.query.offset || '0', 10),
       });
     for (const r of rows) {
       r.quote = r.q_checked
-        ? { kind: r.q_kind, price: r.q_price, name: r.q_name, url: r.q_url, image: r.q_image, source: r.q_source, net: r.q_net, rate: r.q_rate, passed: !!r.q_passed, verified: r.q_verified, reason: r.q_reason, checked: r.q_checked }
+        ? { kind: r.q_kind, price: r.q_price, name: r.q_name, url: r.q_url, image: r.q_image, source: r.q_source, net: r.q_net, rate: r.q_rate, passed: !!r.q_passed, rev: r.q_rev_net == null ? null : { net: r.q_rev_net, rate: r.q_rev_rate, passed: !!r.q_rev_passed }, verified: r.q_verified, reason: r.q_reason, checked: r.q_checked }
         : null;
       for (const k of Object.keys(r)) if (k.startsWith('q_')) delete r[k];
     }
-    res.json({ rows });
+    let fx = null; // 화면에서 원↔엔 환산 표시용
+    try { fx = (await getFxKrwPerJpy()).rate; } catch { /* 환율을 못 가져오면 환산 표시만 생략 */ }
+    res.json({ rows, fx });
   });
 
   // 발굴: 주시 후보 + 소싱 후보

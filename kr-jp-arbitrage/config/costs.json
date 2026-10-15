@@ -45,6 +45,26 @@
   "pass_min_margin_jpy": 2200,
   "pass_min_margin_rate": 0.25,
 
+  "jp_to_kr": {
+    "_comment": "일본에서 사서 한국에 파는 방향의 비용 가정. 전부 확인 필요 — 한국 관세율·일본→한국 배송비·판매 수수료는 실제 계약/품목별로 교체 (config_override 시트에서 jp_to_kr.xxx 로 덮어쓰기)",
+    "sell_price_factor": 0.95,
+    "jp_domestic_ship_jpy": 800,
+    "intl_ship_krw": {
+      "tiers": [
+        { "max_g": 500, "krw": 11000 },
+        { "max_g": 1000, "krw": 15000 },
+        { "max_g": 2000, "krw": 22000 }
+      ],
+      "over_per_kg_krw": 8000
+    },
+    "duty_rates": { "apparel": 0.13, "shoes": 0.13, "bag": 0.08, "cap": 0.08, "default": 0.13 },
+    "import_vat": 0.1,
+    "platform_fee_rate": 0.11,
+    "packing_and_misc_krw": 1500,
+    "pass_min_margin_krw": 20000,
+    "pass_min_margin_rate": 0.25
+  },
+
   "default_weight_g": {
     "shoes": 1100,
     "cap": 150,

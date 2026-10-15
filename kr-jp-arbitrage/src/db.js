@@ -121,6 +121,13 @@ try {
   /* 이미 있음 */
 }
 db.exec(`CREATE INDEX IF NOT EXISTS idx_jp_review ON products_jp(brand, review_count)`);
+for (const col of ['rev_net INTEGER', 'rev_rate REAL', 'rev_passed INTEGER DEFAULT 0']) {
+  try {
+    db.exec(`ALTER TABLE quotes ADD COLUMN ${col}`);
+  } catch {
+    /* 이미 있음 */
+  }
+}
 
 // ---------- 상품 upsert ----------
 const upsertKrStmt = db.prepare(`
@@ -436,7 +443,9 @@ export function recentRuns(limit = 8) {
 // 수집된 상품 둘러보기 (이미지 포함). 같은 이름·가격의 색상별 중복은 1건으로 묶고 variants로 개수 표시.
 // 각 상품에는 quotes(반대편 시세·예상 마진)가 붙는다. sort: 'margin'(마진 높은 순) | 'recent'(최근 수집순)
 // profit: 'plus'(마진 +만) | 'pass'(통과 기준 충족만) | 그 외 전체
-export function listProducts({ side = 'kr', brand, source, q, minPrice = 0, sort = 'margin', profit = '', limit = 60, offset = 0 } = {}) {
+export function listProducts({ side = 'kr', brand, source, q, minPrice = 0, sort = 'margin', profit = '', dir = 'kr2jp', limit = 60, offset = 0 } = {}) {
+  const netCol = dir === 'jp2kr' ? 'q.rev_net' : 'q.margin_net';
+  const passCol = dir === 'jp2kr' ? 'q.rev_passed' : 'q.passed';
   const table = side === 'jp' ? 'products_jp' : 'products_kr';
   const price = side === 'jp' ? 'price_jpy' : 'COALESCE(NULLIF(sale_price_krw,0), price_krw)';
   const extra = side === 'jp' ? ', MAX(review_count) AS review_count' : ', price_krw, sale_price_krw';
@@ -452,12 +461,13 @@ export function listProducts({ side = 'kr', brand, source, q, minPrice = 0, sort
 
   let sql = `SELECT t.*, q.kind AS q_kind, q.best_name AS q_name, q.best_price AS q_price, q.best_url AS q_url, q.best_image AS q_image,
                     q.best_source AS q_source, q.margin_net AS q_net, q.margin_rate AS q_rate, q.passed AS q_passed,
+                    q.rev_net AS q_rev_net, q.rev_rate AS q_rev_rate, q.rev_passed AS q_rev_passed,
                     q.verified AS q_verified, q.verified_reason AS q_reason, q.checked_at AS q_checked
              FROM (${inner}) t LEFT JOIN quotes q ON q.side='${side === 'jp' ? 'jp' : 'kr'}' AND q.product_id = t.id WHERE 1=1`;
   // AI가 '다른 상품'이라고 판정한 시세는 마진이 +여도 필터·상위 정렬에서 제외
-  if (profit === 'plus') sql += ` AND q.margin_net > 0 AND COALESCE(q.verified,'') != 'different'`;
-  if (profit === 'pass') sql += ` AND q.passed = 1 AND COALESCE(q.verified,'') != 'different'`;
-  if (sort === 'margin') sql += ` ORDER BY (q.margin_net IS NULL OR q.best_price IS NULL), COALESCE(q.verified = 'different', 0), q.margin_net DESC, t.fetched_at DESC`;
+  if (profit === 'plus') sql += ` AND ${netCol} > 0 AND COALESCE(q.verified,'') != 'different'`;
+  if (profit === 'pass') sql += ` AND ${passCol} = 1 AND COALESCE(q.verified,'') != 'different'`;
+  if (sort === 'margin') sql += ` ORDER BY (${netCol} IS NULL OR q.best_price IS NULL), COALESCE(q.verified = 'different', 0), ${netCol} DESC, t.fetched_at DESC`;
   else sql += side === 'jp' ? ` ORDER BY t.review_count DESC, t.fetched_at DESC` : ` ORDER BY t.fetched_at DESC, t.id DESC`;
   sql += ` LIMIT ? OFFSET ?`;
   args.push(Math.min(limit, 200), offset);
@@ -479,25 +489,28 @@ export function quoteTargets(side, { brand, minPrice = 0, limit = 400, force = f
   if (force) return rows.slice(0, limit);
   const todayStr = new Date().toISOString().slice(0, 10);
   const done = new Set(
-    db.prepare(`SELECT product_id FROM quotes WHERE side=? AND substr(checked_at,1,10)=?`).all(side, todayStr).map((r) => r.product_id)
+    db.prepare(`SELECT product_id FROM quotes WHERE side=? AND substr(checked_at,1,10)=? AND (rev_net IS NOT NULL OR best_price IS NULL)`).all(side, todayStr).map((r) => r.product_id)
   );
   return rows.filter((r) => !done.has(r.id)).slice(0, limit);
 }
 
 export function saveQuote(side, productId, q) {
   db.prepare(
-    `INSERT INTO quotes (side, product_id, kind, best_name, best_price, best_url, best_image, best_source, margin_net, margin_rate, passed, checked_at)
-     VALUES (@side, @product_id, @kind, @best_name, @best_price, @best_url, @best_image, @best_source, @margin_net, @margin_rate, @passed, @checked_at)
+    `INSERT INTO quotes (side, product_id, kind, best_name, best_price, best_url, best_image, best_source, margin_net, margin_rate, passed, rev_net, rev_rate, rev_passed, checked_at)
+     VALUES (@side, @product_id, @kind, @best_name, @best_price, @best_url, @best_image, @best_source, @margin_net, @margin_rate, @passed, @rev_net, @rev_rate, @rev_passed, @checked_at)
      ON CONFLICT(side, product_id) DO UPDATE SET
        kind=excluded.kind, best_name=excluded.best_name, best_price=excluded.best_price, best_url=excluded.best_url,
        best_image=excluded.best_image, best_source=excluded.best_source, margin_net=excluded.margin_net,
-       margin_rate=excluded.margin_rate, passed=excluded.passed, checked_at=excluded.checked_at,
+       margin_rate=excluded.margin_rate, passed=excluded.passed, rev_net=excluded.rev_net, rev_rate=excluded.rev_rate,
+       rev_passed=excluded.rev_passed, checked_at=excluded.checked_at,
        verified = CASE WHEN quotes.best_url = excluded.best_url THEN quotes.verified ELSE NULL END,
        verified_reason = CASE WHEN quotes.best_url = excluded.best_url THEN quotes.verified_reason ELSE NULL END`
   ).run({
     side, product_id: productId, kind: q.kind || 'none', best_name: q.name ?? null, best_price: q.price ?? null,
     best_url: q.url ?? null, best_image: q.image ?? null, best_source: q.source ?? null, margin_net: q.net ?? null,
-    margin_rate: q.rate ?? null, passed: q.passed ? 1 : 0, checked_at: nowIso(),
+    margin_rate: q.rate ?? null, passed: q.passed ? 1 : 0,
+    rev_net: q.rev?.net ?? null, rev_rate: q.rev?.rate ?? null, rev_passed: q.rev?.passed ? 1 : 0,
+    checked_at: nowIso(),
   });
 }
 
@@ -512,7 +525,7 @@ export function setQuoteVerdict(side, productId, verdict, reason) {
 // AI 이미지 비교 대상: 이름 검색으로 찾은(품번 일치가 아닌) 결과 중 마진이 + 이고 아직 확인 안 한 것
 export function quotesToVerify(limit = 30) {
   return db
-    .prepare(`SELECT * FROM quotes WHERE margin_net > 0 AND kind='search' AND verified IS NULL AND best_image IS NOT NULL ORDER BY margin_net DESC LIMIT ?`)
+    .prepare(`SELECT * FROM quotes WHERE (margin_net > 0 OR rev_net > 0) AND kind='search' AND verified IS NULL AND best_image IS NOT NULL ORDER BY margin_net DESC LIMIT ?`)
     .all(limit);
 }
 

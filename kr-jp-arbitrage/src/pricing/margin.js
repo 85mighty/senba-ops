@@ -95,6 +95,55 @@ export function computeMargin({ krPriceKrw, jpLowestJpy, fx, weightG, category =
   };
 }
 
+// 상품명에서 품목 종류(shoes/cap/bag/…)를 추정 — 관세율 구분용
+export function categoryOfName(name, weightKeywords) {
+  const n = (name || '').toLowerCase();
+  for (const [cat, words] of Object.entries(weightKeywords || {})) {
+    if (words.some((w) => n.includes(w.toLowerCase()))) return cat;
+  }
+  return 'top';
+}
+
+/**
+ * 일본에서 사서 한국에 파는 방향의 순마진(원).
+ * net = 한국 판매가(시세×계수) − 일본 매입(환율·안전마진) − 일본 국내배송 − 일본→한국 배송비 − 한국 관세 − 수입 부가세 − 판매 수수료 − 포장·잡비
+ * @param {number} p.jpPriceJpy  일본에서 사는 값(엔, 세금 포함가)
+ * @param {number} p.krSellKrw   한국에서 팔리는 시세(원)
+ * @param {number} p.fx          1엔당 원
+ */
+export function computeMarginJpToKr({ jpPriceJpy, krSellKrw, fx, weightG, category = 'default' }, costs) {
+  const c = costs.jp_to_kr;
+  const fxMargin = Number(process.env.FX_SAFETY_MARGIN ?? costs.fx_safety_margin ?? 0);
+
+  const krSellPriceKrw = Math.floor(krSellKrw * (c.sell_price_factor ?? 0.95));
+  const jpGoodsKrw = Math.round(jpPriceJpy * fx * (1 + fxMargin)); // 원화가 약해지면 비싸지므로 안전마진은 비용에 가산
+  const jpShipKrw = Math.round((c.jp_domestic_ship_jpy ?? 0) * fx * (1 + fxMargin));
+
+  const tiers = c.intl_ship_krw.tiers;
+  let intlShipKrw = tiers.find((t) => weightG <= t.max_g)?.krw;
+  if (intlShipKrw == null) {
+    const last = tiers[tiers.length - 1];
+    intlShipKrw = last.krw + Math.ceil((weightG - last.max_g) / 1000) * (c.intl_ship_krw.over_per_kg_krw || 8000);
+  }
+
+  const taxableKrw = jpGoodsKrw + intlShipKrw; // 과세가격(CIF 근사)
+  const dutyRate = c.duty_rates[category] ?? c.duty_rates.default;
+  const customsDutyKrw = Math.round(taxableKrw * dutyRate);
+  const importVatKrw = Math.round((taxableKrw + customsDutyKrw) * (c.import_vat ?? 0.1));
+  const platformFeeKrw = Math.round(krSellPriceKrw * (c.platform_fee_rate ?? 0));
+  const packingKrw = c.packing_and_misc_krw ?? 0;
+
+  const netMarginKrw = krSellPriceKrw - jpGoodsKrw - jpShipKrw - intlShipKrw - customsDutyKrw - importVatKrw - platformFeeKrw - packingKrw;
+  const marginRate = krSellPriceKrw > 0 ? netMarginKrw / krSellPriceKrw : 0;
+  const passed = netMarginKrw >= (c.pass_min_margin_krw ?? 20000) && marginRate >= (c.pass_min_margin_rate ?? 0.25);
+
+  return {
+    krSellKrw, krSellPriceKrw, jpPriceJpy, jpGoodsKrw, jpShipKrw, intlShipKrw, weightG, taxableKrw,
+    dutyRate, customsDutyKrw, importVatKrw, platformFeeKrw, packingKrw, fx, category,
+    netMarginKrw, marginRate: Math.round(marginRate * 1000) / 1000, passed,
+  };
+}
+
 /**
  * 목표 매입가 역산: 이 일본가·중량에서 통과 기준을 만족하는 최대 한국 매입가(KRW).
  * 공짜여도 미달이면 null (이 상품은 가격이 아무리 떨어져도 안 됨 — 배송비·수수료 구조 문제).

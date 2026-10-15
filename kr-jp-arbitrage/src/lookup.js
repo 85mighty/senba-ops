@@ -6,7 +6,7 @@
 import { loadBrands, loadCostsBase, features, warn } from './util.js';
 import { getProductById, productsByCode } from './db.js';
 import { getFxKrwPerJpy } from './pricing/fx.js';
-import { computeMargin, estimateWeightG } from './pricing/margin.js';
+import { computeMargin, computeMarginJpToKr, estimateWeightG, categoryOfName } from './pricing/margin.js';
 import { extractCode } from './matcher/rules.js';
 import { searchRakuten } from './collectors/jp/rakuten.js';
 import { searchYahoo } from './collectors/jp/yahoo.js';
@@ -62,6 +62,13 @@ export async function findCounterparts(p, side, { online = true, google = false 
     const bd = computeMargin({ krPriceKrw, jpLowestJpy, fx, weightG }, costs);
     return { net: bd.netMarginJpy, rate: bd.marginRate, passed: bd.passed, sell: bd.jpSellPriceJpy };
   };
+  // 일본에서 사서 한국에 파는 방향 (한국 관세·부가세 구분용 품목)
+  const category = categoryOfName(p.name, brands._global?.weight_keywords);
+  const dutyCat = ['shoes', 'cap', 'bag'].includes(category) ? category : 'apparel';
+  const calcRev = (krSellKrw, jpBuyJpy) => {
+    const bd = computeMarginJpToKr({ jpPriceJpy: jpBuyJpy, krSellKrw, fx, weightG, category: dutyCat }, costs);
+    return { net: bd.netMarginKrw, rate: bd.marginRate, passed: bd.passed, sell: bd.krSellPriceKrw };
+  };
   const settle = async (jobs) => {
     let list = [];
     for (const s of await Promise.allSettled(jobs)) {
@@ -104,7 +111,7 @@ export async function findCounterparts(p, side, { online = true, google = false 
     }
     results = uniqByUrl(list.filter((r) => r.price >= Math.max(floor, 1) && !USED.test(r.name)))
       .sort((a, b) => a.price - b.price).slice(0, 14)
-      .map((r) => ({ ...r, margin: calc(buy, r.price) }));
+      .map((r) => ({ ...r, margin: calc(buy, r.price), reverse: calcRev(buy, r.price) }));
   } else {
     // ---------- 일본 상품 → 한국 구입처 ----------
     const sellRef = p.price_jpy;
@@ -131,7 +138,7 @@ export async function findCounterparts(p, side, { online = true, google = false 
     }
     results = uniqByUrl(list.filter((r) => r.price > 0))
       .sort((a, b) => a.price - b.price).slice(0, 14)
-      .map((r) => ({ ...r, margin: calc(r.price, sellRef) }));
+      .map((r) => ({ ...r, margin: calc(r.price, sellRef), reverse: calcRev(r.price, sellRef) }));
   }
 
   // 대표 결과: 품번이 일치한 것 중 가장 싼 것, 없으면 전체 중 가장 싼 것(추정)
@@ -155,5 +162,9 @@ export async function lookup({ side, id, google = false }) {
 export function toQuote(r) {
   if (!r.best) return { kind: 'none' };
   const b = r.best;
-  return { kind: r.kind, name: b.name, price: b.price, url: b.url, image: b.image_url, source: b.source, net: b.margin.net, rate: b.margin.rate, passed: b.margin.passed };
+  return {
+    kind: r.kind, name: b.name, price: b.price, url: b.url, image: b.image_url, source: b.source,
+    net: b.margin.net, rate: b.margin.rate, passed: b.margin.passed,
+    rev: b.reverse ? { net: b.reverse.net, rate: b.reverse.rate, passed: b.reverse.passed } : null,
+  };
 }
