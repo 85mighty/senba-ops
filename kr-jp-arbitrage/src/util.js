@@ -51,8 +51,28 @@ export function loadJson(file) {
   return JSON.parse(fs.readFileSync(file, 'utf8'));
 }
 
+// config/brands.extra.json 은 brands.json 위에 덮어쓰는 보강 설정이다 (객체는 합치고, 배열·값은 교체).
+// 서버에서 셀렉터를 직접 고친 brands.json 은 배포(rsync)에서 제외되므로, 검색어·쿠팡 쿼리 같은 추가분은 이 파일로 배포한다.
+function deepMerge(base, extra) {
+  if (!extra || typeof extra !== 'object' || Array.isArray(extra)) return extra === undefined ? base : extra;
+  const out = { ...(base && typeof base === 'object' && !Array.isArray(base) ? base : {}) };
+  for (const [k, v] of Object.entries(extra)) {
+    if (k.startsWith('__')) continue;
+    out[k] = k in out ? deepMerge(out[k], v) : v;
+  }
+  return out;
+}
+
 export function loadBrands() {
-  return loadJson(path.join(ROOT, 'config', 'brands.json'));
+  const base = loadJson(path.join(ROOT, 'config', 'brands.json'));
+  const extraFile = path.join(ROOT, 'config', 'brands.extra.json');
+  if (!fs.existsSync(extraFile)) return base;
+  try {
+    return deepMerge(base, loadJson(extraFile));
+  } catch (e) {
+    warn(`config/brands.extra.json 읽기 실패 — 무시합니다: ${e.message}`);
+    return base;
+  }
 }
 
 export function loadCostsBase() {

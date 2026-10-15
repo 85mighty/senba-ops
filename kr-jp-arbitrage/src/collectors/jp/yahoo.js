@@ -38,13 +38,16 @@ export async function collect(brandKey, brandCfg, { limit } = {}) {
   const cfg = brandCfg.jp?.yahoo;
   if (!cfg?.enabled || !process.env.YAHOO_CLIENT_ID) return [];
 
-  const items = (await search(cfg.query, { results: limit || 50, sellerId: cfg.seller_id })).map((it) => ({
-    brand: brandKey,
-    source: 'yahoo',
-    product_code: extractCode(it.name, brandCfg.product_code_regex),
-    color: null,
-    ...it,
-  }));
+  const queries = (cfg.queries?.length ? cfg.queries : [cfg.query]).filter(Boolean);
+  const byUrl = new Map();
+  for (const query of queries) {
+    for (const it of await search(query, { results: limit || 50, sellerId: cfg.seller_id })) {
+      if (it.url && !byUrl.has(it.url)) {
+        byUrl.set(it.url, { brand: brandKey, source: 'yahoo', product_code: extractCode(it.name, brandCfg.product_code_regex), color: null, ...it });
+      }
+    }
+  }
+  const items = [...byUrl.values()];
   info(`[yahoo] ${brandKey}: ${items.length}건`);
   return items;
 }

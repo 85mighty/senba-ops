@@ -62,36 +62,42 @@ export async function collect(brandKey, brandCfg, { limit } = {}) {
   if (!cfg?.enabled || !hasKeys()) return [];
 
   const maxHits = Math.min(limit || 60, 60);
+  // 키워드가 여러 개면(brands.json의 keywords) 각각 검색해서 합친다
+  const keywords = (cfg.keywords?.length ? cfg.keywords : [cfg.keyword]).filter(Boolean);
 
   // 최저가순(시장가 파악) + 리뷰 많은 순(수요 파악 = 재고 위험 낮은 발굴 후보) 두 축으로 수집
   const byUrl = new Map();
-  for (const sort of ['+itemPrice', '-reviewCount']) {
-    let page = 1;
-    while (byUrl.size < maxHits && page <= Math.ceil(maxHits / 30)) {
-      const batch = await fetchPage({ keyword: cfg.keyword, sort, page, shopCode: cfg.shop_code });
-      for (const raw of batch) {
-        const it = toItem(raw);
-        const item = {
-          brand: brandKey,
-          source: 'rakuten',
-          product_code: extractCode(it.name, brandCfg.product_code_regex),
-          name: it.name,
-          color: null,
-          price: it.price,
-          url: it.url,
-          image_url: it.image_url,
-          in_stock: it.in_stock,
-          review_count: it.review_count,
-        };
-        if (item.url && !byUrl.has(item.url)) byUrl.set(item.url, item);
+  for (const keyword of keywords) {
+    const seen = new Set();
+    for (const sort of ['+itemPrice', '-reviewCount']) {
+      let page = 1;
+      while (seen.size < maxHits * 2 && page <= Math.ceil(maxHits / 30)) {
+        const batch = await fetchPage({ keyword, sort, page, shopCode: cfg.shop_code });
+        for (const raw of batch) {
+          const it = toItem(raw);
+          const item = {
+            brand: brandKey,
+            source: 'rakuten',
+            product_code: extractCode(it.name, brandCfg.product_code_regex),
+            name: it.name,
+            color: null,
+            price: it.price,
+            url: it.url,
+            image_url: it.image_url,
+            in_stock: it.in_stock,
+            review_count: it.review_count,
+          };
+          if (item.url) seen.add(item.url);
+          if (item.url && !byUrl.has(item.url)) byUrl.set(item.url, item);
+        }
+        if (batch.length < 30) break;
+        page++;
+        await sleep(1200); // API 예절
       }
-      if (batch.length < 30) break;
-      page++;
-      await sleep(1200); // API 예절
+      await sleep(1200);
     }
-    await sleep(1200);
   }
-  const items = [...byUrl.values()].slice(0, maxHits * 2);
-  info(`[rakuten] ${brandKey}: ${items.length}건 (가격순+리뷰순, 신형 API)`);
+  const items = [...byUrl.values()].slice(0, maxHits * 2 * keywords.length);
+  info(`[rakuten] ${brandKey}: ${items.length}건 (키워드 ${keywords.length}개, 가격순+리뷰순, 신형 API)`);
   return items;
 }

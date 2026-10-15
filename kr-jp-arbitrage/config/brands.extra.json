@@ -1,0 +1,73 @@
+{
+  "__comment": "brands.json 위에 덮어쓰는 보강 설정 (객체는 합쳐지고 배열은 교체됨). 서버에서 셀렉터를 직접 고친 brands.json은 배포에서 제외되므로, 검색어 확장은 여기에 둔다. 쿠팡 queries는 실행할 때마다 한 개씩 순환하며 쓰고(시간당 호출 한도), 라쿠텐 keywords·Yahoo queries는 전부 한 번에 검색한다. 키워드는 '확인 필요' — 결과가 적거나 엉뚱하면 여기만 고친다.",
+  "xexymix": {
+    "kr": { "coupang": { "queries": ["젝시믹스 레깅스", "젝시믹스 스커트", "젝시믹스 브라탑", "젝시믹스 자켓", "젝시믹스 팬츠"] } },
+    "jp": {
+      "rakuten": { "keywords": ["XEXYMIX レギンス", "XEXYMIX ゼクシィミックス", "XEXYMIX ジャケット", "XEXYMIX ブラトップ"] },
+      "yahoo": { "queries": ["XEXYMIX レギンス", "XEXYMIX ゼクシィミックス", "XEXYMIX ジャケット"] }
+    }
+  },
+  "mardi": {
+    "kr": { "coupang": { "queries": ["마르디 메크르디 티셔츠", "마르디 메크르디 맨투맨", "마르디 메크르디 후드", "마르디 메크르디 가방"] } },
+    "jp": {
+      "rakuten": { "keywords": ["マルディメクルディ Mardi Mercredi", "マルディメクルディ トレーナー", "マルディメクルディ Tシャツ", "Mardi Mercredi 韓国"] },
+      "yahoo": { "queries": ["マルディメクルディ Mardi Mercredi", "マルディメクルディ トレーナー", "Mardi Mercredi 韓国"] }
+    }
+  },
+  "tnf": {
+    "kr": { "coupang": { "queries": ["노스페이스 눕시", "노스페이스 바람막이", "노스페이스 플리스", "노스페이스 맨투맨", "노스페이스 백팩"] } },
+    "jp": {
+      "rakuten": { "keywords": ["ノースフェイス ヌプシ", "ノースフェイス 韓国 ホワイトレーベル", "ノースフェイス フリース", "ノースフェイス ジャケット"] },
+      "yahoo": { "queries": ["ノースフェイス ヌプシ", "ノースフェイス 韓国 ホワイトレーベル", "ノースフェイス フリース"] }
+    }
+  },
+  "emis": {
+    "kr": { "coupang": { "queries": ["이미스 볼캡", "이미스 모자", "이미스 가방", "이미스 후드"] } },
+    "jp": {
+      "rakuten": { "keywords": ["emis キャップ 韓国", "emis エミス キャップ", "emis エミス バッグ", "emis エミス 韓国"] },
+      "yahoo": { "queries": ["emis キャップ 韓国", "emis エミス キャップ", "emis エミス 韓国"] }
+    }
+  },
+  "matin_kim": {
+    "kr": { "coupang": { "enabled": true, "queries": ["마뗑킴 가방", "마뗑킴 숄더백", "마뗑킴 후드", "마뗑킴 니트", "마뗑킴 볼캡", "마뗑킴 맨투맨"] } },
+    "jp": {
+      "rakuten": { "keywords": ["Matin Kim バッグ", "Matin Kim 韓国", "マタンキム", "マーティンキム バッグ"] },
+      "yahoo": { "queries": ["Matin Kim バッグ", "Matin Kim 韓国", "マタンキム"] }
+    }
+  },
+  "mlb_korea": {
+    "kr": { "coupang": { "queries": ["MLB 볼캡", "MLB 빅로고 맨투맨", "MLB 바람막이", "MLB 백팩", "MLB 청키라이너"] } },
+    "jp": {
+      "rakuten": { "keywords": ["MLB Korea キャップ 韓国", "MLB 韓国 パーカー", "MLB 韓国 バッグ", "MLB 韓国 スニーカー"] },
+      "yahoo": { "queries": ["MLB Korea キャップ 韓国", "MLB 韓国 パーカー", "MLB 韓国 スニーカー"] }
+    }
+  },
+  "sculptor": {
+    "kr": { "coupang": { "queries": ["스컬프터 SCULPTOR", "스컬프터 가방", "스컬프터 니트", "스컬프터 스커트"] } },
+    "jp": {
+      "rakuten": { "keywords": ["SCULPTOR 韓国 ブランド", "SCULPTOR スカルプター", "SCULPTOR バッグ"] },
+      "yahoo": { "queries": ["SCULPTOR 韓国 ブランド", "SCULPTOR スカルプター"] }
+    }
+  },
+  "nike": {
+    "kr": { "coupang": { "queries": ["나이키 테크 플리스 후디", "나이키 에어포스 1 07", "나이키 캡 볼캡", "나이키 덩크 로우", "나이키 에어맥스", "나이키 트랙수트"] } },
+    "jp": {
+      "rakuten": { "keywords": ["ナイキ エアフォース1 07", "ナイキ テックフリース", "ナイキ ダンク ロー", "ナイキ キャップ"] },
+      "yahoo": { "queries": ["ナイキ エアフォース1 07", "ナイキ テックフリース", "ナイキ ダンク ロー", "ナイキ キャップ"] }
+    }
+  },
+  "adidas": {
+    "kr": { "coupang": { "queries": ["아디다스 삼바 OG", "아디다스 트랙탑 져지", "아디다스 가젤", "아디다스 스페지알", "아디다스 캠퍼스"] } },
+    "jp": {
+      "rakuten": { "keywords": ["アディダス サンバ OG", "アディダス トラックジャケット", "アディダス ガゼル", "アディダス スペジアル"] },
+      "yahoo": { "queries": ["アディダス サンバ OG", "アディダス トラックジャケット", "アディダス ガゼル"] }
+    }
+  },
+  "puma": {
+    "kr": { "coupang": { "queries": ["푸마 스피드캣", "푸마 팔레르모", "푸마 트랙탑", "푸마 스웨이드"] } },
+    "jp": {
+      "rakuten": { "keywords": ["プーマ スピードキャット", "プーマ パレルモ", "プーマ スウェード", "プーマ トラックジャケット"] },
+      "yahoo": { "queries": ["プーマ スピードキャット", "プーマ パレルモ", "プーマ スウェード"] }
+    }
+  }
+}

@@ -5,6 +5,7 @@
 import crypto from 'node:crypto';
 import { info, warn, sleep } from '../../util.js';
 import { extractCode } from '../../matcher/rules.js';
+import { kvGet, kvSet } from '../../db.js';
 
 const HOST = 'https://api-gateway.coupang.com';
 const PATH = '/v2/providers/affiliate_open_api/apis/openapi/products/search';
@@ -28,25 +29,34 @@ export function authHeader({ method, path, query, accessKey, secretKey, now }) {
 // 파트너스 링크(추적 파라미터가 매번 달라짐) 대신 상품 ID로 고정 URL을 만든다 (중복 누적 방지)
 export const canonicalUrl = (productId) => `https://www.coupang.com/vp/products/${productId}`;
 
-let blockedUntil = 0; // 401/403/429를 받으면 15분간 쿠팡 호출을 멈춘다 (쿠팡 안내: 403이면 10분 이상 쉴 것)
-const isBlocked = () => Date.now() < blockedUntil;
-const blockNow = () => { blockedUntil = Date.now() + 15 * 60 * 1000; };
-const calls = []; // 최근 호출 시각 (시간당 한도 보호)
+// 호출 기록과 차단 시각은 DB(kv)에 저장한다 — 단계를 따로따로 실행(프로세스가 매번 새로 뜸)해도 시간당 한도가 지켜지게
+const KV_CALLS = 'coupang:calls';
+const KV_BLOCK = 'coupang:blocked_until';
+const readCalls = () => {
+  try { return JSON.parse(kvGet(KV_CALLS) || '[]').filter((t) => t > Date.now() - 3600_000); } catch { return []; }
+};
+const isBlocked = () => Date.now() < parseInt(kvGet(KV_BLOCK) || '0', 10); // 401/403/429를 받으면 15분간 멈춤 (쿠팡 안내: 403이면 10분 이상 쉴 것)
+const blockNow = () => kvSet(KV_BLOCK, Date.now() + 15 * 60 * 1000);
 const hourlyLimit = () => parseInt(process.env.COUPANG_HOURLY_LIMIT || '8', 10);
-function pruneCalls() {
-  const cutoff = Date.now() - 3600_000;
-  while (calls.length && calls[0] < cutoff) calls.shift();
-}
 // 호출 가능 여부를 판단하고, 가능하면 호출 기록을 남긴다
 function takeCall() {
-  pruneCalls();
+  const calls = readCalls();
   if (isBlocked() || calls.length >= hourlyLimit()) return false;
   calls.push(Date.now());
+  kvSet(KV_CALLS, JSON.stringify(calls));
   return true;
 }
 export function coupangStatus() {
-  pruneCalls();
-  return { blocked: isBlocked(), usedLastHour: calls.length, limited: isBlocked() || calls.length >= hourlyLimit() };
+  const used = readCalls().length;
+  return { blocked: isBlocked(), usedLastHour: used, limited: isBlocked() || used >= hourlyLimit() };
+}
+// 브랜드별로 어디까지 돌았는지 기억해서, 실행할 때마다 다음 검색어를 쓰고(순환) 오래 안 한 브랜드부터 처리한다
+export const coupangLastRun = (brandKey) => parseInt(kvGet(`coupang:last:${brandKey}`) || '0', 10);
+function nextQuery(brandKey, queries) {
+  const cur = parseInt(kvGet(`coupang:cursor:${brandKey}`) || '0', 10);
+  kvSet(`coupang:cursor:${brandKey}`, (cur + 1) % queries.length);
+  kvSet(`coupang:last:${brandKey}`, Date.now());
+  return queries[cur % queries.length];
 }
 
 // 연결 시험용: 1회 호출해서 상태와 실패 이유(키·승인·허용 IP·시간)를 알려준다. 키 값은 절대 반환하지 않는다
@@ -122,18 +132,20 @@ export async function collect(brandKey, brandCfg, { limit } = {}) {
 
   const cfg = brandCfg.kr?.coupang || {};
   if (cfg.enabled === false) return [];
-  const queries = (cfg.queries?.length ? cfg.queries : brandCfg.kr?.naver?.queries?.length ? brandCfg.kr.naver.queries : [brandCfg.kr?.naver?.query])
-    .filter(Boolean)
-    .slice(0, parseInt(process.env.COUPANG_MAX_CALLS || '1', 10));
+  const allQueries = (cfg.queries?.length ? cfg.queries : brandCfg.kr?.naver?.queries?.length ? brandCfg.kr.naver.queries : [brandCfg.kr?.naver?.query]).filter(Boolean);
+  if (!allQueries.length) return [];
+  const callsPerRun = parseInt(process.env.COUPANG_MAX_CALLS || '1', 10);
+  const queries = allQueries.slice(0, Math.min(callsPerRun, allQueries.length)); // 개수만 쓰고, 실제 검색어는 호출이 허락될 때 순환해서 고른다
 
   const brandWords = (brandCfg.brand_words || []).map((w) => w.toLowerCase());
   const byId = new Map();
 
-  for (const q of queries) {
+  for (let n = 0; n < queries.length; n++) {
     if (!takeCall()) {
       warn('[coupang] 시간당 호출 한도 보호로 나머지 쿠팡 호출을 건너뜁니다');
       break;
     }
+    const q = nextQuery(brandKey, allQueries);
     const query = `keyword=${encodeURIComponent(q)}&limit=${Math.min(limit || 10, 10)}`;
     const res = await fetch(`${HOST}${PATH}?${query}`, {
       headers: {

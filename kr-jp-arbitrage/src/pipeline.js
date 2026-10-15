@@ -33,7 +33,13 @@ async function optionalModule(spec) {
 async function stepCollect(side, { brand, limit } = {}) {
   const feats = features();
   let total = 0;
-  for (const { key, cfg } of enabledBrands(brand)) {
+  let list = enabledBrands(brand);
+  if (side === 'kr' && feats.coupang) {
+    // 쿠팡은 시간당 호출 수가 적어서, 가장 오래 안 돈 브랜드부터 처리해 한 브랜드만 계속 도는 것을 막는다
+    const { coupangLastRun } = await import('./collectors/kr/coupang.js');
+    list = list.slice().sort((a, b) => coupangLastRun(a.key) - coupangLastRun(b.key));
+  }
+  for (const { key, cfg } of list) {
     // 공식몰 (Playwright)
     try {
       const items = side === 'kr' ? await collectKrBrandSite(key, cfg, { limit }) : await collectJpBrandSite(key, cfg, { limit });
