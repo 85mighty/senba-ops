@@ -44,7 +44,11 @@ async function stepCollect(side, { brand, limit } = {}) {
     // 시장가 API (키·설정 있을 때만)
     const apiSources =
       side === 'kr'
-        ? [['naver', feats.naver, cfg.kr?.naver, './collectors/kr/naver.js']]
+        ? [
+            ['naver', feats.naver, cfg.kr?.naver, './collectors/kr/naver.js'],
+            // 쿠팡: 별도 설정이 없으면 네이버 검색어를 재사용 (brands.json에 kr.coupang.enabled=false로 끌 수 있음)
+            ['coupang', feats.coupang, { enabled: cfg.kr?.coupang?.enabled !== false && !!(cfg.kr?.naver?.query || cfg.kr?.naver?.queries?.length || cfg.kr?.coupang?.queries?.length) }, './collectors/kr/coupang.js'],
+          ]
         : [
             ['rakuten', feats.rakuten, cfg.jp?.rakuten, './collectors/jp/rakuten.js'],
             ['yahoo', feats.yahoo, cfg.jp?.yahoo, './collectors/jp/yahoo.js'],
