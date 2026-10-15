@@ -45,6 +45,7 @@ const dow = ds => new Date(ds + 'T12:00:00').getDay();
   const sumW = w => HOURS.reduce((s, h) => s + cnt[w][h], 0);
   // 오전 건수(12:30 전 시작) 정밀 재집계
   const mornCnt = Object.fromEntries(ORDER.map(w => [w, 0]));
+  const mornHr = Object.fromEntries(ORDER.map(w => [w, { 10: 0, 11: 0, 12: 0 }]));
   for (const r of g.data.values || []) {
     const status = String(r[1] || '');
     const dm = String(r[4] || '').match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
@@ -52,15 +53,16 @@ const dow = ds => new Date(ds + 'T12:00:00').getDay();
     if (!dm || !tm || status.includes('취소')) continue;
     const date = `${dm[1]}-${dm[2].padStart(2, '0')}-${dm[3].padStart(2, '0')}`;
     if (date < FROM || date > TO) continue;
-    if (Number(tm[1]) * 60 + Number(tm[2]) < MORNING_BEFORE) mornCnt[dow(date)]++;
+    if (Number(tm[1]) * 60 + Number(tm[2]) < MORNING_BEFORE) { mornCnt[dow(date)]++; if (mornHr[dow(date)][Number(tm[1])] !== undefined) mornHr[dow(date)][Number(tm[1])]++; }
   }
 
   // ── 탭 구성
   const rows = [];
   const push = r => { rows.push(r); return rows.length - 1; };
-  const t = ORDER.map(w => `${WD[w]}${mornCnt[w]}/${nDays[w]}일(${morningDays[w].size}일)`).join(' ');
-  const iTitle = push([`오전(12:30전) 예약 ${FROM.slice(5)}~${TO.slice(5)} ${t}`]);
-  const iSub = push([`표시: 요일 오전예약건수/그 요일 일수(오전예약 있던 날수) | 합계 ${used}건 | 집계 2026-10-15 | 12:30 전 시작 = 아이미짱 출근(12:45) 전 손님맞이 필요`]);
+  const wk = w => `${WD[w]} 오전${mornCnt[w]}건/${nDays[w]}일(${morningDays[w].size}일) 10시${mornHr[w][10]} 11시${mornHr[w][11]} 12시${mornHr[w][12]}`;
+  const iTitle = push([wk(0)]);
+  const iSub = push([wk(6)]);
+  push([`※ 위 두 줄: 요일 오전(12:30전 시작)건수/요일일수(예약있던 날수) 시간대별 | 합계 ${used}건 | ${FROM}~${TO} | 집계 2026-10-15`]);
   push([]);
   const iH1 = push(['■ 요일 × 시작 시각 (건수 합계)']);
   const h1 = push(['요일', '일수', ...HOURS.map(h => `${h}시대`), '합계', '오전(12:30전)', '오전 예약 있던 날']);
