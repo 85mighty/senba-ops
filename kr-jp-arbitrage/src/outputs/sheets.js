@@ -2,7 +2,7 @@
 import { google } from 'googleapis';
 import { features, info, warn } from '../util.js';
 
-const TABS = ['daily_picks', 'review_queue', 'config_override'];
+const TABS = ['daily_picks', 'review_queue', 'candidates', 'config_override'];
 
 const PICKS_HEADER = [
   '날짜', '브랜드', '상품명', '색상', '한국가(KRW)', '일본가(JPY)', '환율', '순마진(JPY)', '마진율', '등급', '한국URL', '일본URL', '비고',
@@ -125,6 +125,35 @@ export async function writeReviewQueue(pendings) {
     requestBody: { values },
   });
   info(`[sheets] review_queue ${pendings.length}건 갱신`);
+  return true;
+}
+
+// 발굴 후보 탭 전체 갱신: 주시 후보(목표가 포함) + 소싱 후보
+export async function writeCandidates(date, candidates, sourcing) {
+  const api = await getClient();
+  if (!api) return false;
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+  await ensureTabs(api, spreadsheetId);
+  const values = [
+    ['[주시 후보] 지금은 미달 — 목표가 도달 시 통과', '', '', '', '', '', '', ''],
+    ['날짜', '브랜드', '상품명', '현재 순마진(JPY)', '현재 한국가(KRW)', '목표 매입가(KRW)', '일본 리뷰수', 'URL(한국/일본)'],
+    ...candidates.map((c) => [
+      date, c.brand, c.name, c.netMarginJpy, c.krPriceKrw, c.targetKrPriceKrw, c.reviewCount,
+      `${c.krUrl || ''} | ${c.jpUrl || ''}`,
+    ]),
+    [],
+    ['[소싱 후보] 일본 수요 높은데 한국 매칭 없음 — 소싱처 찾아볼 것', '', '', '', '', '', '', ''],
+    ['날짜', '브랜드', '상품명', '일본가(JPY)', '리뷰수', '품번', '', 'URL'],
+    ...sourcing.map((s) => [date, s.brand, s.name, s.price_jpy, s.review_count, s.product_code || '', '', s.url]),
+  ];
+  await api.spreadsheets.values.clear({ spreadsheetId, range: 'candidates!A:Z' });
+  await api.spreadsheets.values.update({
+    spreadsheetId,
+    range: 'candidates!A1',
+    valueInputOption: 'RAW',
+    requestBody: { values },
+  });
+  info(`[sheets] candidates 주시 ${candidates.length}건 + 소싱 ${sourcing.length}건 갱신`);
   return true;
 }
 

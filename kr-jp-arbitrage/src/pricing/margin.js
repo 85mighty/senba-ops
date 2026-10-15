@@ -95,6 +95,24 @@ export function computeMargin({ krPriceKrw, jpLowestJpy, fx, weightG, category =
   };
 }
 
+/**
+ * 목표 매입가 역산: 이 일본가·중량에서 통과 기준을 만족하는 최대 한국 매입가(KRW).
+ * 공짜여도 미달이면 null (이 상품은 가격이 아무리 떨어져도 안 됨 — 배송비·수수료 구조 문제).
+ * 100원 단위 내림. 이분 탐색이라 마진 공식이 바뀌어도 항상 일치한다.
+ */
+export function breakEvenKrPrice({ jpLowestJpy, fx, weightG, category = 'apparel' }, costs) {
+  const pass = (krw) => computeMargin({ krPriceKrw: krw, jpLowestJpy, fx, weightG, category }, costs).passed;
+  if (!pass(0)) return null;
+  let lo = 0;
+  let hi = Math.ceil(jpLowestJpy * fx); // 상한: 환산 동일가 (이 가격이면 반드시 미달)
+  while (hi - lo > 1) {
+    const mid = Math.floor((lo + hi) / 2);
+    if (pass(mid)) lo = mid;
+    else hi = mid;
+  }
+  return Math.floor(lo / 100) * 100;
+}
+
 // Sheets config_override 병합: key는 점 표기 경로 (예: intl_ship.over_per_kg_jpy)
 export function mergeOverrides(costs, overrides) {
   const merged = structuredClone(costs);

@@ -32,6 +32,7 @@ export async function collect(brandKey, brandCfg, { limit } = {}) {
     url: it.url,
     image_url: it.image?.medium || null,
     in_stock: it.inStock !== false,
+    review_count: it.review?.count || 0,
   }));
   info(`[yahoo] ${brandKey}: ${items.length}건`);
   return items;

@@ -29,8 +29,8 @@ async function send(text) {
   }
 }
 
-// 매일 보고: 통과 상품 상위 10개 요약
-export async function sendDailyReport({ date, rows, pendingCount, trendNotes = [] }) {
+// 매일 보고: 통과 상품 상위 10개 요약 + 발굴·소싱 후보
+export async function sendDailyReport({ date, rows, pendingCount, trendNotes = [], candidates = [], sourcing = [] }) {
   const lines = [];
   lines.push(`📊 KR→JP 아비트라지 일일 보고 (${date})`);
   lines.push('※ 리서치 도구 — 자동 구매·출품 없음. 메루카리Shops는 무재고 판매 금지 → 선매입 후보 선정용.');
@@ -48,6 +48,22 @@ export async function sendDailyReport({ date, rows, pendingCount, trendNotes = [
   if (rows.some((r) => r.brand === 'tnf')) {
     lines.push('');
     lines.push('⚠️ TNF: 병행수입 리스크 확인 필요 (한국 영원아웃도어 ↔ 일본 Goldwin 별도 라이선시)');
+  }
+  if (candidates.length) {
+    lines.push('');
+    lines.push('📈 발굴 후보 — 지금은 미달이지만 주시할 상품 (수요 높은 순):');
+    candidates.slice(0, 5).forEach((c, i) => {
+      lines.push(
+        `${i + 1}. [${c.brand}] ${c.name}\n   현재 마진 ¥${c.netMarginJpy.toLocaleString()} · 리뷰 ${c.reviewCount}건\n   한국가 ₩${(c.krPriceKrw || 0).toLocaleString()} → ₩${c.targetKrPriceKrw.toLocaleString()} 이하로 떨어지면 통과`
+      );
+    });
+  }
+  if (sourcing.length) {
+    lines.push('');
+    lines.push('🔥 일본에서 잘 팔리는데 아직 한국 매칭 없는 상품 (소싱처 찾아볼 것):');
+    sourcing.slice(0, 5).forEach((s, i) => {
+      lines.push(`${i + 1}. [${s.brand}] ${s.name} — ¥${(s.price_jpy || 0).toLocaleString()} · 리뷰 ${s.review_count}건\n   ${s.url}`);
+    });
   }
   if (trendNotes.length) {
     lines.push('');

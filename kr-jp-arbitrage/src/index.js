@@ -8,6 +8,7 @@ import cron from 'node-cron';
 import { ROOT, info, warn, error, warnMissingFeatures, today } from './util.js';
 import * as db from './db.js';
 import { runPipeline, STEP_ORDER } from './pipeline.js';
+import { rankCandidates, sourcingCandidates } from './discover.js';
 import { startCommandBot } from './outputs/telegram.js';
 
 // ---------- CLI 인자 ----------
@@ -78,14 +79,31 @@ function startServer() {
 
   app.get('/api/health', (req, res) => res.json({ ok: true, service: 'kr-jp-arbitrage', date: today() }));
 
-  // 최신 통과 목록
+  // 최신 통과 목록 (목표 매입가·리뷰수는 breakdown에서 꺼내 평탄화)
   app.get('/api/top', auth, (req, res) => {
     const rows = db.topSnapshots({
       date: req.query.date || undefined,
       onlyPassed: req.query.all !== '1',
       limit: parseInt(req.query.limit || '50', 10),
     });
+    for (const r of rows) {
+      try {
+        const bd = JSON.parse(r.breakdown_json || '{}');
+        r.target_kr_price = bd.targetKrPriceKrw ?? null;
+        r.review_count = bd.jpReviewCount ?? 0;
+      } catch {
+        /* 무시 */
+      }
+    }
     res.json({ rows });
+  });
+
+  // 발굴: 주시 후보 + 소싱 후보
+  app.get('/api/discover', auth, (req, res) => {
+    res.json({
+      candidates: rankCandidates({ limit: parseInt(req.query.limit || '20', 10) }),
+      sourcing: sourcingCandidates({ limit: parseInt(req.query.limit || '20', 10) }),
+    });
   });
 
   // C등급 검토 대기

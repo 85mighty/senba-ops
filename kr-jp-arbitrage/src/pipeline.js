@@ -8,12 +8,13 @@ import {
 import * as db from './db.js';
 import { matchBrand } from './matcher/rules.js';
 import { getFxKrwPerJpy } from './pricing/fx.js';
-import { computeMargin, estimateWeightG, mergeOverrides } from './pricing/margin.js';
+import { computeMargin, estimateWeightG, mergeOverrides, breakEvenKrPrice } from './pricing/margin.js';
 import { collect as collectKrBrandSite } from './collectors/kr/brandSite.js';
 import { collect as collectJpBrandSite } from './collectors/jp/brandSite.js';
 import { closeBrowser } from './collectors/browser.js';
-import { appendDailyPicks, writeReviewQueue, readConfigOverride } from './outputs/sheets.js';
+import { appendDailyPicks, writeReviewQueue, writeCandidates, readConfigOverride } from './outputs/sheets.js';
 import { sendDailyReport, sendStepFailure } from './outputs/telegram.js';
+import { rankCandidates, sourcingCandidates } from './discover.js';
 
 export const STEP_ORDER = ['collect-kr', 'collect-jp', 'match', 'price', 'report'];
 
@@ -133,6 +134,9 @@ async function stepPrice({ brand } = {}) {
 
     const weightG = m.weight_g || estimateWeightG(kr.name, costs, weightKeywords);
     const bd = computeMargin({ krPriceKrw: krPrice, jpLowestJpy: jpLowest, fx: fx.rate, weightG }, costs);
+    // 발굴용 부가정보: 목표 매입가(이 한국가면 통과) + 일본 수요(리뷰 수)
+    bd.targetKrPriceKrw = breakEvenKrPrice({ jpLowestJpy: jpLowest, fx: fx.rate, weightG }, costs);
+    bd.jpReviewCount = db.jpDemandByCode(m.brand, jp.product_code, jp.id);
 
     db.saveSnapshot({
       master_id: m.id,
@@ -175,11 +179,16 @@ async function stepReport() {
     }
   }
 
+  // 발굴: 기준 미달이지만 주시할 후보 + 일본 수요 높은데 매칭 없는 소싱 후보
+  const candidates = rankCandidates({ date, limit: 10 });
+  const sourcing = sourcingCandidates({ limit: 10 });
+
   const pendings = db.pendingReviews();
   await appendDailyPicks(rows);
   await writeReviewQueue(pendings);
-  await sendDailyReport({ date, rows, pendingCount: pendings.length, trendNotes });
-  return `통과 ${rows.length}건 보고, 검토 대기 ${pendings.length}건`;
+  await writeCandidates(date, candidates, sourcing);
+  await sendDailyReport({ date, rows, pendingCount: pendings.length, trendNotes, candidates, sourcing });
+  return `통과 ${rows.length}건 보고, 발굴 후보 ${candidates.length}건, 소싱 후보 ${sourcing.length}건, 검토 대기 ${pendings.length}건`;
 }
 
 const STEP_FNS = {

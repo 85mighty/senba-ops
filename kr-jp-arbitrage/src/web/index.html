@@ -62,7 +62,10 @@ function render(){
     <th onclick="sortBy('date')">날짜</th><th onclick="sortBy('brand')">브랜드</th>
     <th onclick="sortBy('kr_name')">상품명</th><th onclick="sortBy('kr_price_krw')">한국가</th>
     <th onclick="sortBy('jp_price_jpy')">일본 판매가</th><th onclick="sortBy('net_margin_jpy')">순마진</th>
-    <th onclick="sortBy('margin_rate')">마진율</th><th onclick="sortBy('confidence')">등급</th><th>링크</th>
+    <th onclick="sortBy('margin_rate')">마진율</th>
+    <th onclick="sortBy('target_kr_price')" title="한국가가 이 값 이하로 떨어지면 통과">목표매입가</th>
+    <th onclick="sortBy('review_count')" title="일본 리뷰 수 = 수요 (재고 위험 지표)">리뷰</th>
+    <th onclick="sortBy('confidence')">등급</th><th>링크</th>
   </tr></thead><tbody>` + sorted.map(r => `<tr>
     <td>${esc(r.date)}</td><td>${esc(r.brand)}</td>
     <td class="name" title="${esc(r.kr_name||r.jp_name)}">${esc(r.kr_name||r.jp_name)}</td>
@@ -70,6 +73,8 @@ function render(){
     <td class="num">¥${(r.jp_price_jpy||0).toLocaleString()}</td>
     <td class="num margin">¥${(r.net_margin_jpy||0).toLocaleString()}</td>
     <td class="num">${((r.margin_rate||0)*100).toFixed(1)}%</td>
+    <td class="num">${r.target_kr_price?`₩${r.target_kr_price.toLocaleString()}`:'—'}</td>
+    <td class="num">${r.review_count||0}</td>
     <td>${esc(r.confidence)}</td>
     <td>${r.kr_url?`<a href="${esc(r.kr_url)}" target="_blank">KR</a>`:''} ${r.jp_url?`<a href="${esc(r.jp_url)}" target="_blank">JP</a>`:''}</td>
   </tr>`).join('') + '</tbody></table>';

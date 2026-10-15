@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS products_jp (
   url TEXT NOT NULL,
   image_url TEXT,
   in_stock INTEGER DEFAULT 1,
+  review_count INTEGER DEFAULT 0,     -- 리뷰 수 = 일본 수요 지표 (라쿠텐/Yahoo)
   fetched_at TEXT,
   UNIQUE(brand, source, url)
 );
@@ -95,6 +96,14 @@ CREATE INDEX IF NOT EXISTS idx_hist ON price_history(product_side, product_id, f
 CREATE INDEX IF NOT EXISTS idx_snap_date ON margin_snapshots(date, passed);
 `);
 
+// 기존 DB 마이그레이션: review_count 컬럼이 없던 시절 DB에 추가
+try {
+  db.exec(`ALTER TABLE products_jp ADD COLUMN review_count INTEGER DEFAULT 0`);
+} catch {
+  /* 이미 있음 */
+}
+db.exec(`CREATE INDEX IF NOT EXISTS idx_jp_review ON products_jp(brand, review_count)`);
+
 // ---------- 상품 upsert ----------
 const upsertKrStmt = db.prepare(`
 INSERT INTO products_kr (brand, source, product_code, name, color, price_krw, sale_price_krw, url, image_url, in_stock, fetched_at)
@@ -105,12 +114,13 @@ ON CONFLICT(brand, source, url) DO UPDATE SET
   image_url=excluded.image_url, in_stock=excluded.in_stock, fetched_at=excluded.fetched_at
 `);
 const upsertJpStmt = db.prepare(`
-INSERT INTO products_jp (brand, source, product_code, name, color, price_jpy, url, image_url, in_stock, fetched_at)
-VALUES (@brand, @source, @product_code, @name, @color, @price, @url, @image_url, @in_stock, @fetched_at)
+INSERT INTO products_jp (brand, source, product_code, name, color, price_jpy, url, image_url, in_stock, review_count, fetched_at)
+VALUES (@brand, @source, @product_code, @name, @color, @price, @url, @image_url, @in_stock, @review_count, @fetched_at)
 ON CONFLICT(brand, source, url) DO UPDATE SET
   product_code=excluded.product_code, name=excluded.name, color=excluded.color,
   price_jpy=excluded.price_jpy, image_url=excluded.image_url,
-  in_stock=excluded.in_stock, fetched_at=excluded.fetched_at
+  in_stock=excluded.in_stock, review_count=MAX(excluded.review_count, products_jp.review_count),
+  fetched_at=excluded.fetched_at
 `);
 const histStmt = db.prepare(`
 INSERT OR REPLACE INTO price_history (product_side, product_id, price, fetched_at, fetched_date)
@@ -136,6 +146,7 @@ export const saveProducts = db.transaction((side, items) => {
       sale_price: null,
       image_url: null,
       in_stock: 1,
+      review_count: 0,
       ...it,
       in_stock: it.in_stock === false || it.in_stock === 0 ? 0 : 1,
       fetched_at: now,
@@ -303,6 +314,44 @@ export function topSnapshots({ date, onlyPassed = true, limit = 50 } = {}) {
        ORDER BY s.net_margin_jpy DESC LIMIT ?`
     )
     .all(d, limit);
+}
+
+// ---------- 발굴 (수요·소싱 후보) ----------
+// 같은 품번의 일본 상품 중 최대 리뷰 수 = 수요 지표
+export function jpDemandByCode(brand, code, fallbackId) {
+  if (code) {
+    const n = db
+      .prepare(`SELECT MAX(review_count) AS n FROM products_jp WHERE brand=? AND product_code=?`)
+      .get(brand, code)?.n;
+    if (n) return n;
+  }
+  if (fallbackId) {
+    return db.prepare(`SELECT review_count AS n FROM products_jp WHERE id=?`).get(fallbackId)?.n || 0;
+  }
+  return 0;
+}
+
+// 일본에서 수요(리뷰)는 높은데 아직 매칭/소싱이 없는 상품 — 사람이 한국 소싱처를 찾아볼 후보
+export function unmatchedHighDemandJp({ brand, minReviews = 50, limit = 10 } = {}) {
+  let sql = `
+    SELECT j.id, j.brand, j.name, j.price_jpy, j.review_count, j.url, j.product_code
+    FROM products_jp j
+    LEFT JOIN product_master m ON m.jp_product_id = j.id AND m.confidence != 'X'
+    WHERE m.id IS NULL AND j.in_stock=1 AND j.review_count >= ?
+      AND j.source IN ('rakuten','yahoo')
+      -- 같은 품번이 이미 매칭돼 있으면 소싱 후보가 아님 (시장가 보강용 중복 행)
+      AND NOT (j.product_code IS NOT NULL AND EXISTS (
+        SELECT 1 FROM product_master m2 JOIN products_jp j2 ON j2.id = m2.jp_product_id
+        WHERE m2.confidence != 'X' AND j2.brand = j.brand AND j2.product_code = j.product_code
+      ))`;
+  const args = [minReviews];
+  if (brand) {
+    sql += ` AND j.brand=?`;
+    args.push(brand);
+  }
+  sql += ` ORDER BY j.review_count DESC LIMIT ?`;
+  args.push(limit);
+  return db.prepare(sql).all(...args);
 }
 
 // ---------- 가격 추세 (Phase 4) ----------
