@@ -612,7 +612,7 @@ async function apiStatus(p) {
   await gcal('PATCH', '/events/' + encodeURIComponent(p.id), { extendedProperties: { private: priv } });
 }
 
-// ── 근무 안내 (마미짱·아이미짱) — 매일 20:05 JST 에 다음날 예약 기준 출퇴근을 텔레그램(근태봇 그룹)으로 발송
+// ── 근무 안내 (마미짱·아이미짱) — 매일 마감(기본 22시)+5분 JST 에 다음날 예약 기준 출퇴근을 텔레그램(근태봇 그룹)으로 발송
 const SHIFT = require('./shift-rules');
 const SHIFT_ENV = { ...envOf('/opt/senba-attend/.env'), ...envOf('/opt/senba-booking-view/.env') };
 const SHIFT_TOKEN = E.SHIFT_BOT_TOKEN || SHIFT_ENV.SHIFT_BOT_TOKEN || SHIFT_ENV.ATTEND_BOT_TOKEN || '';
@@ -630,14 +630,37 @@ async function shiftSend(text) {
   const r = await fetch(`https://api.telegram.org/bot${SHIFT_TOKEN}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: SHIFT_CHAT, text }) });
   const j = await r.json(); if (!j.ok) throw new Error('telegram: ' + (j.description || r.status));
 }
-let shiftTries = 0, shiftTryDay = '';
+// 마감 시각(전날, 기본 22시): 구루나비 예약 마감과 맞출 것. 사전 점검=마감 30분 전(사장님 전용), 최종 발송=마감 5분 후
+const SHIFT_CUTOFF = Number(E.SHIFT_CUTOFF_HOUR || SHIFT_ENV.SHIFT_CUTOFF_HOUR || 22);
+const BOARD_URL = E.SHIFT_BOARD_URL || SHIFT_ENV.SHIFT_BOARD_URL || 'https://reserve-osaka.senbaartstudio.com';
+const SHIFT_PRE_FILE = require('path').join(__dirname, '.shift-pre');
+async function ownerSend(text) {   // 사장님 전용 알림 (sales-sync 의 텔레그램 — 알바 그룹과 별개)
+  const tok = E.TELEGRAM_BOT_TOKEN, chat = E.TELEGRAM_CHAT_ID;
+  if (!tok || !chat) throw new Error('사장님 알림용 TELEGRAM_BOT_TOKEN/CHAT_ID 없음');
+  const r = await fetch(`https://api.telegram.org/bot${tok}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: chat, text }) });
+  const j = await r.json(); if (!j.ok) throw new Error('telegram: ' + (j.description || r.status));
+}
+const readFlag = f => { try { return fs.readFileSync(f, 'utf8').trim(); } catch { return ''; } };
+let shiftTries = 0, shiftTryDay = '', preTried = '';
 async function shiftTick() {
   if (!SHIFT_ON) return;
   const now = new Date(Date.now() + 9 * 3600e3), min = now.getUTCHours() * 60 + now.getUTCMinutes();
-  if (min < 20 * 60 + 5 || min > 22 * 60) return;                 // 20:05~22:00 사이에만 (재시도 구간)
-  const tom = jstDay(1);
-  let last = ''; try { last = fs.readFileSync(SHIFT_SENT_FILE, 'utf8').trim(); } catch {}
-  if (last === tom) return;
+  const tom = jstDay(1), cut = SHIFT_CUTOFF * 60;
+  // ① 사전 점검: 내일 마미짱이 휴무로 나오면, 전화·현장 예약이 누락됐는지 사장님께 먼저 확인
+  if (min >= cut - 30 && min < cut + 5 && readFlag(SHIFT_PRE_FILE) !== tom && preTried !== tom) {
+    preTried = tom;
+    try {
+      const { p } = await shiftFor(tom);
+      if (!p.mami) {
+        const [, M, D] = tom.split('-').map(Number);
+        await ownerSend(`🔔 내일 ${M}/${D}(${'일월화수목금토'[new Date(tom + 'T12:00:00Z').getUTCDay()]}) 마미짱 휴무로 안내될 예정입니다 (예약 ${p.bookings.length}組)\n\n📞 전화·현장 예약이 있으면 ${SHIFT_CUTOFF}:05 전에 예약 보드에서 추가하세요 (빈 칸 탭 → 수동 예약).\n🟦 Square 요청은 수락해야 반영됩니다.\n\n보드: ${BOARD_URL}/?key=${KEY}&date=${tom}\n없으면 ${SHIFT_CUTOFF}:05에 그룹으로 휴무 안내가 자동 발송됩니다.`);
+      }
+      fs.writeFileSync(SHIFT_PRE_FILE, tom);
+    } catch (e) { console.error('[shift] 사전점검 실패:', e.message); }
+  }
+  // ② 최종 발송: 마감 5분 후 ~ 90분 사이 (실패 시 1분마다 재시도, 최대 6회)
+  if (min < cut + 5 || min > cut + 90) return;
+  if (readFlag(SHIFT_SENT_FILE) === tom) return;
   if (shiftTryDay !== tom) { shiftTryDay = tom; shiftTries = 0; }
   if (shiftTries >= 6) return;
   shiftTries++;
