@@ -139,7 +139,7 @@ async function api(path) {
   if (!res.ok) throw new Error(data.error || res.status);
   return data;
 }
-const SRC = { brand_site:'공식몰', naver:'네이버', coupang:'쿠팡', rakuten:'라쿠텐', yahoo:'Yahoo' };
+const SRC = { brand_site:'공식몰', naver:'네이버', coupang:'쿠팡', elevenst:'11번가', rakuten:'라쿠텐', yahoo:'Yahoo' };
 const srcName = (x) => SRC[x] || x;
 const photo = (src, label, extra = '') =>
   `<div class="photo">${src ? `<img src="${esc(src)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : '이미지 없음'}${label ? `<span class="badge">${label}</span>` : ''}${extra}</div>`;

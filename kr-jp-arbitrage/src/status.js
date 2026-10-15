@@ -6,6 +6,7 @@ const SOURCE_LABEL = {
   'kr/brand_site': '한국 공식몰',
   'kr/naver': '네이버쇼핑',
   'kr/coupang': '쿠팡',
+  'kr/elevenst': '11번가',
   'jp/brand_site': '일본 공식몰',
   'jp/rakuten': '라쿠텐',
   'jp/yahoo': 'Yahoo!쇼핑',
@@ -19,6 +20,7 @@ function planFor(cfg, feats) {
   return [
     { id: 'kr/brand_site', configured: site(kr.brand_site), key: true, hint: '목록 URL·셀렉터 설정 필요' },
     { id: 'kr/naver', configured: !!kr.naver?.enabled && feats.naver, key: feats.naver, hint: '2026-07-31 종료된 API (사용 안 함)' },
+    { id: 'kr/elevenst', configured: kr.elevenst?.enabled !== false && !!(kr.naver?.query || kr.naver?.queries?.length || kr.elevenst?.queries?.length), key: feats.elevenst, hint: '11번가 키 필요', keyName: 'ELEVENST_API_KEY' },
     { id: 'kr/coupang', configured: kr.coupang?.enabled !== false && !!(kr.naver?.query || kr.naver?.queries?.length || kr.coupang?.queries?.length), key: feats.coupang, hint: '쿠팡 파트너스 키 필요', keyName: 'COUPANG_ACCESS_KEY/SECRET_KEY' },
     { id: 'jp/brand_site', configured: site(jp.brand_site), key: true, hint: '목록 URL·셀렉터 설정 필요' },
     { id: 'jp/rakuten', configured: !!jp.rakuten?.enabled, key: feats.rakuten, hint: '라쿠텐 키 필요', keyName: 'RAKUTEN_APP_ID/ACCESS_KEY' },

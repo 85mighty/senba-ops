@@ -29,12 +29,29 @@ export function authHeader({ method, path, query, accessKey, secretKey, now }) {
 export const canonicalUrl = (productId) => `https://www.coupang.com/vp/products/${productId}`;
 
 let blocked = false; // 403/401/429를 받으면 이번 프로세스에서는 중단
+const calls = []; // 최근 호출 시각 (시간당 한도 보호)
+const hourlyLimit = () => parseInt(process.env.COUPANG_HOURLY_LIMIT || '8', 10);
+function pruneCalls() {
+  const cutoff = Date.now() - 3600_000;
+  while (calls.length && calls[0] < cutoff) calls.shift();
+}
+// 호출 가능 여부를 판단하고, 가능하면 호출 기록을 남긴다
+function takeCall() {
+  pruneCalls();
+  if (blocked || calls.length >= hourlyLimit()) return false;
+  calls.push(Date.now());
+  return true;
+}
+export function coupangStatus() {
+  pruneCalls();
+  return { blocked, usedLastHour: calls.length, limited: blocked || calls.length >= hourlyLimit() };
+}
 
 // 화면의 "시세 찾기"용 즉석 검색 (1회 호출, DB에 저장하지 않음)
 export async function searchCoupang(keyword) {
   const ak = process.env.COUPANG_ACCESS_KEY;
   const sk = process.env.COUPANG_SECRET_KEY;
-  if (blocked || !ak || !sk || !keyword) return [];
+  if (!ak || !sk || !keyword || !takeCall()) return [];
   const query = `keyword=${encodeURIComponent(keyword)}&limit=10`;
   const res = await fetch(`${HOST}${PATH}?${query}`, {
     headers: {
@@ -72,12 +89,16 @@ export async function collect(brandKey, brandCfg, { limit } = {}) {
   if (cfg.enabled === false) return [];
   const queries = (cfg.queries?.length ? cfg.queries : brandCfg.kr?.naver?.queries?.length ? brandCfg.kr.naver.queries : [brandCfg.kr?.naver?.query])
     .filter(Boolean)
-    .slice(0, parseInt(process.env.COUPANG_MAX_CALLS || '2', 10));
+    .slice(0, parseInt(process.env.COUPANG_MAX_CALLS || '1', 10));
 
   const brandWords = (brandCfg.brand_words || []).map((w) => w.toLowerCase());
   const byId = new Map();
 
   for (const q of queries) {
+    if (!takeCall()) {
+      warn('[coupang] 시간당 호출 한도 보호로 나머지 쿠팡 호출을 건너뜁니다');
+      break;
+    }
     const query = `keyword=${encodeURIComponent(q)}&limit=${Math.min(limit || 10, 10)}`;
     const res = await fetch(`${HOST}${PATH}?${query}`, {
       headers: {

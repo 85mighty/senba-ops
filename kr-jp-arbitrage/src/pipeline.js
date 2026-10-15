@@ -47,6 +47,7 @@ async function stepCollect(side, { brand, limit } = {}) {
         ? [
             ['naver', feats.naver, cfg.kr?.naver, './collectors/kr/naver.js'],
             // 쿠팡: 별도 설정이 없으면 네이버 검색어를 재사용 (brands.json에 kr.coupang.enabled=false로 끌 수 있음)
+            ['elevenst', feats.elevenst, { enabled: cfg.kr?.elevenst?.enabled !== false && !!(cfg.kr?.naver?.query || cfg.kr?.naver?.queries?.length || cfg.kr?.elevenst?.queries?.length) }, './collectors/kr/elevenst.js'],
             ['coupang', feats.coupang, { enabled: cfg.kr?.coupang?.enabled !== false && !!(cfg.kr?.naver?.query || cfg.kr?.naver?.queries?.length || cfg.kr?.coupang?.queries?.length) }, './collectors/kr/coupang.js'],
           ]
         : [

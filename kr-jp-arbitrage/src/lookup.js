@@ -10,7 +10,8 @@ import { extractCode } from './matcher/rules.js';
 import { searchRakuten } from './collectors/jp/rakuten.js';
 import { searchYahoo } from './collectors/jp/yahoo.js';
 import { searchNaver } from './collectors/kr/naver.js';
-import { searchCoupang } from './collectors/kr/coupang.js';
+import { searchCoupang, coupangStatus } from './collectors/kr/coupang.js';
+import { searchElevenst } from './collectors/kr/elevenst.js';
 
 const USED = /中古|USED|used|古着|ジャンク|訳あり|訳アリ/;
 const HANGUL = /[가-힣]/;
@@ -95,7 +96,10 @@ export async function lookup({ side, id }) {
   if (feats.naver) jobs.push(searchNaver(query, { display: 30 }).then((r) => r.map((x) => ({ ...x, source: x.mall ? `네이버·${x.mall}` : '네이버' }))));
   else notes.push('네이버 쇼핑 검색 API가 2026-07-31에 종료되어 한국 시장 가격은 자동 검색되지 않습니다. 아래에는 수집해 둔 한국 공식몰 가격만 나옵니다. 다른 한국 쇼핑몰은 아래 "직접 찾기" 링크로 확인하세요.');
   if (feats.coupang) jobs.push(searchCoupang(query).then((r) => r.map((x) => ({ ...x, source: x.mall || '쿠팡' }))));
+  if (feats.elevenst) jobs.push(searchElevenst(query).then((r) => r.map((x) => ({ ...x, source: x.mall || '11번가' }))));
+  else notes.push('11번가 키(ELEVENST_API_KEY)를 넣으면 11번가 가격도 함께 나옵니다.');
   if (!feats.coupang) notes.push('쿠팡 파트너스 키를 넣으면 쿠팡 가격도 함께 나옵니다.');
+  else if (coupangStatus().limited) notes.push('쿠팡 호출 한도에 가까워 이번에는 쿠팡 검색을 건너뛰었습니다. 잠시 뒤 다시 시도하세요.');
   const settled = await Promise.allSettled(jobs);
   let list = [];
   for (const s of settled) {
