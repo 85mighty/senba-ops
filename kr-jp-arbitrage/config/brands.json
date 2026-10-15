@@ -7,25 +7,177 @@
       "c": 0.6
     },
     "color_map": {
-      "black": ["블랙", "ブラック", "black", "bk", "먹색"],
-      "white": ["화이트", "ホワイト", "white", "wh", "아이보리", "アイボリー", "ivory", "크림", "クリーム", "cream"],
-      "gray": ["그레이", "グレー", "gray", "grey", "차콜", "チャコール", "charcoal", "멜란지", "メランジ"],
-      "navy": ["네이비", "ネイビー", "navy", "곤색"],
-      "blue": ["블루", "ブルー", "blue", "스카이", "スカイ", "sky"],
-      "red": ["레드", "レッド", "red", "버건디", "バーガンディ", "burgundy", "와인", "ワイン", "wine"],
-      "pink": ["핑크", "ピンク", "pink", "로즈", "ローズ", "rose", "코랄", "コーラル", "coral"],
-      "green": ["그린", "グリーン", "green", "카키", "カーキ", "khaki", "올리브", "オリーブ", "olive", "민트", "ミント", "mint"],
-      "beige": ["베이지", "ベージュ", "beige", "오트밀", "オートミール", "oatmeal", "샌드", "サンド", "sand"],
-      "brown": ["브라운", "ブラウン", "brown", "모카", "モカ", "mocha", "카멜", "キャメル", "camel"],
-      "purple": ["퍼플", "パープル", "purple", "라벤더", "ラベンダー", "lavender", "라일락", "ライラック", "lilac"],
-      "yellow": ["옐로우", "イエロー", "yellow", "머스타드", "マスタード", "mustard"],
-      "orange": ["오렌지", "オレンジ", "orange"]
+      "black": [
+        "블랙",
+        "ブラック",
+        "black",
+        "bk",
+        "먹색"
+      ],
+      "white": [
+        "화이트",
+        "ホワイト",
+        "white",
+        "wh",
+        "아이보리",
+        "アイボリー",
+        "ivory",
+        "크림",
+        "クリーム",
+        "cream"
+      ],
+      "gray": [
+        "그레이",
+        "グレー",
+        "gray",
+        "grey",
+        "차콜",
+        "チャコール",
+        "charcoal",
+        "멜란지",
+        "メランジ"
+      ],
+      "navy": [
+        "네이비",
+        "ネイビー",
+        "navy",
+        "곤색"
+      ],
+      "blue": [
+        "블루",
+        "ブルー",
+        "blue",
+        "스카이",
+        "スカイ",
+        "sky"
+      ],
+      "red": [
+        "레드",
+        "レッド",
+        "red",
+        "버건디",
+        "バーガンディ",
+        "burgundy",
+        "와인",
+        "ワイン",
+        "wine"
+      ],
+      "pink": [
+        "핑크",
+        "ピンク",
+        "pink",
+        "로즈",
+        "ローズ",
+        "rose",
+        "코랄",
+        "コーラル",
+        "coral"
+      ],
+      "green": [
+        "그린",
+        "グリーン",
+        "green",
+        "카키",
+        "カーキ",
+        "khaki",
+        "올리브",
+        "オリーブ",
+        "olive",
+        "민트",
+        "ミント",
+        "mint"
+      ],
+      "beige": [
+        "베이지",
+        "ベージュ",
+        "beige",
+        "오트밀",
+        "オートミール",
+        "oatmeal",
+        "샌드",
+        "サンド",
+        "sand"
+      ],
+      "brown": [
+        "브라운",
+        "ブラウン",
+        "brown",
+        "모카",
+        "モカ",
+        "mocha",
+        "카멜",
+        "キャメル",
+        "camel"
+      ],
+      "purple": [
+        "퍼플",
+        "パープル",
+        "purple",
+        "라벤더",
+        "ラベンダー",
+        "lavender",
+        "라일락",
+        "ライラック",
+        "lilac"
+      ],
+      "yellow": [
+        "옐로우",
+        "イエロー",
+        "yellow",
+        "머스타드",
+        "マスタード",
+        "mustard"
+      ],
+      "orange": [
+        "오렌지",
+        "オレンジ",
+        "orange"
+      ]
     },
     "weight_keywords": {
-      "cap": ["볼캡", "캡", "모자", "キャップ", "帽子", "cap", "버킷햇", "バケットハット", "비니", "ビーニー"],
-      "bag": ["가방", "백", "バッグ", "bag", "숄더", "ショルダー", "토트", "トート", "크로스백"],
-      "leggings": ["레깅스", "レギンス", "leggings", "팬츠", "パンツ", "pants", "쇼츠", "ショーツ"],
-      "padding": ["패딩", "다운", "눕시", "ダウン", "ヌプシ", "nuptse", "puffer", "점퍼"],
+      "cap": [
+        "볼캡",
+        "캡",
+        "모자",
+        "キャップ",
+        "帽子",
+        "cap",
+        "버킷햇",
+        "バケットハット",
+        "비니",
+        "ビーニー"
+      ],
+      "bag": [
+        "가방",
+        "백",
+        "バッグ",
+        "bag",
+        "숄더",
+        "ショルダー",
+        "토트",
+        "トート",
+        "크로스백"
+      ],
+      "leggings": [
+        "레깅스",
+        "レギンス",
+        "leggings",
+        "팬츠",
+        "パンツ",
+        "pants",
+        "쇼츠",
+        "ショーツ"
+      ],
+      "padding": [
+        "패딩",
+        "다운",
+        "눕시",
+        "ダウン",
+        "ヌプシ",
+        "nuptse",
+        "puffer",
+        "점퍼"
+      ],
       "top": []
     }
   },
@@ -33,51 +185,59 @@
     "enabled": true,
     "phase": 1,
     "display_name": "XEXYMIX",
-    "brand_words": ["젝시믹스", "xexymix", "ゼクシィミックス", "ゼクシーミックス"],
+    "brand_words": [
+      "젝시믹스",
+      "xexymix",
+      "ゼクシィミックス",
+      "ゼクシーミックス"
+    ],
     "product_code_regex": "\\bX[A-Z]{1,2}\\d{4}[A-Z]{0,2}\\b",
     "kr": {
       "brand_site": {
         "enabled": true,
-        "_comment": "한국 공식몰. 세일·쿠폰이 커서 네이버 가격보다 실결제가가 낮은 경우가 많음 → 세일가 기준 수집. Cafe24 계열 셀렉터 추정치 — 확인 필요",
+        "_comment": "한국 공식몰 = 메이크샵(Cafe24 아님, 2026-10-15 실측). 레깅스 검색 목록 기준. 이미지 lazy(data-frz-src)라 image는 비워둠.",
         "base_url": "https://www.xexymix.com",
         "list_urls": [
-          "https://www.xexymix.com/product/list.html?cate_no=24&page={page}"
+          "https://www.xexymix.com/shop/shopbrand.html?search=%EB%A0%88%EA%B9%85%EC%8A%A4&page={page}"
         ],
-        "max_pages": 5,
+        "max_pages": 3,
         "selectors": {
-          "item": "ul.prdList > li[id^='anchorBoxId']",
-          "name": ".name a",
-          "price": "li[rel='판매가'] span, .xans-product-listitem li:nth-child(1) span",
-          "sale_price": "li[rel='할인판매가'] span, .sale-price",
-          "link": ".thumbnail a, .name a",
-          "image": ".thumbnail img, .prdImg img",
-          "sold_out": ".icon img[alt*='품절'], .promotion img[alt*='품절']"
+          "item": "dl.item-list",
+          "name": ".prd-name",
+          "price": "li.prd-price .o_prd",
+          "sale_price": "li.prd-price.s_prd",
+          "link": "dt a",
+          "image": "dt img",
+          "sold_out": ".prd-icon img[alt*='품절']"
         }
       },
       "naver": {
         "enabled": true,
         "_comment": "Phase 3. 브랜드 공식 스토어 mallName 우선, sort=asc 최저가",
         "query": "젝시믹스 레깅스",
-        "mall_names": ["젝시믹스", "XEXYMIX"]
+        "mall_names": [
+          "젝시믹스",
+          "XEXYMIX"
+        ]
       }
     },
     "jp": {
       "brand_site": {
         "enabled": true,
-        "_comment": "일본 공식몰 (정가 기준). 셀렉터 추정치 — 확인 필요",
-        "base_url": "https://xexymix.jp",
+        "_comment": "일본 공식몰 = Shopify 계열(www.xexymix.jp/collections/all, 2026-10-15 실측). 페이지당 10건이라 max_pages 확대. 가격은 세일가만 표기(정가 미노출) → price/sale_price 동일 셀렉터.",
+        "base_url": "https://www.xexymix.jp",
         "list_urls": [
-          "https://xexymix.jp/shop/shopbrand.html?search=&sort=&page={page}"
+          "https://www.xexymix.jp/collections/all?page={page}"
         ],
-        "max_pages": 5,
+        "max_pages": 10,
         "selectors": {
-          "item": ".item-list li, ul.prdList > li",
-          "name": ".item-name, .name a",
-          "price": ".item-price, li[rel='販売価格'] span",
-          "sale_price": ".item-sale-price, li[rel='割引販売価格'] span",
-          "link": "a",
-          "image": "img",
-          "sold_out": ".soldout, img[alt*='SOLD']"
+          "item": "product-item",
+          "name": ".product-item-meta__title",
+          "price": ".price-list .price",
+          "sale_price": ".price-list .price",
+          "link": ".product-item-meta__title",
+          "image": ".product-item__primary-image",
+          "sold_out": ".label--sold-out, .product-item__label .label--custom[class*='sold']"
         }
       },
       "rakuten": {
@@ -98,52 +258,63 @@
     "enabled": true,
     "phase": 2,
     "display_name": "Mardi Mercredi",
-    "brand_words": ["마르디 메크르디", "마르디메크르디", "mardi mercredi", "mardi", "mercredi", "マルディメクルディ", "マルディ メクルディ"],
+    "brand_words": [
+      "마르디 메크르디",
+      "마르디메크르디",
+      "mardi mercredi",
+      "mardi",
+      "mercredi",
+      "マルディメクルディ",
+      "マルディ メクルディ"
+    ],
     "product_code_regex": null,
     "_product_code_regex_comment": "마르디는 노출 품번 체계 불명 — 이름 매칭 위주. 품번 확인되면 정규식 추가",
     "kr": {
       "brand_site": {
         "enabled": true,
-        "_comment": "한국 공식몰. 셀렉터 추정치 — 확인 필요",
+        "_comment": "Cafe24 맞음. 기존 cate_no=25는 상품 0개 카테고리였음 → 1622(상품 20+/페이지)로 교체(2026-10-15 실측). 다른 카테고리: 24(9개).",
         "base_url": "https://mardimercredi.com",
         "list_urls": [
-          "https://mardimercredi.com/product/list.html?cate_no=25&page={page}"
+          "https://mardimercredi.com/product/list.html?cate_no=1622&page={page}"
         ],
         "max_pages": 5,
         "selectors": {
-          "item": "ul.prdList > li[id^='anchorBoxId'], .item-list li",
-          "name": ".name a, .item-name",
-          "price": "li[rel='판매가'] span, .price",
-          "sale_price": "li[rel='할인판매가'] span, .sale-price",
-          "link": ".thumbnail a, .name a, a",
-          "image": ".thumbnail img, .prdImg img, img",
-          "sold_out": ".icon img[alt*='품절'], .soldout"
+          "item": "li[id^='anchorBoxId']",
+          "name": ".description .name a > span:not(.displaynone)",
+          "price": "li[rel='판매가'] > span:not([id])",
+          "sale_price": "li[rel='할인판매가'] > span:not([id])",
+          "link": ".thumbnail a",
+          "image": ".thumbnail img.img_first",
+          "sold_out": ".icon_soldout > *"
         }
       },
       "naver": {
         "enabled": true,
         "_comment": "Phase 3",
         "query": "마르디 메크르디 티셔츠",
-        "mall_names": ["마르디 메크르디", "MARDI MERCREDI"]
+        "mall_names": [
+          "마르디 메크르디",
+          "MARDI MERCREDI"
+        ]
       }
     },
     "jp": {
       "brand_site": {
         "enabled": true,
-        "_comment": "일본 공식 온라인스토어 — URL 확인·수정 필요 (CLAUDE.md §4). 셀렉터 추정치",
-        "base_url": "https://mardimercredi-japan.com",
+        "_comment": "기존 mardimercredi-japan.com 은 도메인 매물 페이지(공식몰 아님). 한국몰이 안내하는 공식몰 mardimercredi.jp(Shopify)로 교체(2026-10-15 실측).",
+        "base_url": "https://mardimercredi.jp",
         "list_urls": [
-          "https://mardimercredi-japan.com/collections/all?page={page}"
+          "https://mardimercredi.jp/collections/all?page={page}"
         ],
-        "max_pages": 5,
+        "max_pages": 6,
         "selectors": {
-          "item": ".product-card, .grid__item, li.grid__item",
-          "name": ".product-card__title, .card__heading, .full-unstyled-link",
-          "price": ".price-item--regular, .price__regular .price-item",
-          "sale_price": ".price-item--sale, .price__sale .price-item--sale",
-          "link": "a",
-          "image": "img",
-          "sold_out": ".badge--sold-out, .price--sold-out"
+          "item": "product-card",
+          "name": ".product-card-title",
+          "price": ".price .amount",
+          "sale_price": ".price ins .amount",
+          "link": ".product-card-title",
+          "image": ".product-primary-image",
+          "sold_out": ".sold-out, .badge--sold-out"
         }
       },
       "rakuten": {
@@ -165,38 +336,48 @@
     "report_note": "TNF: 병행수입 리스크 확인 필요",
     "auto_match": false,
     "_auto_match_comment": "한국(영원아웃도어)·일본(Goldwin)은 별도 라이선시 — 품번·사양이 달라 자동 매칭 기대 금지. 승인 UI 또는 product_master에 사람이 쌍을 등록. 병행수입 리스크 비고는 보고서에 자동 삽입됨",
-    "brand_words": ["노스페이스", "더 노스페이스", "the north face", "ザ・ノース・フェイス", "ノースフェイス"],
+    "brand_words": [
+      "노스페이스",
+      "더 노스페이스",
+      "the north face",
+      "ザ・ノース・フェイス",
+      "ノースフェイス"
+    ],
     "product_code_regex": "\\bN[JMFDTP][A-Z0-9]{2}\\d{2,4}[A-Z0-9]{0,2}\\b",
     "_product_code_regex_comment": "한국 NJ…/NM…/NF…, 일본 ND…/NT…/NP… — 체계가 달라 품번 교차 일치는 사실상 없음(검색·수동 등록 보조용)",
     "kr": {
       "brand_site": {
         "enabled": true,
-        "_comment": "영원아웃도어 공식몰. 셀렉터 추정치 — 확인 필요. 패딩류는 중량 커서 배송비 비중 큼(weight_g 수동 입력 권장)",
+        "_comment": "기존 /display/category 는 404. 실제 구조 /category/n/{경로}, 카드 li.plp-grid-item (2026-10-15 실측). 시드 카테고리=세일 자켓. 확장 시 list_urls 추가. ※ sold_out 비움: .soldout 클래스는 사이즈 단위 품절 표시라 상품 전체 품절로 오탐됨(2026-10-15 확인). 색상별 카드가 같은 이름으로 중복 노출됨.",
         "base_url": "https://www.thenorthfacekorea.co.kr",
         "list_urls": [
-          "https://www.thenorthfacekorea.co.kr/display/category?categoryNo=1&page={page}"
+          "https://www.thenorthfacekorea.co.kr/category/n/Sale/jacket?page={page}"
         ],
-        "max_pages": 5,
+        "max_pages": 3,
         "selectors": {
-          "item": ".goods-list li, .product-list .item",
-          "name": ".goods-name, .name",
-          "price": ".goods-price .num, .price",
-          "sale_price": ".goods-sale-price .num, .sale-price",
-          "link": "a",
-          "image": "img",
-          "sold_out": ".soldout, img[alt*='품절']"
+          "item": "li.plp-grid-item",
+          "name": ".product-tile-details .name",
+          "price": ".product-tile-details .price .retail",
+          "sale_price": ".product-tile-details .price .sale",
+          "link": "a.product-url",
+          "image": ".product-img img",
+          "sold_out": "",
+          "wait_selector": "li.plp-grid-item .product-tile-details .name"
         }
       },
       "naver": {
         "enabled": true,
         "query": "노스페이스 눕시",
-        "mall_names": ["노스페이스", "THE NORTH FACE"]
+        "mall_names": [
+          "노스페이스",
+          "THE NORTH FACE"
+        ]
       }
     },
     "jp": {
       "brand_site": {
-        "enabled": true,
-        "_comment": "Goldwin 일본 공식. 셀렉터 추정치 — 확인 필요",
+        "enabled": false,
+        "_comment": "goldwin.co.jp robots.txt 가 Disallow: /tnf/ 로 수집 명시 금지 → 공식몰 수집 끔(2026-10-15). 일본가는 라쿠텐·Yahoo API 사용.",
         "base_url": "https://www.goldwin.co.jp",
         "list_urls": [
           "https://www.goldwin.co.jp/tnf/category/?p={page}"
@@ -229,23 +410,58 @@
     "phase": "발굴",
     "display_name": "emis",
     "_comment": "발굴 후보 1순위. 일본 상설매장 시부야 1곳뿐인데 Yahoo/라쿠텐 대행이 캡을 6,300~7,980엔에 판매 중 (한국 공식가 4만원대 ≈ 4,300엔). 모자 ~150g = 배송비 최저구간. 일본 공식몰 없음 → 시장가(대행 시세) 매칭",
-    "brand_words": ["이미스", "emis", "エミス", "イミス"],
+    "brand_words": [
+      "이미스",
+      "emis",
+      "エミス",
+      "イミス"
+    ],
     "product_code_regex": null,
     "kr": {
       "brand_site": {
-        "enabled": false,
-        "_comment": "emis.kr — 셀렉터 확인 후 활성화",
+        "enabled": true,
+        "_comment": "emis.kr = Cafe24, 전체상품 cate_no=24(ALL, 48개/페이지) 실측(2026-10-15). 일본 공식몰은 없음(시장가 매칭).",
         "base_url": "https://emis.kr",
-        "list_urls": [],
+        "list_urls": [
+          "https://emis.kr/product/list.html?cate_no=24&page={page}"
+        ],
         "max_pages": 3,
-        "selectors": {}
+        "selectors": {
+          "item": "li[id^='anchorBoxId']",
+          "name": ".text-info .name span:not(.supplier):not(.srn-icon)",
+          "price": "li[rel='판매가'] > span:not([id])",
+          "sale_price": "li[rel='할인판매가'] > span:not([id])",
+          "link": ".thumb-box a",
+          "image": ".thumb-box img.thumb",
+          "sold_out": ".icon-soldout, img[alt*='품절']"
+        }
       },
-      "naver": { "enabled": true, "query": "이미스 볼캡", "mall_names": ["이미스", "EMIS"] }
+      "naver": {
+        "enabled": true,
+        "query": "이미스 볼캡",
+        "mall_names": [
+          "이미스",
+          "EMIS"
+        ]
+      }
     },
     "jp": {
-      "brand_site": { "enabled": false, "base_url": "", "list_urls": [], "selectors": {} },
-      "rakuten": { "enabled": true, "keyword": "emis キャップ 韓国", "shop_code": "" },
-      "yahoo": { "enabled": true, "query": "emis キャップ 韓国", "seller_id": "" }
+      "brand_site": {
+        "enabled": false,
+        "base_url": "",
+        "list_urls": [],
+        "selectors": {}
+      },
+      "rakuten": {
+        "enabled": true,
+        "keyword": "emis キャップ 韓国",
+        "shop_code": ""
+      },
+      "yahoo": {
+        "enabled": true,
+        "query": "emis キャップ 韓国",
+        "seller_id": ""
+      }
     }
   },
   "matin_kim": {
@@ -253,7 +469,14 @@
     "phase": "발굴",
     "display_name": "Matin Kim",
     "_comment": "발굴 후보 2순위. BUYMA 한국브랜드 구매 3위, 일본 매장(시부야·나고야·하라주쿠) 급성장 중이지만 '한국 경유가 싸고 구색 유리' — 라쿠텐 한국발송 백 16,800~18,800엔. 가방 = 가볍고 단가 높음",
-    "brand_words": ["마뗑킴", "마틴킴", "matin kim", "matinkim", "マーティンキム", "マタンキム"],
+    "brand_words": [
+      "마뗑킴",
+      "마틴킴",
+      "matin kim",
+      "matinkim",
+      "マーティンキム",
+      "マタンキム"
+    ],
     "product_code_regex": null,
     "kr": {
       "brand_site": {
@@ -264,12 +487,32 @@
         "max_pages": 3,
         "selectors": {}
       },
-      "naver": { "enabled": true, "query": "마뗑킴 가방", "mall_names": ["마뗑킴", "MATIN KIM"] }
+      "naver": {
+        "enabled": true,
+        "query": "마뗑킴 가방",
+        "mall_names": [
+          "마뗑킴",
+          "MATIN KIM"
+        ]
+      }
     },
     "jp": {
-      "brand_site": { "enabled": false, "base_url": "", "list_urls": [], "selectors": {} },
-      "rakuten": { "enabled": true, "keyword": "マーティンキム Matin Kim", "shop_code": "" },
-      "yahoo": { "enabled": true, "query": "マーティンキム Matin Kim", "seller_id": "" }
+      "brand_site": {
+        "enabled": false,
+        "base_url": "",
+        "list_urls": [],
+        "selectors": {}
+      },
+      "rakuten": {
+        "enabled": true,
+        "keyword": "マーティンキム Matin Kim",
+        "shop_code": ""
+      },
+      "yahoo": {
+        "enabled": true,
+        "query": "マーティンキム Matin Kim",
+        "seller_id": ""
+      }
     }
   },
   "mlb_korea": {
@@ -278,7 +521,12 @@
     "display_name": "MLB Korea",
     "report_note": "MLB: F&F 라이선스 지역(한국 등) 외 판매 — 병행수입·상표권 리스크 확인 필요",
     "_comment": "발굴 후보 3순위. BUYMA 레디스 5위. F&F 라이선스라 일본 정식 전개 제한 → 희소성으로 대행 수요 높음. 모자 중심 = 가볍다. 단 TNF와 같은 라이선스 리스크 — 소량 테스트 전 확인",
-    "brand_words": ["엠엘비", "mlb", "MLB Korea", "エムエルビー"],
+    "brand_words": [
+      "엠엘비",
+      "mlb",
+      "MLB Korea",
+      "エムエルビー"
+    ],
     "product_code_regex": "\\b3[A-Z]{3}\\d{4}N?[A-Z0-9]{0,6}\\b",
     "kr": {
       "brand_site": {
@@ -289,12 +537,32 @@
         "max_pages": 3,
         "selectors": {}
       },
-      "naver": { "enabled": true, "query": "MLB 볼캡", "mall_names": ["MLB", "엠엘비"] }
+      "naver": {
+        "enabled": true,
+        "query": "MLB 볼캡",
+        "mall_names": [
+          "MLB",
+          "엠엘비"
+        ]
+      }
     },
     "jp": {
-      "brand_site": { "enabled": false, "base_url": "", "list_urls": [], "selectors": {} },
-      "rakuten": { "enabled": true, "keyword": "MLB Korea キャップ 韓国 正規", "shop_code": "" },
-      "yahoo": { "enabled": true, "query": "MLB Korea キャップ 韓国 正規", "seller_id": "" }
+      "brand_site": {
+        "enabled": false,
+        "base_url": "",
+        "list_urls": [],
+        "selectors": {}
+      },
+      "rakuten": {
+        "enabled": true,
+        "keyword": "MLB Korea キャップ 韓国 正規",
+        "shop_code": ""
+      },
+      "yahoo": {
+        "enabled": true,
+        "query": "MLB Korea キャップ 韓国 正規",
+        "seller_id": ""
+      }
     }
   },
   "sculptor": {
@@ -302,16 +570,46 @@
     "phase": "발굴",
     "display_name": "SCULPTOR",
     "_comment": "발굴 후보. BUYMA 레디스 4위 — '일본 미전개 신작을 현지가로'가 셀링포인트 = 대행 모델 그 자체. 수집 데이터로 가격차 검증 후 본격 투입",
-    "brand_words": ["스컬프터", "스컬퍼터", "sculptor", "スカルプター"],
+    "brand_words": [
+      "스컬프터",
+      "스컬퍼터",
+      "sculptor",
+      "スカルプター"
+    ],
     "product_code_regex": null,
     "kr": {
-      "brand_site": { "enabled": false, "base_url": "", "list_urls": [], "selectors": {} },
-      "naver": { "enabled": true, "query": "스컬프터 SCULPTOR", "mall_names": ["스컬프터", "SCULPTOR"] }
+      "brand_site": {
+        "enabled": false,
+        "base_url": "",
+        "list_urls": [],
+        "selectors": {}
+      },
+      "naver": {
+        "enabled": true,
+        "query": "스컬프터 SCULPTOR",
+        "mall_names": [
+          "스컬프터",
+          "SCULPTOR"
+        ]
+      }
     },
     "jp": {
-      "brand_site": { "enabled": false, "base_url": "", "list_urls": [], "selectors": {} },
-      "rakuten": { "enabled": true, "keyword": "SCULPTOR 韓国 ブランド", "shop_code": "" },
-      "yahoo": { "enabled": true, "query": "SCULPTOR 韓国 ブランド", "seller_id": "" }
+      "brand_site": {
+        "enabled": false,
+        "base_url": "",
+        "list_urls": [],
+        "selectors": {}
+      },
+      "rakuten": {
+        "enabled": true,
+        "keyword": "SCULPTOR 韓国 ブランド",
+        "shop_code": ""
+      },
+      "yahoo": {
+        "enabled": true,
+        "query": "SCULPTOR 韓国 ブランド",
+        "seller_id": ""
+      }
     }
   }
 }

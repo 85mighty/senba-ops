@@ -87,6 +87,11 @@ function writePageCache(url, items) {
 async function extractListPage(page, url, selectors) {
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
   await page.waitForTimeout(1500); // 지연 렌더 대비
+  // [2026-10-15] SPA 사이트(TNF 한국몰 등): 상품 카드가 뜰 때까지 대기 + 한 번 더 안정화 (브랜드 설정 wait_selector, 없으면 기존 동작)
+  if (selectors.wait_selector) {
+    await page.waitForSelector(selectors.wait_selector, { timeout: 30000 }).catch(() => {});
+    await page.waitForTimeout(2500);
+  }
   return page.$$eval(
     selectors.item,
     (nodes, sel) => {
