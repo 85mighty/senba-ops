@@ -415,20 +415,30 @@ export function recentRuns(limit = 8) {
   return db.prepare(`SELECT run_id, step, status, message, started_at, finished_at FROM run_log ORDER BY id DESC LIMIT ?`).all(limit);
 }
 
-// 수집된 상품 둘러보기 (이미지 포함)
+// 수집된 상품 둘러보기 (이미지 포함). 같은 이름·가격의 색상별 중복은 1건으로 묶고 variants로 개수 표시
 export function listProducts({ side = 'kr', brand, source, q, limit = 60, offset = 0 } = {}) {
   const table = side === 'jp' ? 'products_jp' : 'products_kr';
   const price = side === 'jp' ? 'price_jpy' : 'COALESCE(NULLIF(sale_price_krw,0), price_krw)';
-  const extra = side === 'jp' ? ', review_count' : ', price_krw, sale_price_krw';
-  let sql = `SELECT id, brand, source, product_code, name, ${price} AS price, url, image_url, in_stock, fetched_at${extra} FROM ${table} WHERE 1=1`;
+  const extra = side === 'jp' ? ', MAX(review_count) AS review_count' : ', price_krw, sale_price_krw';
+  let sql = `SELECT MIN(id) AS id, brand, source, product_code, name, ${price} AS price, url, image_url, in_stock,
+                    MAX(fetched_at) AS fetched_at, COUNT(*) AS variants${extra}
+             FROM ${table} WHERE 1=1`;
   const args = [];
   if (brand) { sql += ` AND brand=?`; args.push(brand); }
   if (source) { sql += ` AND source=?`; args.push(source); }
   if (q) { sql += ` AND name LIKE ?`; args.push(`%${q}%`); }
+  sql += ` GROUP BY brand, source, name, price`;
   sql += side === 'jp' ? ` ORDER BY review_count DESC, fetched_at DESC` : ` ORDER BY fetched_at DESC, id DESC`;
   sql += ` LIMIT ? OFFSET ?`;
   args.push(Math.min(limit, 200), offset);
   return db.prepare(sql).all(...args);
+}
+
+// 같은 품번의 반대편(또는 같은 편) 상품들 — 시세 찾기에서 DB에 이미 있는 가격을 함께 보여주기 위함
+export function productsByCode(side, brand, code) {
+  if (!code) return [];
+  const table = side === 'jp' ? 'products_jp' : 'products_kr';
+  return db.prepare(`SELECT * FROM ${table} WHERE brand=? AND product_code=? AND in_stock=1`).all(brand, code);
 }
 
 export default db;

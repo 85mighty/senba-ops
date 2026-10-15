@@ -3,216 +3,297 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>KR→JP 아비트라지</title>
+<title>KR↔JP 아비트라지</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
 <style>
-  :root { --bg:#f4f6f7; --card:#fff; --fg:#14232b; --muted:#6b7c85; --line:#dbe3e7; --accent:#0a7cff;
-    --go:#0a8f3c; --near:#c77700; --wait:#6b7c85; --far:#9a6b6b; --no:#b3261e; --imgbg:#e9eef0; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#10181c; --card:#18242a; --fg:#e6eef1; --muted:#8fa3ad; --line:#2a3b43;
-    --accent:#4aa3ff; --go:#3ccf74; --near:#f0b44a; --wait:#8fa3ad; --far:#c99; --no:#ff7a70; --imgbg:#22313a; } }
+  :root {
+    --bg:#f4f5f8; --surface:#ffffff; --surface2:#eceff4; --ink:#0f1728; --ink2:#46536a; --muted:#8793a8; --line:#e2e6ee;
+    --accent:#3451d1; --accent-ink:#ffffff; --accent-soft:#e7ebfc;
+    --good:#0b8f63; --good-soft:#dff5ec; --warn:#a85f00; --warn-soft:#fff1d6; --bad:#c2352d; --bad-soft:#fde7e5;
+    --shadow:0 1px 2px rgba(15,23,40,.06), 0 6px 18px rgba(15,23,40,.06);
+    --font:'Noto Sans KR',system-ui,-apple-system,'Segoe UI',sans-serif;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --bg:#0d1117; --surface:#161c25; --surface2:#1e2632; --ink:#eef2f8; --ink2:#a9b4c6; --muted:#76839a; --line:#273041;
+    --accent:#8ea3ff; --accent-ink:#0d1117; --accent-soft:#222c52;
+    --good:#41d3a0; --good-soft:#12382c; --warn:#f3b24d; --warn-soft:#3a2b10; --bad:#ff8077; --bad-soft:#3d1b19;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35); color-scheme:dark; } }
   * { box-sizing:border-box; }
-  body { margin:0; padding:16px; background:var(--bg); color:var(--fg); font:14px/1.5 -apple-system,'Noto Sans KR',sans-serif; }
-  h1 { font-size:18px; margin:0 0 2px; }
-  .sub { color:var(--muted); font-size:12px; margin-bottom:12px; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.55 var(--font); }
   a { color:var(--accent); text-decoration:none; }
-  input, select, button { font:inherit; padding:6px 10px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--fg); }
+  button, input, select { font:inherit; color:inherit; }
   button { cursor:pointer; }
-  .primary { background:var(--accent); color:#fff; border-color:var(--accent); }
-  .bar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
-  .tabs { display:flex; gap:4px; border-bottom:1px solid var(--line); margin-bottom:14px; }
-  .tab { border:0; border-bottom:3px solid transparent; border-radius:0; background:none; padding:8px 14px; color:var(--muted); font-weight:600; }
-  .tab[aria-selected="true"] { color:var(--fg); border-bottom-color:var(--accent); }
-  .empty { color:var(--muted); padding:24px 0; }
-  .chips { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
-  .chip { border:1px solid var(--line); border-radius:999px; padding:3px 12px; font-size:12.5px; background:var(--card); }
-  .chip[aria-pressed="true"] { background:var(--accent); border-color:var(--accent); color:#fff; }
+  :focus-visible { outline:3px solid var(--accent); outline-offset:2px; }
 
-  /* 판단 카드 */
-  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:14px; }
-  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; display:flex; flex-direction:column; min-width:0; }
-  .imgs { display:grid; grid-template-columns:1fr 1fr; gap:2px; background:var(--line); }
-  .im { position:relative; aspect-ratio:1/1; background:var(--imgbg); display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:12px; }
-  .im img { width:100%; height:100%; object-fit:cover; display:block; }
-  .im .tag { position:absolute; left:6px; top:6px; background:rgba(0,0,0,.62); color:#fff; font-size:11px; border-radius:4px; padding:0 6px; }
-  .imgs.wide { grid-template-columns:1fr; } .imgs.wide .im { aspect-ratio:2/1; }
-  .body { padding:12px 14px 14px; display:flex; flex-direction:column; gap:8px; min-width:0; }
-  .top { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
-  .verdict { font-weight:800; font-size:13px; border-radius:6px; padding:1px 8px; border:1.5px solid currentColor; white-space:nowrap; }
-  .v-go{color:var(--go)} .v-near{color:var(--near)} .v-wait{color:var(--wait)} .v-far{color:var(--far)} .v-no{color:var(--no)}
-  .brand { font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
-  .name { font-weight:600; overflow-wrap:anywhere; }
-  .jpn { color:var(--muted); font-size:12.5px; overflow-wrap:anywhere; }
-  .nums { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; text-align:center; background:var(--bg); border-radius:8px; padding:8px 4px; }
-  .nums b { display:block; font-size:15px; font-variant-numeric:tabular-nums; }
-  .nums span { font-size:11px; color:var(--muted); }
-  .pos { color:var(--go); } .neg { color:var(--no); }
-  .meta { display:flex; gap:6px; flex-wrap:wrap; font-size:12px; color:var(--muted); }
-  .links { display:flex; gap:10px; flex-wrap:wrap; font-size:13px; }
-  details { font-size:12.5px; color:var(--muted); }
-  details table { width:100%; margin-top:4px; border-collapse:collapse; font-variant-numeric:tabular-nums; }
+  header { position:sticky; top:0; z-index:5; background:color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter:blur(10px); border-bottom:1px solid var(--line); }
+  .head { max-width:1180px; margin:0 auto; padding:12px 16px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  .logo { font-weight:900; font-size:18px; letter-spacing:-.02em; }
+  .logo small { display:block; font-weight:400; font-size:11.5px; color:var(--muted); letter-spacing:0; }
+  .spacer { flex:1; }
+  .tok { display:flex; gap:6px; align-items:center; }
+  .tok input { width:170px; padding:7px 10px; border:1px solid var(--line); border-radius:8px; background:var(--surface); }
+  .btn { border:1px solid var(--line); background:var(--surface); border-radius:9px; padding:7px 13px; font-weight:500; }
+  .btn:hover { background:var(--surface2); }
+  .btn.pri { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:700; }
+  .btn.pri:hover { filter:brightness(1.08); background:var(--accent); }
+  .btn.sm { padding:5px 10px; font-size:13px; }
+  .tabs { max-width:1180px; margin:0 auto; padding:0 16px 10px; display:flex; gap:6px; }
+  .tab { border:0; background:transparent; border-radius:999px; padding:7px 16px; font-weight:700; color:var(--ink2); }
+  .tab[aria-selected="true"] { background:var(--ink); color:var(--bg); }
+
+  main { max-width:1180px; margin:0 auto; padding:18px 16px 60px; }
+  .hint { color:var(--ink2); background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:11px 15px; margin-bottom:16px; font-size:13.5px; }
+  .hint b { color:var(--ink); }
+  .empty { color:var(--muted); text-align:center; padding:48px 12px; }
+  .bar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
+  .bar input, .bar select { padding:8px 11px; border:1px solid var(--line); border-radius:9px; background:var(--surface); }
+  .seg { display:inline-flex; background:var(--surface2); border-radius:10px; padding:3px; }
+  .seg button { border:0; background:transparent; padding:6px 14px; border-radius:8px; font-weight:700; color:var(--ink2); }
+  .seg button[aria-pressed="true"] { background:var(--surface); color:var(--ink); box-shadow:var(--shadow); }
+  .chips { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
+  .chip { border:1px solid var(--line); background:var(--surface); border-radius:999px; padding:4px 13px; font-size:13px; }
+  .chip[aria-pressed="true"] { background:var(--ink); color:var(--bg); border-color:var(--ink); }
+
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px; }
+  .grid.wide { grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); }
+  .card { background:var(--surface); border-radius:16px; box-shadow:var(--shadow); overflow:hidden; display:flex; flex-direction:column; min-width:0; }
+  .photo { position:relative; aspect-ratio:1/1; background:var(--surface2); display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:12px; }
+  .photo img { width:100%; height:100%; object-fit:cover; display:block; }
+  .pair { display:grid; grid-template-columns:1fr 1fr; gap:2px; background:var(--line); }
+  .pair .photo { aspect-ratio:4/5; }
+  .badge { position:absolute; left:8px; top:8px; background:rgba(15,23,40,.72); color:#fff; font-size:11px; font-weight:700; border-radius:6px; padding:1px 7px; }
+  .badge.r { left:auto; right:8px; background:var(--accent); }
+  .body { padding:12px 14px 14px; display:flex; flex-direction:column; gap:9px; min-width:0; flex:1; }
+  .nm { font-weight:700; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; }
+  .sub { color:var(--muted); font-size:12px; overflow-wrap:anywhere; }
+  .price { font-size:22px; font-weight:900; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+  .price small { font-size:12px; font-weight:400; color:var(--muted); margin-left:6px; }
+  .acts { display:flex; gap:6px; flex-wrap:wrap; margin-top:auto; }
+  .quick { display:flex; gap:10px; flex-wrap:wrap; font-size:12px; }
+  .pill { display:inline-block; border-radius:999px; padding:1px 10px; font-size:12px; font-weight:700; }
+  .pill.go { background:var(--good-soft); color:var(--good); } .pill.near { background:var(--warn-soft); color:var(--warn); }
+  .pill.wait,.pill.far { background:var(--surface2); color:var(--ink2); } .pill.no { background:var(--bad-soft); color:var(--bad); }
+  .nums { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; text-align:center; background:var(--surface2); border-radius:10px; padding:9px 4px; }
+  .nums b { display:block; font-size:15px; font-variant-numeric:tabular-nums; } .nums span { font-size:11px; color:var(--muted); }
+  .pos { color:var(--good); } .neg { color:var(--bad); }
+  details { font-size:12.5px; color:var(--muted); } details table { width:100%; margin-top:5px; border-collapse:collapse; font-variant-numeric:tabular-nums; }
   details td { padding:1px 0; } details td:last-child { text-align:right; }
-  .sec { font-size:15px; font-weight:700; margin:22px 0 10px; }
+  .sec { font-size:16px; font-weight:900; margin:28px 0 12px; }
 
-  /* 연결 현황 */
-  .brand-card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:12px; }
-  .brand-card h3 { margin:0 0 2px; font-size:15px; }
-  .brand-card .cm { color:var(--muted); font-size:12px; margin-bottom:8px; }
-  .srcs { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:8px; }
-  .src { border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:12.5px; }
-  .src .t { font-weight:700; display:flex; justify-content:space-between; gap:6px; }
-  .st-done{border-left:4px solid var(--go)} .st-ready{border-left:4px solid var(--accent)} .st-nokey{border-left:4px solid var(--near)} .st-off{border-left:4px solid var(--line)}
-  .src .d { color:var(--muted); }
-  .runs { font-size:12.5px; color:var(--muted); }
-  .runs div { padding:2px 0; border-bottom:1px dashed var(--line); }
+  .bc { background:var(--surface); border-radius:16px; box-shadow:var(--shadow); padding:16px; margin-bottom:14px; }
+  .bc h3 { margin:0; font-size:16px; } .bc .cm { color:var(--muted); font-size:12px; margin:2px 0 10px; }
+  .srcs { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:8px; }
+  .src { border:1px solid var(--line); border-left-width:4px; border-radius:10px; padding:8px 11px; font-size:12.5px; }
+  .src .t { font-weight:700; display:flex; justify-content:space-between; gap:6px; } .src .d { color:var(--muted); }
+  .st-done { border-left-color:var(--good); } .st-ready { border-left-color:var(--accent); } .st-nokey { border-left-color:var(--warn); } .st-off { border-left-color:var(--line); }
+  .runs div { padding:3px 0; border-bottom:1px dashed var(--line); color:var(--ink2); font-size:12.5px; }
 
-  /* 수집 상품 */
-  .row { display:flex; gap:10px; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:8px; margin-bottom:8px; align-items:center; min-width:0; }
-  .row .th { flex:none; width:64px; height:64px; border-radius:6px; background:var(--imgbg); overflow:hidden; }
-  .row .th img { width:100%; height:100%; object-fit:cover; }
-  .row .tx { min-width:0; flex:1; }
-  .row .tx .n { overflow-wrap:anywhere; font-weight:600; }
-  .row .tx .m { color:var(--muted); font-size:12px; }
-  .row .pr { flex:none; font-weight:700; font-variant-numeric:tabular-nums; }
-  @media (max-width:520px){ .grid { grid-template-columns:1fr; } }
+  dialog { border:0; border-radius:20px; padding:0; width:min(760px, calc(100vw - 24px)); max-height:calc(100vh - 32px); background:var(--surface); color:var(--ink); box-shadow:0 20px 60px rgba(0,0,0,.35); }
+  dialog::backdrop { background:rgba(8,12,20,.55); }
+  .dh { display:flex; gap:14px; padding:16px; border-bottom:1px solid var(--line); align-items:flex-start; }
+  .dh img { width:72px; height:72px; border-radius:10px; object-fit:cover; background:var(--surface2); flex:none; }
+  .dh .t { min-width:0; flex:1; } .dh .t b { overflow-wrap:anywhere; }
+  .dbody { padding:14px 16px 18px; overflow:auto; max-height:calc(100vh - 160px); display:flex; flex-direction:column; gap:10px; }
+  .sum { border-radius:12px; padding:11px 14px; background:var(--accent-soft); }
+  .sum.ok { background:var(--good-soft); } .sum.bad { background:var(--bad-soft); }
+  .note { font-size:12.5px; color:var(--warn); background:var(--warn-soft); border-radius:10px; padding:7px 11px; }
+  .res { display:flex; gap:12px; align-items:center; border:1px solid var(--line); border-radius:12px; padding:9px; }
+  .res img, .res .noimg { width:60px; height:60px; border-radius:8px; object-fit:cover; background:var(--surface2); flex:none; }
+  .res .t { min-width:0; flex:1; } .res .t .n { overflow-wrap:anywhere; font-weight:500; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .res .r { text-align:right; flex:none; font-variant-numeric:tabular-nums; } .res .r b { display:block; font-size:16px; }
+  .mg { font-size:12.5px; font-weight:700; }
+  @media (max-width:560px){ .grid { grid-template-columns:repeat(2,1fr); gap:10px; } .grid.wide { grid-template-columns:1fr; } .price { font-size:18px; } .tok input { width:120px; } }
 </style>
 </head>
 <body>
-<h1>KR→JP 아비트라지</h1>
-<div class="sub">리서치 도구 (선매입 후보 선정용). 메루카리Shops는 일본 국내 재고만 판매 가능. <a href="/review">검토 대기 →</a></div>
+<header>
+  <div class="head">
+    <div class="logo">KR↔JP 아비트라지<small>한국 가격 · 일본 시세 · 마진을 한 번에</small></div>
+    <div class="spacer"></div>
+    <a href="/review" class="btn sm">검토 대기</a>
+    <div class="tok"><input id="token" type="password" placeholder="UI_TOKEN" autocomplete="off"><button class="btn pri sm" id="go">접속</button></div>
+  </div>
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" data-tab="cards" aria-selected="true">오늘의 후보</button>
+    <button class="tab" role="tab" data-tab="explore" aria-selected="false">상품 탐색</button>
+    <button class="tab" role="tab" data-tab="status" aria-selected="false">연결 현황</button>
+  </nav>
+</header>
+<main id="out"><div class="empty">토큰을 입력하고 접속하세요.</div></main>
 
-<div class="bar">
-  <input id="token" type="password" placeholder="UI_TOKEN" size="22">
-  <button class="primary" id="go">조회</button>
-</div>
-
-<div class="tabs" role="tablist">
-  <button class="tab" role="tab" data-tab="cards" aria-selected="true">판단 카드</button>
-  <button class="tab" role="tab" data-tab="status" aria-selected="false">연결 현황</button>
-  <button class="tab" role="tab" data-tab="products" aria-selected="false">수집 상품</button>
-</div>
-
-<div id="out" class="empty">토큰을 입력하고 조회하세요.</div>
+<dialog id="dlg" aria-labelledby="dlgTitle"></dialog>
 
 <script>
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const won = (n) => '₩' + (n || 0).toLocaleString();
-const yen = (n) => '¥' + (n || 0).toLocaleString();
-let tab = 'cards', brandFilter = '', levelFilter = '';
+const won = (n) => '₩' + Math.round(n || 0).toLocaleString();
+const yen = (n) => '¥' + Math.round(n || 0).toLocaleString();
+const signYen = (n) => (n >= 0 ? '+' : '−') + '¥' + Math.abs(Math.round(n)).toLocaleString();
+const enc = encodeURIComponent;
+let tab = 'cards', brandFilter = '', levelFilter = '', side = 'kr', exBrand = '', exQ = '', brandList = [], products = [];
 try { $('token').value = localStorage.getItem('ui_token') || ''; } catch {}
 
-const api = async (path) => {
-  const sep = path.includes('?') ? '&' : '?';
-  const res = await fetch(`${path}${sep}token=${encodeURIComponent($('token').value)}`);
-  if (!res.ok) throw new Error(`${res.status} ${(await res.json().catch(() => ({}))).error || ''}`);
-  return res.json();
-};
-const img = (src, label) => `<div class="im">${src ? `<img src="${esc(src)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}<span class="tag">${label}</span>${src ? '' : '이미지 없음'}</div>`;
-// 일본 상품 한국 구입처를 찾아볼 검색 링크
-const naverQ = (n) => `https://search.shopping.naver.com/search/all?query=${encodeURIComponent(n)}`;
-const coupangQ = (n) => `https://www.coupang.com/np/search?q=${encodeURIComponent(n)}`;
+async function api(path) {
+  const res = await fetch(`${path}${path.includes('?') ? '&' : '?'}token=${enc($('token').value)}`);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || res.status);
+  return data;
+}
+const SRC = { brand_site:'공식몰', naver:'네이버', coupang:'쿠팡', rakuten:'라쿠텐', yahoo:'Yahoo' };
+const srcName = (x) => SRC[x] || x;
+const photo = (src, label, extra = '') =>
+  `<div class="photo">${src ? `<img src="${esc(src)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : '이미지 없음'}${label ? `<span class="badge">${label}</span>` : ''}${extra}</div>`;
 
+/* 바로가기 검색 링크 */
+const jpLinks = (q) => [['라쿠텐', `https://search.rakuten.co.jp/search/mall/${enc(q)}/`], ['Yahoo', `https://shopping.yahoo.co.jp/search?p=${enc(q)}`], ['메루카리', `https://jp.mercari.com/search?keyword=${enc(q)}`], ['구글', `https://www.google.com/search?q=${enc(q)}`]];
+const krLinks = (q) => [['네이버', `https://search.shopping.naver.com/search/all?query=${enc(q)}`], ['쿠팡', `https://www.coupang.com/np/search?q=${enc(q)}`], ['무신사', `https://www.musinsa.com/search/goods?keyword=${enc(q)}`], ['구글', `https://www.google.com/search?q=${enc(q)}`]];
+const linkRow = (arr) => arr.map(([n, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener">${n}</a>`).join('');
+
+/* ---------- 오늘의 후보 ---------- */
 function cardHtml(c) {
   const v = c.verdict, b = c.breakdown || {};
-  return `<div class="card">
-    <div class="imgs">${img(c.krImage, '한국')}${img(c.jpImage, '일본')}</div>
+  return `<article class="card">
+    <div class="pair">${photo(c.krImage, '한국')}${photo(c.jpImage, '일본')}</div>
     <div class="body">
-      <div class="top"><div class="brand">${esc(c.brand)} · ${esc(c.confidence)}등급${c.code ? ' · ' + esc(c.code) : ''}</div>
-        <span class="verdict v-${v.level}">${esc(v.label)}</span></div>
-      <div class="name">${esc(c.krName || c.jpName)}</div>
-      ${c.jpName && c.jpName !== c.krName ? `<div class="jpn">🇯🇵 ${esc(c.jpName)}</div>` : ''}
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
+        <span class="sub">${esc(c.brand)} · ${esc(c.confidence)}등급${c.code ? ' · ' + esc(c.code) : ''}</span>
+        <span class="pill ${v.level}">${esc(v.label)}</span></div>
+      <div class="nm">${esc(c.krName || c.jpName)}</div>
+      ${c.jpName && c.jpName !== c.krName ? `<div class="sub">🇯🇵 ${esc(c.jpName)}</div>` : ''}
       <div class="nums">
         <div><b>${won(c.krPriceKrw)}</b><span>한국 매입가</span></div>
         <div><b>${yen(c.jpSellPriceJpy)}</b><span>일본 판매가</span></div>
-        <div><b class="${c.netMarginJpy >= 0 ? 'pos' : 'neg'}">${yen(c.netMarginJpy)}</b><span>순마진 ${(c.marginRate * 100).toFixed(0)}%</span></div>
+        <div><b class="${c.netMarginJpy >= 0 ? 'pos' : 'neg'}">${signYen(c.netMarginJpy)}</b><span>순마진 ${(c.marginRate * 100).toFixed(0)}%</span></div>
       </div>
-      <div class="meta">
-        <span>${c.targetKrPriceKrw ? `목표 매입가 ${won(c.targetKrPriceKrw)} 이하면 통과` : esc(v.hint || '')}</span>
-        <span>· ${esc(c.demand)}${c.reviews ? ` (리뷰 ${c.reviews})` : ''}</span>
-      </div>
-      <div class="links">${c.krUrl ? `<a href="${esc(c.krUrl)}" target="_blank" rel="noopener">한국 상품 ↗</a>` : ''}${c.jpUrl ? `<a href="${esc(c.jpUrl)}" target="_blank" rel="noopener">일본 상품 ↗</a>` : ''}</div>
+      <div class="sub">${c.targetKrPriceKrw ? `한국가 <b>${won(c.targetKrPriceKrw)}</b> 이하면 통과` : esc(v.hint || '')} · ${esc(c.demand)}${c.reviews ? ` (리뷰 ${c.reviews})` : ''}</div>
+      <div class="acts">${c.krUrl ? `<a class="btn sm" href="${esc(c.krUrl)}" target="_blank" rel="noopener">한국 상품 ↗</a>` : ''}${c.jpUrl ? `<a class="btn sm" href="${esc(c.jpUrl)}" target="_blank" rel="noopener">일본 상품 ↗</a>` : ''}</div>
       <details><summary>마진 계산 내역</summary><table>
         <tr><td>일본 판매가</td><td>${yen(b.jpSellPriceJpy)}</td></tr>
-        <tr><td>상품(환율 ${b.fx ? b.fx.toFixed(2) : '-'} 안전마진 포함)</td><td>−${yen(b.krGoodsJpy)}</td></tr>
+        <tr><td>상품 (환율 ${b.fx ? b.fx.toFixed(2) : '-'}, 안전마진 포함)</td><td>−${yen(b.krGoodsJpy)}</td></tr>
         <tr><td>한국 국내배송</td><td>−${yen(b.krShipJpy)}</td></tr>
         <tr><td>국제배송 (${b.weightG || '-'}g)</td><td>−${yen(b.intlShipJpy)}</td></tr>
         <tr><td>관세 · 수입소비세</td><td>−${yen((b.customsDutyJpy || 0) + (b.importTaxJpy || 0))}</td></tr>
         <tr><td>플랫폼 수수료 · 포장</td><td>−${yen((b.platformFeeJpy || 0) + (b.packingJpy || 0))}</td></tr>
       </table></details>
-    </div></div>`;
+    </div></article>`;
 }
-
 function sourcingHtml(s) {
-  return `<div class="card">
-    <div class="imgs wide">${img(s.image_url, '일본')}</div>
-    <div class="body">
-      <div class="brand">${esc(s.brand)} · ${esc(s.source)}${s.product_code ? ' · ' + esc(s.product_code) : ''}</div>
-      <div class="name">${esc(s.name)}</div>
-      <div class="meta"><span><b>${yen(s.price_jpy)}</b></span><span>· 리뷰 ${s.review_count}건 (일본에서 잘 팔림)</span></div>
-      <div class="links"><a href="${esc(s.url)}" target="_blank" rel="noopener">일본 상품 ↗</a>
-        <a href="${esc(naverQ(s.name))}" target="_blank" rel="noopener">네이버에서 한국 구입처 찾기 ↗</a>
-        <a href="${esc(coupangQ(s.name))}" target="_blank" rel="noopener">쿠팡에서 찾기 ↗</a></div>
-    </div></div>`;
+  return `<article class="card">${photo(s.image_url, '일본 수요')}<div class="body">
+    <div class="sub">${esc(s.brand)} · ${esc(srcName(s.source))}${s.product_code ? ' · ' + esc(s.product_code) : ''}</div>
+    <div class="nm">${esc(s.name)}</div>
+    <div class="price">${yen(s.price_jpy)}<small>리뷰 ${s.review_count}건</small></div>
+    <div class="acts"><button class="btn pri sm" data-lookup="jp:${s.id}">한국 구입처 찾기</button><a class="btn sm" href="${esc(s.url)}" target="_blank" rel="noopener">원본 ↗</a></div>
+  </div></article>`;
 }
-
 async function renderCards() {
-  const d = await api(`/api/cards${brandFilter ? '?brand=' + brandFilter : ''}`);
-  const brands = [...new Set(d.cards.map((c) => c.brand))];
+  const d = await api(`/api/cards${brandFilter ? '?brand=' + enc(brandFilter) : ''}`);
   const levels = [['', '전체'], ['go', '지금 가능'], ['near', '세일 임박'], ['wait', '큰 세일 필요'], ['far', '가능성 낮음'], ['no', '구조상 어려움']];
+  const brands = [...new Set(d.cards.map((c) => c.brand))];
   const shown = levelFilter ? d.cards.filter((c) => c.verdict.level === levelFilter) : d.cards;
-  const chips = (arr, cur, attr) => arr.map(([val, lab]) => `<button class="chip" data-${attr}="${val}" aria-pressed="${cur === val}">${lab}</button>`).join('');
+  const chips = (arr, cur, attr) => arr.map(([val, lab]) => `<button class="chip" data-${attr}="${esc(val)}" aria-pressed="${cur === val}">${esc(lab)}</button>`).join('');
   $('out').innerHTML =
-    `<div class="chips">${chips(levels, levelFilter, 'level')}</div>` +
-    `<div class="chips">${chips([['', '모든 브랜드'], ...brands.map((b) => [b, b])], brandFilter, 'brand')}</div>` +
-    (shown.length ? `<div class="grid">${shown.map(cardHtml).join('')}</div>` : '<div class="empty">조건에 맞는 상품이 없습니다. 수집·매칭이 끝나면 여기에 카드로 나옵니다.</div>') +
-    (d.sourcing.length ? `<div class="sec">일본에서 잘 팔리는데 한국 매칭이 없는 상품 — 한국 구입처를 찾아볼 것</div><div class="grid">${d.sourcing.map(sourcingHtml).join('')}</div>` : '');
+    `<div class="hint"><b>한국 상품과 일본 상품이 짝지어진 것만</b> 여기에 나옵니다. 같은 품번이 양쪽에 있을 때 자동으로 짝이 지어집니다. 짝이 없는 상품은 <b>상품 탐색</b> 탭에서 "시세 찾기"를 눌러 직접 확인하세요.</div>` +
+    (d.cards.length ? `<div class="chips">${chips(levels, levelFilter, 'level')}</div><div class="chips">${chips([['', '모든 브랜드'], ...brands.map((b) => [b, b])], brandFilter, 'brand')}</div>` : '') +
+    (shown.length ? `<div class="grid wide">${shown.map(cardHtml).join('')}</div>` : '<div class="empty">아직 짝지어진 상품이 없습니다.<br>서버에서 <code>node src/index.js --step=match,price</code> 를 실행하거나 상품 탐색 탭을 이용하세요.</div>') +
+    (d.sourcing.length ? `<h2 class="sec">일본에서 잘 팔리는데 한국 매칭이 없는 상품</h2><div class="grid">${d.sourcing.map(sourcingHtml).join('')}</div>` : '');
 }
 
+/* ---------- 상품 탐색 ---------- */
+function productHtml(p) {
+  const q = p.product_code || p.name.replace(/\[[^\]]*\]/g, ' ').trim();
+  const isKr = side === 'kr';
+  return `<article class="card">
+    ${photo(p.image_url, esc(srcName(p.source)), p.variants > 1 ? `<span class="badge r">${p.variants}색</span>` : '')}
+    <div class="body">
+      <div class="sub">${esc(p.brand)}${p.product_code ? ' · ' + esc(p.product_code) : ''}${p.review_count ? ' · 리뷰 ' + p.review_count : ''}</div>
+      <div class="nm">${esc(p.name)}</div>
+      <div class="price">${isKr ? won(p.price) : yen(p.price)}${isKr && p.sale_price_krw && p.sale_price_krw < p.price_krw ? `<small><s>${won(p.price_krw)}</s></small>` : ''}</div>
+      <div class="acts"><button class="btn pri sm" data-lookup="${side}:${p.id}">${isKr ? '일본 시세 찾기' : '한국 구입처 찾기'}</button><a class="btn sm" href="${esc(p.url)}" target="_blank" rel="noopener">원본 보기 ↗</a></div>
+      <div class="quick">${linkRow(isKr ? jpLinks(q) : krLinks(q))}</div>
+    </div></article>`;
+}
+async function renderExplore() {
+  if (!brandList.length) { try { brandList = (await api('/api/status')).brands.map((b) => [b.key, b.name]); } catch {} }
+  const d = await api(`/api/products?side=${side}&limit=96${exBrand ? '&brand=' + enc(exBrand) : ''}${exQ ? '&q=' + enc(exQ) : ''}`);
+  products = d.rows;
+  $('out').innerHTML =
+    `<div class="hint">상품을 고르고 <b>${side === 'kr' ? '"일본 시세 찾기"' : '"한국 구입처 찾기"'}</b>를 누르면, ${side === 'kr' ? '일본 쇼핑몰(라쿠텐·Yahoo)에서 같은 상품의 판매가를 찾아' : '한국 쇼핑몰(네이버·쿠팡·공식몰)에서 같은 상품의 가격을 찾아'} <b>판매처마다 순마진</b>을 계산해 줍니다.</div>` +
+    `<div class="bar"><div class="seg"><button data-side="kr" aria-pressed="${side === 'kr'}">🇰🇷 한국 상품</button><button data-side="jp" aria-pressed="${side === 'jp'}">🇯🇵 일본 상품</button></div>
+      <select id="exBrand"><option value="">모든 브랜드</option>${brandList.map(([k, n]) => `<option value="${esc(k)}"${k === exBrand ? ' selected' : ''}>${esc(n)}</option>`).join('')}</select>
+      <input id="exQ" placeholder="상품명 검색" value="${esc(exQ)}"><button class="btn" id="exGo">검색</button></div>` +
+    (d.rows.length ? `<div class="grid">${d.rows.map(productHtml).join('')}</div>` : '<div class="empty">수집된 상품이 없습니다.</div>');
+}
+
+/* ---------- 시세 찾기 창 ---------- */
+async function openLookup(sd, id) {
+  const dlg = $('dlg');
+  dlg.innerHTML = `<div class="dbody"><div class="empty">시세를 찾는 중… (몇 초 걸립니다)</div></div>`;
+  dlg.showModal();
+  try {
+    const d = await api(`/api/lookup?side=${sd}&id=${id}`);
+    const best = d.results[0];
+    const isKr = d.side === 'kr';
+    let sum = '';
+    if (best) {
+      const ok = best.margin.passed, bad = best.margin.net < 0;
+      sum = `<div class="sum ${ok ? 'ok' : bad ? 'bad' : ''}"><b>${isKr ? `일본에서 가장 싼 결과 ${yen(best.price)}` : `한국에서 가장 싼 결과 ${won(best.price)}`}</b> (${esc(best.source)}) 기준 → 순마진 <b class="${best.margin.net >= 0 ? 'pos' : 'neg'}">${signYen(best.margin.net)}</b> (${(best.margin.rate * 100).toFixed(0)}%) · ${ok ? '통과 기준 충족' : '통과 기준 미달 (¥2,200 · 25%)'}<br><span class="sub">환율 ${d.fx.toFixed(2)}원/엔 · 무게 ${d.weightG}g 가정 · 검색어 "${esc(d.query)}"</span></div>`;
+    }
+    dlg.innerHTML = `<div class="dh"><img src="${esc(d.base.image || '')}" alt="" referrerpolicy="no-referrer" onerror="this.style.visibility='hidden'"><div class="t"><div class="sub">${isKr ? '한국 상품' : '일본 상품'}</div><b id="dlgTitle">${esc(d.base.name)}</b><div class="sub">${esc(d.base.label)} · <a href="${esc(d.base.url)}" target="_blank" rel="noopener">원본 ↗</a></div></div><button class="btn sm" data-close>닫기</button></div>
+      <div class="dbody">${sum}${d.notes.map((n) => `<div class="note">${esc(n)}</div>`).join('')}
+      ${d.results.length ? d.results.map((r) => `<div class="res">${r.image_url ? `<img src="${esc(r.image_url)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : '<div class="noimg"></div>'}
+        <div class="t"><div class="n">${esc(r.name)}</div><div class="sub">${esc(r.source)}${r.review_count ? ' · 리뷰 ' + r.review_count : ''}</div></div>
+        <div class="r"><b>${isKr ? yen(r.price) : won(r.price)}</b><span class="mg ${r.margin.net >= 0 ? 'pos' : 'neg'}">${signYen(r.margin.net)}${r.margin.passed ? ' ✓통과' : ''}</span></div>
+        <a class="btn sm" href="${esc(r.url)}" target="_blank" rel="noopener">보기 ↗</a></div>`).join('') : '<div class="empty">자동 검색 결과가 없습니다. 아래 링크로 직접 찾아보세요.</div>'}
+      <div class="sub">직접 찾기: <span class="quick" style="display:inline-flex">${linkRow(isKr ? jpLinks(d.query) : krLinks(d.query))}</span></div>
+      <div class="sub">같은 상품인지 이미지로 꼭 확인하세요. 검색 결과에는 비슷한 다른 상품이 섞일 수 있습니다.</div></div>`;
+  } catch (e) {
+    dlg.innerHTML = `<div class="dh"><b>시세를 찾지 못했습니다</b><span class="spacer"></span><button class="btn sm" data-close>닫기</button></div><div class="dbody"><div class="note">${esc(e.message)}</div></div>`;
+  }
+}
+
+/* ---------- 연결 현황 ---------- */
 const STATE = { done: '수집됨', ready: '대기 (아직 수집 전)', nokey: '키 없음', off: '꺼짐' };
 async function renderStatus() {
   const d = await api('/api/status');
   const f = d.features;
   $('out').innerHTML =
-    `<div class="sec" style="margin-top:0">키 연결: ${Object.entries({ naver:'네이버', coupang:'쿠팡', rakuten:'라쿠텐', yahoo:'Yahoo', sheets:'구글시트', telegram:'텔레그램', llm:'Claude(LLM)' })
-      .map(([k, n]) => `<span class="chip" style="${f[k] ? '' : 'opacity:.55'}">${f[k] ? '● ' : '○ '}${n}</span>`).join(' ')}</div>` +
-    d.brands.map((b) => `<div class="brand-card"><h3>${esc(b.name)} <span style="font-weight:400;color:var(--muted);font-size:12px">${b.enabled ? '' : '(꺼짐) '}· 총 ${b.total}건</span></h3>
-      <div class="cm">${esc(b.comment).slice(0, 150)}</div>
+    `<div class="chips">${Object.entries({ naver:'네이버', coupang:'쿠팡', rakuten:'라쿠텐', yahoo:'Yahoo', sheets:'구글시트', telegram:'텔레그램', llm:'Claude(LLM)' })
+      .map(([k, n]) => `<span class="chip" style="${f[k] ? '' : 'opacity:.55'}">${f[k] ? '● ' : '○ '}${n}</span>`).join('')}</div>` +
+    d.brands.map((b) => `<section class="bc"><h3>${esc(b.name)} <span class="sub">${b.enabled ? '' : '(꺼짐) '}· 총 ${b.total}건</span></h3>
+      <div class="cm">${esc(b.comment).slice(0, 160)}</div>
       <div class="srcs">${b.sources.map((s) => `<div class="src st-${s.state}"><div class="t"><span>${s.side === 'kr' ? '🇰🇷' : '🇯🇵'} ${esc(s.label)}</span><span>${s.count ? s.count + '건' : ''}</span></div>
-        <div class="d">${STATE[s.state]}${s.last ? ' · ' + esc(s.last.slice(5, 16).replace('T', ' ')) : ''}</div>${s.hint ? `<div class="d">${esc(s.hint)}</div>` : ''}</div>`).join('')}</div></div>`).join('') +
-    `<div class="sec">최근 실행 기록</div><div class="runs">${d.runs.length ? d.runs.map((r) => `<div>${esc((r.started_at || '').slice(5, 16).replace('T', ' '))} · ${esc(r.step)} · ${r.status === 'ok' ? '성공' : '실패'} — ${esc(r.message || '')}</div>`).join('') : '아직 실행 기록이 없습니다. 서버에서 node src/index.js --run-now'}</div>`;
-}
-
-let pSide = 'kr', pBrand = '', pQ = '';
-async function renderProducts() {
-  const d = await api(`/api/products?side=${pSide}&limit=80${pBrand ? '&brand=' + pBrand : ''}${pQ ? '&q=' + encodeURIComponent(pQ) : ''}`);
-  $('out').innerHTML =
-    `<div class="bar"><select id="pSide"><option value="kr"${pSide === 'kr' ? ' selected' : ''}>한국 수집 상품</option><option value="jp"${pSide === 'jp' ? ' selected' : ''}>일본 수집 상품 (리뷰 많은 순)</option></select>
-      <input id="pBrand" placeholder="브랜드 키 (예: emis)" value="${esc(pBrand)}" size="16"><input id="pQ" placeholder="상품명 검색" value="${esc(pQ)}" size="18"><button id="pGo">검색</button></div>` +
-    (d.rows.length ? d.rows.map((r) => `<div class="row"><div class="th">${r.image_url ? `<img src="${esc(r.image_url)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}</div>
-      <div class="tx"><div class="n">${esc(r.name)}</div><div class="m">${esc(r.brand)} · ${esc(r.source)}${r.product_code ? ' · ' + esc(r.product_code) : ''}${r.review_count != null ? ' · 리뷰 ' + r.review_count : ''} · <a href="${esc(r.url)}" target="_blank" rel="noopener">열기 ↗</a></div></div>
-      <div class="pr">${pSide === 'jp' ? yen(r.price) : won(r.price)}</div></div>`).join('') : '<div class="empty">수집된 상품이 없습니다.</div>');
-  $('pGo').onclick = () => { pSide = $('pSide').value; pBrand = $('pBrand').value.trim(); pQ = $('pQ').value.trim(); load(); };
+        <div class="d">${STATE[s.state]}${s.last ? ' · ' + esc(s.last.slice(5, 16).replace('T', ' ')) : ''}</div>${s.hint ? `<div class="d">${esc(s.hint)}</div>` : ''}</div>`).join('')}</div></section>`).join('') +
+    `<h2 class="sec">최근 실행 기록</h2><div class="runs">${d.runs.length ? d.runs.map((r) => `<div>${esc((r.started_at || '').slice(5, 16).replace('T', ' '))} · ${esc(r.step)} · ${r.status === 'ok' ? '성공' : '실패'} — ${esc(r.message || '')}</div>`).join('') : '아직 실행 기록이 없습니다.'}</div>`;
 }
 
 async function load() {
   if (!$('token').value) return;
   try { localStorage.setItem('ui_token', $('token').value); } catch {}
   $('out').innerHTML = '<div class="empty">불러오는 중…</div>';
-  try { await ({ cards: renderCards, status: renderStatus, products: renderProducts }[tab])(); }
+  try { await ({ cards: renderCards, explore: renderExplore, status: renderStatus }[tab])(); }
   catch (e) { $('out').innerHTML = `<div class="empty">오류: ${esc(e.message)}</div>`; }
 }
 $('go').onclick = load;
+$('token').addEventListener('keydown', (e) => { if (e.key === 'Enter') load(); });
 document.querySelectorAll('.tab').forEach((t) => t.onclick = () => {
   tab = t.dataset.tab;
   document.querySelectorAll('.tab').forEach((x) => x.setAttribute('aria-selected', x === t ? 'true' : 'false'));
   load();
 });
-$('out').addEventListener('click', (e) => {
-  const c = e.target.closest('.chip');
-  if (!c) return;
-  if (c.dataset.level !== undefined) levelFilter = c.dataset.level;
-  if (c.dataset.brand !== undefined) brandFilter = c.dataset.brand;
-  load();
+document.addEventListener('click', (e) => {
+  const t = e.target;
+  const chip = t.closest('.chip');
+  if (chip && chip.dataset.level !== undefined) { levelFilter = chip.dataset.level; load(); }
+  else if (chip && chip.dataset.brand !== undefined) { brandFilter = chip.dataset.brand; load(); }
+  const sg = t.closest('[data-side]');
+  if (sg) { side = sg.dataset.side; load(); }
+  if (t.closest('#exGo')) { exBrand = $('exBrand').value; exQ = $('exQ').value.trim(); load(); }
+  const lk = t.closest('[data-lookup]');
+  if (lk) { const [sd, id] = lk.dataset.lookup.split(':'); openLookup(sd, id); }
+  if (t.closest('[data-close]')) $('dlg').close();
+  if (t === $('dlg')) $('dlg').close();
 });
+document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.id === 'exQ') { exBrand = $('exBrand').value; exQ = $('exQ').value.trim(); load(); } });
 if ($('token').value) load();
 </script>
 </body>

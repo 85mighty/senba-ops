@@ -5,34 +5,45 @@ import { extractCode } from '../../matcher/rules.js';
 
 const ENDPOINT = 'https://shopping.yahooapis.jp/ShoppingWebService/V3/itemSearch';
 
-export async function collect(brandKey, brandCfg, { limit } = {}) {
-  const cfg = brandCfg.jp?.yahoo;
-  if (!cfg?.enabled || !process.env.YAHOO_CLIENT_ID) return [];
-
+async function search(query, { results = 50, sellerId = '' } = {}) {
   const params = new URLSearchParams({
     appid: process.env.YAHOO_CLIENT_ID,
-    query: cfg.query,
-    results: String(Math.min(limit || 50, 50)),
+    query,
+    results: String(Math.min(results, 50)),
     sort: '+price', // 최저가부터
     in_stock: 'true',
   });
-  if (cfg.seller_id) params.set('seller_id', cfg.seller_id);
+  if (sellerId) params.set('seller_id', sellerId);
 
   const res = await fetch(`${ENDPOINT}?${params}`, { signal: AbortSignal.timeout(20000) });
   if (!res.ok) throw new Error(`Yahoo API HTTP ${res.status}`);
   const data = await res.json();
-
-  const items = (data.hits || []).map((it) => ({
-    brand: brandKey,
-    source: 'yahoo',
-    product_code: extractCode(it.name, brandCfg.product_code_regex),
+  return (data.hits || []).map((it) => ({
     name: it.name,
-    color: null,
     price: it.price,
     url: it.url,
     image_url: it.image?.medium || null,
     in_stock: it.inStock !== false,
     review_count: it.review?.count || 0,
+  }));
+}
+
+// 화면의 "시세 찾기"용 즉석 검색 (DB에 저장하지 않음)
+export async function searchYahoo(query, { results = 30 } = {}) {
+  if (!process.env.YAHOO_CLIENT_ID || !query) return [];
+  return (await search(query, { results })).filter((i) => i.name && i.url && i.price);
+}
+
+export async function collect(brandKey, brandCfg, { limit } = {}) {
+  const cfg = brandCfg.jp?.yahoo;
+  if (!cfg?.enabled || !process.env.YAHOO_CLIENT_ID) return [];
+
+  const items = (await search(cfg.query, { results: limit || 50, sellerId: cfg.seller_id })).map((it) => ({
+    brand: brandKey,
+    source: 'yahoo',
+    product_code: extractCode(it.name, brandCfg.product_code_regex),
+    color: null,
+    ...it,
   }));
   info(`[yahoo] ${brandKey}: ${items.length}건`);
   return items;

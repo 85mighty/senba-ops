@@ -10,6 +10,7 @@ import * as db from './db.js';
 import { runPipeline, STEP_ORDER } from './pipeline.js';
 import { rankCandidates, sourcingCandidates, buildCards } from './discover.js';
 import { buildStatus } from './status.js';
+import { lookup } from './lookup.js';
 import { startCommandBot } from './outputs/telegram.js';
 
 // ---------- CLI 인자 ----------
@@ -111,6 +112,16 @@ function startServer() {
 
   // 연결 현황: 브랜드별 어떤 사이트에서 몇 건 수집했는지
   app.get('/api/status', auth, (req, res) => res.json(buildStatus()));
+
+  // 시세 찾기: 상품 하나의 반대편 나라 시세·구입처를 즉석 검색하고 판매처별 마진 계산
+  app.get('/api/lookup', auth, async (req, res) => {
+    try {
+      res.json(await lookup({ side: req.query.side === 'jp' ? 'jp' : 'kr', id: parseInt(req.query.id, 10) }));
+    } catch (e) {
+      error(`[lookup] ${e.message}`);
+      res.status(e.status || 500).json({ error: e.message });
+    }
+  });
 
   // 수집된 상품 둘러보기
   app.get('/api/products', auth, (req, res) => {

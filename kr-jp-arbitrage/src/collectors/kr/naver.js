@@ -43,6 +43,29 @@ async function searchOne(brandKey, brandCfg, cfg, query, limit) {
   });
 }
 
+// 화면의 "시세 찾기"용 즉석 검색 (DB에 저장하지 않음). 관련도순으로 받아 호출 측에서 가격순 정렬
+export async function searchNaver(query, { display = 30 } = {}) {
+  if (!process.env.NAVER_CLIENT_ID || !process.env.NAVER_CLIENT_SECRET || !query) return [];
+  const params = new URLSearchParams({ query, display: String(Math.min(display, 100)), sort: 'sim' });
+  const res = await fetch(`${ENDPOINT}?${params}`, {
+    headers: {
+      'X-Naver-Client-Id': process.env.NAVER_CLIENT_ID,
+      'X-Naver-Client-Secret': process.env.NAVER_CLIENT_SECRET,
+    },
+    signal: AbortSignal.timeout(20000),
+  });
+  if (!res.ok) throw new Error(`네이버 API HTTP ${res.status}`);
+  const data = await res.json();
+  return (data.items || []).map((it) => ({
+    name: stripTags(it.title),
+    price: parseInt(it.lprice, 10),
+    url: it.link,
+    image_url: it.image || null,
+    in_stock: true,
+    mall: it.mallName || '',
+  }));
+}
+
 export async function collect(brandKey, brandCfg, { limit } = {}) {
   const cfg = brandCfg.kr?.naver;
   if (!cfg?.enabled || !process.env.NAVER_CLIENT_ID || !process.env.NAVER_CLIENT_SECRET) return [];

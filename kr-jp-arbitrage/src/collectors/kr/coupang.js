@@ -30,6 +30,38 @@ export const canonicalUrl = (productId) => `https://www.coupang.com/vp/products/
 
 let blocked = false; // 403/401/429를 받으면 이번 프로세스에서는 중단
 
+// 화면의 "시세 찾기"용 즉석 검색 (1회 호출, DB에 저장하지 않음)
+export async function searchCoupang(keyword) {
+  const ak = process.env.COUPANG_ACCESS_KEY;
+  const sk = process.env.COUPANG_SECRET_KEY;
+  if (blocked || !ak || !sk || !keyword) return [];
+  const query = `keyword=${encodeURIComponent(keyword)}&limit=10`;
+  const res = await fetch(`${HOST}${PATH}?${query}`, {
+    headers: {
+      Authorization: authHeader({ method: 'GET', path: PATH, query, accessKey: ak, secretKey: sk }),
+      'Content-Type': 'application/json;charset=UTF-8',
+    },
+    signal: AbortSignal.timeout(20000),
+  });
+  if ([401, 403, 429].includes(res.status)) {
+    blocked = true;
+    warn(`[coupang] HTTP ${res.status} — 쿠팡 호출 중단 (키·허용 IP·호출 한도 확인)`);
+    return [];
+  }
+  if (!res.ok) throw new Error(`쿠팡 API HTTP ${res.status}`);
+  const data = await res.json();
+  return (data?.data?.productData || [])
+    .filter((it) => it.productId && it.productPrice)
+    .map((it) => ({
+      name: String(it.productName || ''),
+      price: Number(it.productPrice),
+      url: canonicalUrl(it.productId),
+      image_url: it.productImage || null,
+      in_stock: true,
+      mall: it.isRocket ? '쿠팡 로켓' : '쿠팡',
+    }));
+}
+
 export async function collect(brandKey, brandCfg, { limit } = {}) {
   if (blocked) return [];
   const ak = process.env.COUPANG_ACCESS_KEY;
