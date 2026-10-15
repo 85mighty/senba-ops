@@ -120,6 +120,7 @@ async function stepQuote({ brand, limit } = {}) {
     kr: feats.rakuten || feats.yahoo ? parseInt(process.env.QUOTE_SEARCH_BUDGET || '60', 10) : 0,
     jp: feats.coupang || feats.elevenst ? parseInt(process.env.QUOTE_SEARCH_BUDGET_JP || '15', 10) : 0,
   };
+  let googleBudget = feats.dataforseo ? parseInt(process.env.QUOTE_GOOGLE_BUDGET || '10', 10) : 0; // 유료이므로 작게
   let done = 0, found = 0, searched = 0;
   for (const side of ['kr', 'jp']) {
     const targets = db.quoteTargets(side, { brand, minPrice: side === 'jp' ? floor : 0, limit: limit || 600 });
@@ -132,6 +133,11 @@ async function stepQuote({ brand, limit } = {}) {
           searched++;
           r = await findCounterparts(p, side, { online: true });
           await sleep(1200); // 라쿠텐 API 예절(초당 1회)
+          // 그래도 못 찾은 한국 상품은 구글 쇼핑(일본)으로 한 번 더 (예산 안에서)
+          if (!r.best && side === 'kr' && googleBudget > 0) {
+            googleBudget--;
+            r = await findCounterparts(p, side, { online: true, google: true });
+          }
         }
         db.saveQuote(side, t.id, toQuote(r));
         done++;

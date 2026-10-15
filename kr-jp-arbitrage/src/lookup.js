@@ -13,6 +13,7 @@ import { searchYahoo } from './collectors/jp/yahoo.js';
 import { searchNaver } from './collectors/kr/naver.js';
 import { searchCoupang, coupangStatus } from './collectors/kr/coupang.js';
 import { searchElevenst } from './collectors/kr/elevenst.js';
+import { searchGoogleShoppingJp } from './collectors/jp/dataforseo.js';
 
 const USED = /中古|USED|used|古着|ジャンク|訳あり|訳アリ/;
 const HANGUL = /[가-힣]/;
@@ -44,10 +45,10 @@ function uniqByUrl(list) {
  * 반대편 시세 찾기.
  * @param {object} p        기준 상품(DB 행)
  * @param {'kr'|'jp'} side  기준 상품의 나라
- * @param {object} opt      online=false면 외부 API를 부르지 않고 DB에 있는 같은 품번만 사용
+ * @param {object} opt      online=false면 외부 API를 부르지 않고 DB에 있는 같은 품번만 사용, google=true면 구글 쇼핑(일본)도 검색(최대 1분 이상 걸릴 수 있음)
  * @returns {{results, best, kind, query, fx, weightG, base, notes, searched}}
  */
-export async function findCounterparts(p, side, { online = true } = {}) {
+export async function findCounterparts(p, side, { online = true, google = false } = {}) {
   const brands = loadBrands();
   const brandCfg = brands[p.brand] || {};
   const costs = loadCostsBase();
@@ -93,6 +94,10 @@ export async function findCounterparts(p, side, { online = true } = {}) {
       else notes.push('라쿠텐 키가 없어 라쿠텐 검색을 건너뛰었습니다.');
       if (feats.yahoo) jobs.push(searchYahoo(query, { results: 30 }).then((r) => r.map((x) => ({ ...x, source: 'Yahoo!쇼핑' }))));
       else notes.push('Yahoo 키가 없어 Yahoo 검색을 건너뛰었습니다.');
+      if (google) {
+        if (feats.dataforseo) jobs.push(searchGoogleShoppingJp(query).then((r) => r.map((x) => ({ ...x, source: x.mall ? `구글쇼핑·${x.mall}` : '구글쇼핑' }))));
+        else notes.push('DataForSEO 키가 없어 구글 쇼핑 검색을 건너뛰었습니다.');
+      }
       searched = jobs.length > 0;
       list = list.concat((await settle(jobs)).map((r) => ({ ...r, byCode: hasCode(r.name, code) })));
       if (!code) notes.push('품번이 없어 상품명으로 검색했습니다. 다른 상품이 섞일 수 있으니 이미지를 꼭 확인하세요.');
@@ -132,10 +137,10 @@ export async function findCounterparts(p, side, { online = true } = {}) {
   // 대표 결과: 품번이 일치한 것 중 가장 싼 것, 없으면 전체 중 가장 싼 것(추정)
   const coded = results.filter((r) => r.byCode);
   const best = coded[0] || results[0] || null;
-  return { side: side === 'jp' ? 'jp' : 'kr', query, fx, weightG, base, results, best, kind: best ? (best.byCode ? 'code' : 'search') : 'none', notes, searched };
+  return { side: side === 'jp' ? 'jp' : 'kr', query, fx, weightG, base, results, best, kind: best ? (best.byCode ? 'code' : 'search') : 'none', notes, searched, google: !!google && side !== 'jp', googleAvailable: feats.dataforseo };
 }
 
-export async function lookup({ side, id }) {
+export async function lookup({ side, id, google = false }) {
   const sd = side === 'jp' ? 'jp' : 'kr';
   const p = getProductById(sd, id);
   if (!p) {
@@ -143,7 +148,7 @@ export async function lookup({ side, id }) {
     e.status = 404;
     throw e;
   }
-  return findCounterparts(p, sd, { online: true });
+  return findCounterparts(p, sd, { online: true, google });
 }
 
 // 목록용 요약 (quotes 테이블에 저장하는 형태)

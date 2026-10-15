@@ -119,7 +119,7 @@ function startServer() {
     try {
       const sd = req.query.side === 'jp' ? 'jp' : 'kr';
       const id = parseInt(req.query.id, 10);
-      const r = await lookup({ side: sd, id });
+      const r = await lookup({ side: sd, id, google: req.query.google === '1' });
       db.saveQuote(sd, id, toQuote(r)); // 방금 찾은 결과를 목록에도 반영
       res.json(r);
     } catch (e) {

@@ -268,12 +268,12 @@ async function renderExplore() {
 }
 
 /* ---------- 시세 찾기 창 ---------- */
-async function openLookup(sd, id) {
+async function openLookup(sd, id, google = false) {
   const dlg = $('dlg');
-  dlg.innerHTML = `<div class="dbody"><div class="empty">시세를 찾는 중… (몇 초 걸립니다)</div></div>`;
+  dlg.innerHTML = `<div class="dbody"><div class="empty">${google ? '구글 쇼핑까지 찾는 중… (최대 1~2분 걸립니다)' : '시세를 찾는 중… (몇 초 걸립니다)'}</div></div>`;
   dlg.showModal();
   try {
-    const d = await api(`/api/lookup?side=${sd}&id=${id}`);
+    const d = await api(`/api/lookup?side=${sd}&id=${id}${google ? '&google=1' : ''}`);
     lastLookup = { side: sd, id, d };
     const best = d.results[0];
     const isKr = d.side === 'kr';
@@ -288,6 +288,7 @@ async function openLookup(sd, id) {
         <div class="t"><div class="n">${esc(r.name)}</div><div class="sub">${r.byCode ? '<span class="tg code">품번 일치</span>' : ''}${esc(r.source)}${r.review_count ? ' · 리뷰 ' + r.review_count : ''} <span id="cmp-${d.results.indexOf(r)}"></span></div></div>
         <div class="r"><b>${isKr ? yen(r.price) : won(r.price)}</b><span class="mg ${r.margin.net >= 0 ? 'pos' : 'neg'}">${signYen(r.margin.net)}${r.margin.passed ? ' ✓통과' : ''}</span></div>
         <div style="display:flex;flex-direction:column;gap:4px"><a class="btn sm" href="${esc(r.url)}" target="_blank" rel="noopener">보기 ↗</a><button class="btn sm" data-compare="${d.results.indexOf(r)}">AI 이미지 비교</button></div></div>`).join('') : '<div class="empty">자동 검색 결과가 없습니다. 아래 링크로 직접 찾아보세요.</div>'}
+      ${isKr && d.googleAvailable && !d.google ? `<button class="btn sm" data-google="${sd}:${id}">구글 쇼핑(일본)에서도 찾기 · 아마존·요도바시 등 포함, 1~2분</button>` : ''}
       <div class="sub">직접 찾기: <span class="quick" style="display:inline-flex">${linkRow(isKr ? jpLinks(d.query) : krLinks(d.query))}</span></div>
       <div class="sub">같은 상품인지 이미지로 꼭 확인하세요. 검색 결과에는 비슷한 다른 상품이 섞일 수 있습니다.</div></div>`;
   } catch (e) {
@@ -355,6 +356,8 @@ document.addEventListener('click', (e) => {
   if (t.closest('#exGo')) { exBrand = $('exBrand').value; exSort = $('exSort').value; exQ = $('exQ').value.trim(); load(); }
   const lk = t.closest('[data-lookup]');
   if (lk) { const [sd, id] = lk.dataset.lookup.split(':'); openLookup(sd, id); }
+  const gg = t.closest('[data-google]');
+  if (gg) { const [sd2, id2] = gg.dataset.google.split(':'); openLookup(sd2, id2, true); }
   if (t.closest('[data-close]')) $('dlg').close();
   const pf = t.closest('[data-profit]');
   if (pf) { exProfit = pf.dataset.profit; load(); }
