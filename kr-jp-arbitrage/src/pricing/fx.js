@@ -38,3 +38,24 @@ export async function getFxKrwPerJpy() {
     throw new Error(`환율 조회 실패, 캐시도 없음: ${e.message}`);
   }
 }
+
+// 위안(CNY) → 엔(JPY): 1위안이 몇 엔인지. 중국 소싱 원가 환산용. 같은 방식으로 6시간 캐시
+const CNY_CACHE = path.join(DATA_DIR, 'fx-cny.json');
+export async function getFxJpyPerCny() {
+  let cached = null;
+  try { cached = JSON.parse(fs.readFileSync(CNY_CACHE, 'utf8')); } catch { /* 없음 */ }
+  if (cached && Date.now() - new Date(cached.fetchedAt).getTime() < TTL_MS) return { ...cached, stale: false };
+  try {
+    const res = await fetch('https://open.er-api.com/v6/latest/CNY', { signal: AbortSignal.timeout(15000) });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const rate = (await res.json())?.rates?.JPY;
+    if (!rate || rate <= 0) throw new Error('JPY 환율 없음');
+    const entry = { rate, fetchedAt: nowIso() };
+    fs.writeFileSync(CNY_CACHE, JSON.stringify(entry));
+    info(`환율 갱신: 1 CNY = ${rate.toFixed(3)} JPY`);
+    return { ...entry, stale: false };
+  } catch (e) {
+    if (cached) { warn(`위안 환율 API 실패(${e.message}) → 마지막 값 사용`); return { ...cached, stale: true }; }
+    throw new Error(`위안 환율 조회 실패, 캐시도 없음: ${e.message}`);
+  }
+}

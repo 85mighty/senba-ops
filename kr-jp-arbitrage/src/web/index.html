@@ -129,6 +129,8 @@
   .rbox .v small { font-size:12px; font-weight:700; margin-left:6px; }
   .verd { font-size:13px; font-weight:900; border-radius:8px; padding:3px 10px; }
   .verd.kr2jp, .verd.jp2kr { background:var(--good-soft); color:var(--good); }
+  .pr.cnr .verd.pass { background:var(--good-soft); color:var(--good); } .verd.thin { background:var(--warn-soft); color:var(--warn); } .verd.nocost { background:var(--surface2); color:var(--ink2); }
+  .cnb { display:flex; gap:8px; align-items:center; flex-wrap:wrap; } .cnb .thumb { width:34px; height:34px; object-fit:cover; border-radius:6px; }
   .cn { margin:2px 0 4px; overflow-wrap:anywhere; } .pr.unv .rbox { background:var(--surface2); } .pr.unv .rbox .v, .pr.unv .rbox small { color:var(--ink2); } .verd.unverified { background:var(--warn-soft); color:var(--warn); }
   .verd.loss { background:var(--surface2); color:var(--ink2); } .verd.mismatch { background:var(--warn-soft); color:var(--warn); }
   .bdt { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; font-size:13px; margin:4px 0 10px; }
@@ -163,6 +165,7 @@
   <nav class="tabs" role="tablist">
     <button class="tab" role="tab" data-tab="cards" aria-selected="true">오늘의 후보</button>
     <button class="tab" role="tab" data-tab="explore" aria-selected="false">상품 탐색</button>
+    <button class="tab" role="tab" data-tab="china" aria-selected="false">중국 소싱</button>
     <button class="tab" role="tab" data-tab="status" aria-selected="false">연결 현황</button>
   </nav>
 </header>
@@ -186,6 +189,7 @@ const marginMain = (m) => (dir === 'jp2kr' ? signKrw(m.net) : signYen(m.net));
 const marginSub = (m) => (dir === 'jp2kr' ? signYenFromWon(m.net) : signWon(m.net));
 const signYen = (n) => (n >= 0 ? '+' : '−') + '¥' + Math.abs(Math.round(n)).toLocaleString();
 const enc = encodeURIComponent;
+let cnFilter = 'all', cnCat = '', cnQ = '';
 let exView = 'pairs', pairFilter = 'all'; // 상품 탐색 보기: 'pairs' 시세 비교(한 줄 카드) | 'all' 수집 상품 전체
 let dir = 'kr2jp'; // 'kr2jp' 한국에서 사서 일본에 팔기 | 'jp2kr' 일본에서 사서 한국에 팔기
 let tab = 'cards', brandFilter = '', levelFilter = '', side = 'kr', exBrand = '', exQ = '', exSort = 'margin', exProfit = '', brandList = [], products = [], lastLookup = null;
@@ -468,13 +472,85 @@ async function runCompare(i, btn) {
   btn.disabled = false;
 }
 
+
+/* ---------- 중국 소싱 ---------- */
+const CN_VERD = { pass: '✅ 남음 (기준 통과)', thin: '△ 남지만 얇음', loss: '둘 다 손해에 가까움 (원가 대비 안 남음)', unverified: '🔍 같은 상품인지 확인 필요', mismatch: '⚠ 다른 상품 의심 (AI 판정)', nocost: '원가 조회 전' };
+const cnYuan = (v) => '¥' + (Math.round(v * 10) / 10).toLocaleString() + '위안';
+function cnHtml(r) {
+  const c = r.cn;
+  const jpy = (v) => (cnFx ? '≈' + yen(v * cnFx) : '');
+  const cnLine = c
+    ? `<div class="m"><span class="flag">🇨🇳</span><b>${cnYuan(c.priceCny)}</b> <span class="sub">${jpy(c.priceCny)}${c.moq ? ' · 최소 ' + c.moq + '개' : ''}${c.monthSold ? ' · 월 ' + c.monthSold + '건' : ''}</span> · ${c.url ? `<a href="${esc(c.url)}" target="_blank" rel="noopener">1688 ↗</a>` : '직접 입력'}${c.image ? `<img class="thumb" src="${esc(c.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}</div>`
+    : `<div class="m"><span class="flag">🇨🇳</span><span class="sub">${esc(r.cnNote || '아직 1688 원가를 찾지 않았습니다')}</span>${r.targetCny >= 1 ? ` <span class="sub">· 1688에서 <b>${cnYuan(r.targetCny)} 이하</b>면 마진 기준 통과</span>` : ''}</div>`;
+  const resBox = r.net != null
+    ? `<div class="rbox ${r.net > 0 ? 'pos' : 'neg'}"><div class="t">🇨🇳→🇯🇵 중국에서 사서 일본에 팔면 (판매가 ${yen(r.sell)} 가정)</div><div class="v">${signYen(r.net)}<small>마진율 ${((r.rate || 0) * 100).toFixed(0)}%${r.targetCny >= 1 ? ' · 원가 ' + cnYuan(r.targetCny) + ' 이하면 통과' : r.targetCny != null ? ' · 판매가가 낮아 원가와 무관하게 기준 통과 어려움' : ''}</small></div></div>`
+    : `<div class="rbox"><div class="t">예상 순마진</div><div class="v">—<small>원가 조회 후 표시</small></div></div>`;
+  const unv = r.verdict === 'unverified' || r.verdict === 'mismatch' || r.verdict === 'nocost' ? ' unv' : '';
+  return `<article class="pr cnr${unv}">
+    ${r.image ? `<img class="pimg" src="${esc(r.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.visibility='hidden'">` : '<div class="pimg"></div>'}
+    <div class="pbody">
+      <div class="ptop"><span class="sub">${esc(cnCatName(r.category))} · 선별 점수 ${Math.round(r.score)} ${r.reasons.map((x) => `<span class="tg">${esc(x)}</span>`).join('')}</span><span class="verd ${r.verdict}">${CN_VERD[r.verdict]}</span></div>
+      <div class="nm" style="-webkit-line-clamp:2">${esc(r.name)}</div>
+      ${c && r.verdict !== 'pass' && c.title && !c.manual ? `<div class="sub cn">비교한 1688 상품: ${esc(c.title)}${r.reason ? ' · AI: ' + esc(r.reason) : ''}</div>` : ''}
+      <div class="mk">
+        <div class="m"><span class="flag">🇯🇵</span><b>${yen(r.jpPrice)}</b> <span class="sub">${r.shop ? esc(r.shop) + ' · ' : ''}리뷰 ${r.reviews}${r.reviewAvg ? ' (' + r.reviewAvg + ')' : ''} · ${r.url ? `<a href="${esc(r.url)}" target="_blank" rel="noopener">라쿠텐 ↗</a>` : ''}</span></div>
+        ${cnLine}
+      </div>
+      <div class="res2">${resBox}</div>
+      <div class="acts">${r.net != null ? `<button class="btn sm" data-cnbd="${r.id}">왜 이 숫자? 비용 내역</button>` : ''}<button class="btn sm" data-cncost="${r.id}">1688 원가 직접 입력</button></div>
+    </div></article>`;
+}
+let cnFx = null, cnCats = [];
+const cnCatName = (k) => (cnCats.find((c) => c.key === k) || {}).name || k;
+async function renderChina() {
+  const d = await api(`/api/cn?filter=${cnFilter}${cnCat ? '&category=' + enc(cnCat) : ''}${cnQ ? '&q=' + enc(cnQ) : ''}`);
+  cnFx = d.fx; cnCats = d.categories;
+  const c = d.counts;
+  const filters = [['all', `전체 ${c.all}`], ['pass', `✅ 남음 ${c.pass}`], ['thin', `△ 얇음 ${c.thin}`], ['loss', `손해 ${c.loss}`], ['unverified', `🔍 확인 필요 ${c.unverified}`], ['nocost', `원가 조회 전 ${c.nocost}`]];
+  $('out').innerHTML =
+    `<div class="note">일본(라쿠텐)에서 <b>리뷰가 많이 쌓인 = 수요가 검증된</b> 상품을 규제·브랜드 상품을 빼고 골라서, 1688(중국 도매)에서 같은 상품의 원가를 찾아 마진을 계산합니다. 판매가는 라쿠텐 가격 × 0.95로 가정합니다.
+      ${d.provider ? `이미지 검색 제공자: <b>${esc(d.provider)}</b>` : '<b>1688 이미지 검색 키가 아직 없습니다</b> — 후보 선별까지만 동작하고, 원가는 "직접 입력"으로 넣을 수 있습니다.'}${d.fx ? ` · 환율 1위안 = ${d.fx.toFixed(2)}엔` : ''}</div>
+    <div class="chips">${filters.map(([v, l]) => `<button class="chip" data-cf="${v}" aria-pressed="${cnFilter === v}">${l}</button>`).join('')}</div>
+    <div class="bar"><select id="cnCat" class="sel"><option value="">모든 카테고리</option>${d.categories.map((x) => `<option value="${esc(x.key)}" ${cnCat === x.key ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select>
+      <input id="cnQ" class="inp" placeholder="상품명 검색" value="${esc(cnQ)}"><button class="btn" id="cnGo">검색</button></div>` +
+    (d.rows.length ? d.rows.map(cnHtml).join('') : '<div class="empty">후보가 없습니다. 서버에서 <code>node --env-file=.env src/index.js --step=china</code> 를 실행하면 후보가 생깁니다.</div>');
+}
+async function openCnBreakdown(id) {
+  const dlg = $('dlg');
+  dlg.innerHTML = '<div class="dbody"><div class="empty">계산 내역을 불러오는 중…</div></div>';
+  dlg.showModal();
+  try {
+    const d = await api(`/api/cn/breakdown?id=${id}`);
+    const b = d.breakdown;
+    const row = (label, v) => `<tr><td>${label}</td><td>−${yen(v)}</td></tr>`;
+    dlg.innerHTML = `<div class="dh"><div class="t"><div class="sub">비용 내역 · 환율 1위안 = ${d.jpyPerCny.toFixed(2)}엔 · 무게 ${d.weightG}g 가정</div><b>${esc(d.name)}</b>
+      <div class="sub">🇯🇵 ${yen(d.jpPrice)} · 🇨🇳 ${cnYuan(d.cnPriceCny)}${d.moq ? ' · 최소 ' + d.moq + '개' : ''}</div></div><button class="btn sm" data-close>닫기</button></div>
+      <div class="dbody"><b>🇨🇳→🇯🇵 중국에서 사서 일본에 팔 때 (엔 기준)</b>
+      <table class="bdt"><tr><td>일본 판매가 (라쿠텐 ${yen(b.jpRefPriceJpy)} × 0.95)</td><td>${yen(b.sellJpy)}</td></tr>
+        ${row('중국 원가 (' + cnYuan(b.cnPriceCny) + ' × 환율, 안전마진 포함)', b.goodsJpy)}${row('구매대행 수수료', b.agentFeeJpy)}${row('중국 내 배송', b.cnShipJpy)}${row('중국→일본 배송', b.intlShipJpy)}${row('일본 관세 ' + (b.dutyRate * 100).toFixed(0) + '%', b.customsDutyJpy)}${row('일본 수입 소비세', b.importTaxJpy)}${row('판매 수수료(' + b.platform + ')', b.platformFeeJpy)}${row('포장·잡비', b.packingJpy)}${row('불량·반품 충당금', b.reserveJpy)}
+        <tr class="tot"><td>순마진</td><td class="${b.netMarginJpy >= 0 ? 'pos' : 'neg'}">${signYen(b.netMarginJpy)}</td></tr></table>
+      <div class="sub">${d.targetCny >= 1 ? `→ 1688 원가가 <b>${cnYuan(d.targetCny)} 이하</b>면 마진 기준(¥800·30% 이상)을 통과합니다.` : '→ 이 판매가에서는 원가를 아무리 낮춰도 마진 기준(¥800·30% 이상)을 넘기 어렵습니다.'}</div>
+      <div class="sub">배송비·관세율·대행 수수료는 임시 가정값입니다. 실제 이용 업체 요율로 바꾸면 결과가 달라집니다 (config/costs.json 의 cn_to_jp).</div></div>`;
+  } catch (e) {
+    dlg.innerHTML = `<div class="dh"><b>불러오지 못했습니다</b><span class="spacer"></span><button class="btn sm" data-close>닫기</button></div><div class="dbody"><div class="note">${esc(e.message)}</div></div>`;
+  }
+}
+async function cnManualCost(id) {
+  const v = prompt('1688에서 찾은 상품의 위안(CNY) 단가를 입력하세요 (예: 12.5)');
+  if (!v) return;
+  const res = await fetch(`/api/cn/cost?token=${enc($('token').value)}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id, priceCny: v }) });
+  const j = await res.json().catch(() => ({}));
+  if (!res.ok) { alert(j.error || res.status); return; }
+  load();
+}
+
 /* ---------- 연결 현황 ---------- */
 const STATE = { done: '수집됨', ready: '대기 (아직 수집 전)', nokey: '키 없음', off: '꺼짐' };
 async function renderStatus() {
   const d = await api('/api/status');
   const f = d.features;
   $('out').innerHTML =
-    `<div class="bar"><button class="btn pri sm" id="selfTest">🔌 연결 시험 (키가 실제로 동작하는지 확인)</button><span class="sub">유료 호출 없이 몇 초 걸립니다</span></div><div id="selfOut"></div><div class="chips">${Object.entries({ naver:'네이버', coupang:'쿠팡', elevenst:'11번가', rakuten:'라쿠텐', yahoo:'Yahoo', dataforseo:'구글쇼핑(DataForSEO)', sheets:'구글시트', telegram:'텔레그램', llm:'Claude(LLM)' })
+    `<div class="bar"><button class="btn pri sm" id="selfTest">🔌 연결 시험 (키가 실제로 동작하는지 확인)</button><span class="sub">유료 호출 없이 몇 초 걸립니다</span></div><div id="selfOut"></div><div class="chips">${Object.entries({ naver:'네이버', coupang:'쿠팡', elevenst:'11번가', rakuten:'라쿠텐', yahoo:'Yahoo', dataforseo:'구글쇼핑(DataForSEO)', cn1688:'1688 이미지검색', sheets:'구글시트', telegram:'텔레그램', llm:'Claude(LLM)' })
       .map(([k, n]) => `<span class="chip" style="${f[k] ? '' : 'opacity:.55'}">${f[k] ? '● ' : '○ '}${n}</span>`).join('')}</div>` +
     d.brands.map((b) => `<section class="bc"><h3>${esc(b.name)} <span class="sub">${b.enabled ? '' : '(꺼짐) '}· 총 ${b.total}건</span></h3>
       <div class="cm">${esc(b.comment).slice(0, 160)}</div>
@@ -487,7 +563,7 @@ async function load() {
   if (!$('token').value) return;
   try { localStorage.setItem('ui_token', $('token').value); } catch {}
   $('out').innerHTML = '<div class="empty">불러오는 중…</div>';
-  try { await ({ cards: renderCards, explore: renderExplore, status: renderStatus }[tab])(); }
+  try { await ({ cards: renderCards, explore: renderExplore, china: renderChina, status: renderStatus }[tab])(); }
   catch (e) { $('out').innerHTML = `<div class="empty">오류: ${esc(e.message)}</div>`; }
 }
 $('go').onclick = load;
@@ -517,6 +593,13 @@ document.addEventListener('click', (e) => {
   if (pfl) { pairFilter = pfl.dataset.pf; load(); }
   const bd = t.closest('[data-breakdown]');
   if (bd) { const [sd3, id3] = bd.dataset.breakdown.split(':'); openBreakdown(sd3, id3); }
+  const cfb = t.closest('[data-cf]');
+  if (cfb) { cnFilter = cfb.dataset.cf; load(); }
+  if (t.closest('#cnGo')) { cnCat = $('cnCat').value; cnQ = $('cnQ').value.trim(); load(); }
+  const cbd = t.closest('[data-cnbd]');
+  if (cbd) openCnBreakdown(cbd.dataset.cnbd);
+  const ccs = t.closest('[data-cncost]');
+  if (ccs) cnManualCost(parseInt(ccs.dataset.cncost, 10));
   const dr = t.closest('[data-dir]');
   if (dr) { dir = dr.dataset.dir; load(); }
   const pf = t.closest('[data-profit]');
@@ -525,7 +608,8 @@ document.addEventListener('click', (e) => {
   if (cp && lastLookup) runCompare(parseInt(cp.dataset.compare, 10), cp);
   if (t === $('dlg')) $('dlg').close();
 });
-document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.id === 'exQ') { exBrand = $('exBrand').value; exSort = $('exSort').value; exQ = $('exQ').value.trim(); load(); } });
+document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.id === 'cnQ') { cnCat = $('cnCat').value; cnQ = $('cnQ').value.trim(); load(); }
+  if (e.key === 'Enter' && e.target.id === 'exQ') { exBrand = $('exBrand').value; exSort = $('exSort').value; exQ = $('exQ').value.trim(); load(); } });
 if ($('token').value) load();
 </script>
 </body>

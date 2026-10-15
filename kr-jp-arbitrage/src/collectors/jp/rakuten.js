@@ -23,6 +23,8 @@ function toItem(it) {
     image_url: it.mediumImageUrls?.[0]?.imageUrl || it.mediumImageUrls?.[0] || it.imageUrl || null,
     in_stock: it.availability === undefined ? true : it.availability === 1 || it.availability === true,
     review_count: it.reviewCount ?? it.review_count ?? 0,
+    review_avg: it.reviewAverage ?? it.review_average ?? null,
+    shop: it.shopName ?? it.shop_name ?? null,
   };
 }
 

@@ -18,7 +18,7 @@ import { rankCandidates, sourcingCandidates } from './discover.js';
 import { findCounterparts, toQuote } from './lookup.js';
 import { compareProducts } from './matcher/llm.js';
 
-export const STEP_ORDER = ['collect-kr', 'collect-jp', 'match', 'quote', 'price', 'report'];
+export const STEP_ORDER = ['collect-kr', 'collect-jp', 'match', 'quote', 'china', 'price', 'report'];
 
 // 뒤 Phase에서 추가되는 수집기·LLM 모듈은 없으면 조용히 건너뛴다
 async function optionalModule(spec) {
@@ -281,6 +281,7 @@ const STEP_FNS = {
   'collect-jp': (o) => stepCollect('jp', o),
   match: stepMatch,
   quote: stepQuote,
+  china: async () => (await import('./cnsource.js')).stepChina(),
   price: stepPrice,
   report: stepReport,
 };

@@ -96,6 +96,7 @@ export function features() {
     naver: !!(e.NAVER_CLIENT_ID && e.NAVER_CLIENT_SECRET && e.NAVER_SHOP_ENABLED === '1'),
     coupang: !!(e.COUPANG_ACCESS_KEY && e.COUPANG_SECRET_KEY),
     elevenst: !!e.ELEVENST_API_KEY,
+    cn1688: !!(e.NEXSCOPE_API_KEY || (e.APIFY_TOKEN && e.CN_APIFY_ACTOR)),
     dataforseo: !!(e.DATAFORSEO_LOGIN && e.DATAFORSEO_PASSWORD),
     rakuten: !!(e.RAKUTEN_APP_ID && e.RAKUTEN_ACCESS_KEY),
     yahoo: !!e.YAHOO_CLIENT_ID,

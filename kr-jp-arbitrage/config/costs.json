@@ -1,70 +1,94 @@
 {
   "_comment": "마진 계산 상수. 전부 '확인 필요' — 실제 배대지 요율·관세율·수수료로 교체할 것. Sheets의 config_override 탭에서 키 경로(점 표기)로 덮어쓸 수 있다 (예: key=intl_ship.over_per_kg_jpy, value=1500).",
-
   "fx_safety_margin": 0.02,
   "_fx_safety_margin_comment": "한국 매입원가(JPY 환산)에 +2% 가산. .env의 FX_SAFETY_MARGIN이 있으면 그 값 우선",
-
   "kr_domestic_ship_krw": 3000,
-
   "intl_ship": {
     "_comment": "배대지 요율표 placeholder — 실제 이용 배대지 요율로 교체 필요. g 단위 구간",
     "tiers": [
-      { "max_g": 300, "jpy": 1400 },
-      { "max_g": 500, "jpy": 1800 },
-      { "max_g": 1000, "jpy": 2600 },
-      { "max_g": 2000, "jpy": 3800 }
+      {
+        "max_g": 300,
+        "jpy": 1400
+      },
+      {
+        "max_g": 500,
+        "jpy": 1800
+      },
+      {
+        "max_g": 1000,
+        "jpy": 2600
+      },
+      {
+        "max_g": 2000,
+        "jpy": 3800
+      }
     ],
     "_tiers_comment": "단건 발송 기준 placeholder. 일본집에 5~10개 묶음 반입 후 일본 국내 발송하는 운영이면 개당 국제배송이 300~500엔대로 떨어짐 — config_override 시트에서 intl_ship.tiers를 실제 요율로 교체할 것",
     "over_per_kg_jpy": 1500
   },
-
   "duty_rates": {
     "_comment": "간이세율 기준 추정 — 품목별 확인 필요. 과세가격 = 상품원가(JPY) + 국제배송비 (CIF 근사)",
     "apparel": 0.1,
     "bag": 0.08,
     "default": 0.1
   },
-
   "consumption_tax": 0.1,
   "_consumption_tax_comment": "수입소비세 (과세가격+관세)×0.10. 재판매 목적 상업수입이라 0.6掛け·1만엔 면세는 적용하지 않는다",
-
   "platform": "mercari_shops",
   "platform_fees": {
-    "mercari_shops": { "rate": 0.1, "fixed_jpy": 0, "extra_rate": 0, "_comment": "판매수수료 10% + 출금 200엔/회(건별 미반영)" },
-    "base_standard": { "rate": 0.036, "fixed_jpy": 40, "extra_rate": 0.03 }
+    "mercari_shops": {
+      "rate": 0.1,
+      "fixed_jpy": 0,
+      "extra_rate": 0,
+      "_comment": "판매수수료 10% + 출금 200엔/회(건별 미반영)"
+    },
+    "base_standard": {
+      "rate": 0.036,
+      "fixed_jpy": 40,
+      "extra_rate": 0.03
+    }
   },
-
   "packing_and_misc_jpy": 150,
-
   "jp_sell_price_factor": 0.95,
   "_jp_sell_price_factor_comment": "일본 최저가 × 0.95 — 팔리려면 최저가보다 싸야 함. 조정 가능",
-
   "market_min_price_jpy": 3000,
   "_market_min_price_jpy_comment": "라쿠텐·Yahoo 시장 수집에서 이 가격 미만 상품(액세서리·소모품)은 제외. 판매가 3,000엔 미만은 배송비·수수료만으로도 마진이 날 수 없음",
-
   "pass_min_margin_jpy": 2200,
   "pass_min_margin_rate": 0.25,
-
   "jp_to_kr": {
     "_comment": "일본에서 사서 한국에 파는 방향의 비용 가정. 전부 확인 필요 — 한국 관세율·일본→한국 배송비·판매 수수료는 실제 계약/품목별로 교체 (config_override 시트에서 jp_to_kr.xxx 로 덮어쓰기)",
     "sell_price_factor": 0.95,
     "jp_domestic_ship_jpy": 800,
     "intl_ship_krw": {
       "tiers": [
-        { "max_g": 500, "krw": 11000 },
-        { "max_g": 1000, "krw": 15000 },
-        { "max_g": 2000, "krw": 22000 }
+        {
+          "max_g": 500,
+          "krw": 11000
+        },
+        {
+          "max_g": 1000,
+          "krw": 15000
+        },
+        {
+          "max_g": 2000,
+          "krw": 22000
+        }
       ],
       "over_per_kg_krw": 8000
     },
-    "duty_rates": { "apparel": 0.13, "shoes": 0.13, "bag": 0.08, "cap": 0.08, "default": 0.13 },
+    "duty_rates": {
+      "apparel": 0.13,
+      "shoes": 0.13,
+      "bag": 0.08,
+      "cap": 0.08,
+      "default": 0.13
+    },
     "import_vat": 0.1,
     "platform_fee_rate": 0.11,
     "packing_and_misc_krw": 1500,
     "pass_min_margin_krw": 20000,
     "pass_min_margin_rate": 0.25
   },
-
   "default_weight_g": {
     "shoes": 1100,
     "cap": 150,
@@ -73,5 +97,29 @@
     "leggings": 250,
     "padding": 900,
     "default": 300
+  },
+  "cn_to_jp": {
+    "_comment": "중국(1688/타오바오)에서 사서 일본에 파는 방향의 비용 가정. 전부 '확인 필요' — 구매대행 수수료·중국발 배송 요율·관세율은 실제 이용 업체 기준으로 교체 (config_override 시트에서 cn_to_jp.xxx 로 덮어쓰기)",
+    "sell_price_factor": 0.95,
+    "agent_fee_rate": 0.05,
+    "cn_domestic_ship_cny": 6,
+    "intl_ship": {
+      "_comment": "중국→일본 항공 소형화물 가정: 무게(kg) × 단가 + 건당 고정비. 해상·묶음 운송이면 크게 내려감",
+      "per_kg_jpy": 1100,
+      "fixed_per_item_jpy": 120,
+      "min_jpy": 250
+    },
+    "duty_rates": {
+      "default": 0.05,
+      "textile": 0.1,
+      "bag": 0.08
+    },
+    "_duty_comment": "잡화는 0~5% 안팎이 많지만 품목별로 다름 — 수입 전 세관·통관업체 확인 필요",
+    "import_consumption_tax": 0.1,
+    "defect_reserve_rate": 0.03,
+    "_defect_reserve_comment": "불량·반품 충당금: 판매가의 3%",
+    "packing_and_misc_jpy": 100,
+    "pass_min_margin_jpy": 800,
+    "pass_min_margin_rate": 0.3
   }
 }

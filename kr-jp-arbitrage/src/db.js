@@ -129,6 +129,26 @@ for (const col of ['rev_net INTEGER', 'rev_rate REAL', 'rev_passed INTEGER DEFAU
   }
 }
 
+// ---------- 중국 소싱: 일본 판매 후보(cn_items) + 1688 원가 조회 결과(cn_quotes) ----------
+db.exec(`
+CREATE TABLE IF NOT EXISTS cn_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  category TEXT, keyword TEXT, name TEXT, price_jpy INTEGER, url TEXT UNIQUE, image_url TEXT,
+  shop TEXT, review_count INTEGER DEFAULT 0, review_avg REAL, score REAL, reasons TEXT, weight_g INTEGER,
+  fetched_at TEXT
+);
+CREATE TABLE IF NOT EXISTS cn_quotes (
+  item_id INTEGER PRIMARY KEY,
+  status TEXT,                -- 'ok' | 'none'(1688에서 못 찾음) | 'error'
+  provider TEXT, manual INTEGER DEFAULT 0,
+  cn_title TEXT, cn_price_cny REAL, cn_url TEXT, cn_image TEXT, moq REAL, month_sold REAL, supplier TEXT,
+  alts TEXT,                  -- JSON: 다른 후보(AI가 '다른 상품'이라 하면 교체용)
+  weight_g INTEGER, net_jpy INTEGER, rate REAL, passed INTEGER DEFAULT 0, sell_jpy INTEGER,
+  verified TEXT, verified_reason TEXT, note TEXT, checked_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_cn_items_score ON cn_items(score);
+`);
+
 // ---------- 상품 upsert ----------
 const upsertKrStmt = db.prepare(`
 INSERT INTO products_kr (brand, source, product_code, name, color, price_krw, sale_price_krw, url, image_url, in_stock, fetched_at)
@@ -568,3 +588,68 @@ export function listPairRows() {
 }
 
 export default db;
+
+
+// ---------- 중국 소싱 ----------
+export function upsertCnItem(it) {
+  db.prepare(
+    `INSERT INTO cn_items (category, keyword, name, price_jpy, url, image_url, shop, review_count, review_avg, score, reasons, weight_g, fetched_at)
+     VALUES (@category, @keyword, @name, @price_jpy, @url, @image_url, @shop, @review_count, @review_avg, @score, @reasons, @weight_g, @fetched_at)
+     ON CONFLICT(url) DO UPDATE SET category=excluded.category, keyword=excluded.keyword, name=excluded.name, price_jpy=excluded.price_jpy,
+       image_url=excluded.image_url, shop=excluded.shop, review_count=excluded.review_count, review_avg=excluded.review_avg,
+       score=excluded.score, reasons=excluded.reasons, weight_g=excluded.weight_g, fetched_at=excluded.fetched_at`
+  ).run({ ...it, fetched_at: nowIso() });
+}
+export const getCnItem = (id) => db.prepare(`SELECT * FROM cn_items WHERE id=?`).get(id);
+export const getCnQuote = (id) => db.prepare(`SELECT * FROM cn_quotes WHERE item_id=?`).get(id);
+
+// 원가를 아직 못 찾았거나(또는 오래된) 후보, 점수 높은 순 — 수동 입력(manual)은 건드리지 않는다
+export function cnItemsToCost(limit, staleDays = 14) {
+  const cutoff = new Date(Date.now() - staleDays * 86400_000).toISOString();
+  return db
+    .prepare(
+      `SELECT i.* FROM cn_items i LEFT JOIN cn_quotes q ON q.item_id=i.id
+       WHERE q.item_id IS NULL OR (q.manual=0 AND q.checked_at < ? AND q.status != 'ok')
+       ORDER BY i.score DESC LIMIT ?`
+    )
+    .all(cutoff, limit);
+}
+
+export function saveCnQuote(q) {
+  db.prepare(
+    `INSERT INTO cn_quotes (item_id, status, provider, manual, cn_title, cn_price_cny, cn_url, cn_image, moq, month_sold, supplier, alts, weight_g, net_jpy, rate, passed, sell_jpy, verified, verified_reason, note, checked_at)
+     VALUES (@item_id, @status, @provider, @manual, @cn_title, @cn_price_cny, @cn_url, @cn_image, @moq, @month_sold, @supplier, @alts, @weight_g, @net_jpy, @rate, @passed, @sell_jpy, @verified, @verified_reason, @note, @checked_at)
+     ON CONFLICT(item_id) DO UPDATE SET status=excluded.status, provider=excluded.provider, manual=excluded.manual, cn_title=excluded.cn_title,
+       cn_price_cny=excluded.cn_price_cny, cn_url=excluded.cn_url, cn_image=excluded.cn_image, moq=excluded.moq, month_sold=excluded.month_sold,
+       supplier=excluded.supplier, alts=excluded.alts, weight_g=excluded.weight_g, net_jpy=excluded.net_jpy, rate=excluded.rate,
+       passed=excluded.passed, sell_jpy=excluded.sell_jpy, verified=excluded.verified, verified_reason=excluded.verified_reason,
+       note=excluded.note, checked_at=excluded.checked_at`
+  ).run({
+    manual: 0, cn_title: null, cn_price_cny: null, cn_url: null, cn_image: null, moq: null, month_sold: null, supplier: null, alts: '[]',
+    weight_g: null, net_jpy: null, rate: null, passed: 0, sell_jpy: null, verified: null, verified_reason: null, note: null, provider: null,
+    ...q, checked_at: nowIso(),
+  });
+}
+export function setCnVerdict(itemId, verdict, reason) {
+  db.prepare(`UPDATE cn_quotes SET verified=?, verified_reason=? WHERE item_id=?`).run(verdict, reason || null, itemId);
+}
+
+// AI 이미지 확인 대상: 마진이 남는 후보 중 아직 확인 안 한 것 (이익 큰 순)
+export function cnQuotesToVerify(limit) {
+  return db
+    .prepare(`SELECT * FROM cn_quotes WHERE status='ok' AND manual=0 AND verified IS NULL AND net_jpy > 0 AND cn_image IS NOT NULL ORDER BY net_jpy DESC LIMIT ?`)
+    .all(limit);
+}
+
+export function listCnRows() {
+  return db
+    .prepare(
+      `SELECT i.*, q.status AS q_status, q.provider, q.manual, q.cn_title, q.cn_price_cny, q.cn_url, q.cn_image, q.moq, q.month_sold, q.supplier,
+              q.weight_g AS q_weight, q.net_jpy, q.rate, q.passed, q.sell_jpy, q.verified, q.verified_reason, q.note, q.checked_at
+       FROM cn_items i LEFT JOIN cn_quotes q ON q.item_id=i.id`
+    )
+    .all();
+}
+export function cnCounts() {
+  return db.prepare(`SELECT (SELECT COUNT(*) FROM cn_items) AS items, (SELECT COUNT(*) FROM cn_quotes WHERE status='ok') AS costed`).get();
+}

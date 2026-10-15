@@ -30,8 +30,21 @@ const cliOpts = {
   limit: argValue('limit') ? parseInt(argValue('limit'), 10) : undefined,
 };
 
-// --run-now / --step=... : 1회 실행 후 종료 (PM2 상주와 분리된 수동 모드)
-if (hasFlag('selftest')) {
+// --probe-cn [--image=URL] : 1688 이미지 검색을 1회만 호출해 응답의 키 구조를 확인한다 (건당 과금 · 값은 출력하지 않음)
+if (hasFlag('probe-cn')) {
+  (async () => {
+    const { searchBy1688Image, describeShape } = await import('./collectors/cn/image1688.js');
+    const dbm = await import('./db.js');
+    const image = argValue('image') || dbm.default.prepare(`SELECT image_url FROM cn_items WHERE image_url IS NOT NULL ORDER BY score DESC LIMIT 1`).get()?.image_url;
+    if (!image) throw new Error('시험할 이미지가 없습니다. 먼저 --step=china 로 후보를 만들거나 --image=https://...jpg 를 주세요');
+    const r = await searchBy1688Image(image, { pageSize: 5 });
+    console.log(`제공자: ${r.provider} · 파싱된 결과 ${r.matches.length}건`);
+    console.log('응답 구조(키만):', JSON.stringify(describeShape(r.raw)));
+    const m = r.matches[0];
+    if (m) console.log(`첫 결과: ${m.priceCny}위안 · MOQ ${m.moq} · 월판매 ${m.monthSold} · 제목 ${m.title.slice(0, 40)}`);
+    else console.log('파싱된 결과가 0건입니다 → 위 응답 구조를 알려주세요 (필드명 보정 필요)');
+  })().then(() => process.exit(0)).catch((e) => { console.error('실패:', e.message); process.exit(1); });
+} else if (hasFlag('selftest')) {
   runSelfTest()
     .then((rs) => {
       for (const r of rs) console.log(`${r.state === 'ok' ? 'OK  ' : r.state === 'nokey' ? '키없음' : 'FAIL'} ${r.name} — ${r.detail}`);
@@ -138,6 +151,33 @@ function startServer() {
   app.get('/api/breakdown', auth, async (req, res) => {
     try {
       res.json(await explainPair(req.query.side, parseInt(req.query.id, 10)));
+    } catch (e) {
+      res.status(e.status || 500).json({ error: e.message });
+    }
+  });
+
+  // 중국 소싱: 후보 + 1688 원가 + 마진
+  app.get('/api/cn', auth, async (req, res) => {
+    try {
+      const cn = await import('./cnsource.js');
+      res.json(await cn.buildCnRows({ filter: req.query.filter || 'all', category: req.query.category || undefined, q: req.query.q || undefined, limit: parseInt(req.query.limit || '100', 10) }));
+    } catch (e) {
+      error(`[cn] ${e.message}`);
+      res.status(500).json({ error: e.message });
+    }
+  });
+  app.get('/api/cn/breakdown', auth, async (req, res) => {
+    try {
+      res.json(await (await import('./cnsource.js')).explainCn(parseInt(req.query.id, 10)));
+    } catch (e) {
+      res.status(e.status || 500).json({ error: e.message });
+    }
+  });
+  // 자동 조회가 안 될 때 사람이 1688 위안 단가를 직접 넣는 보조 수단
+  app.post('/api/cn/cost', auth, async (req, res) => {
+    try {
+      const b = await (await import('./cnsource.js')).setManualCost(parseInt(req.body?.id, 10), { priceCny: req.body?.priceCny, url: req.body?.url, moq: req.body?.moq });
+      res.json({ ok: true, net: b.netMarginJpy, rate: b.marginRate, passed: b.passed });
     } catch (e) {
       res.status(e.status || 500).json({ error: e.message });
     }

@@ -27,6 +27,7 @@ export async function runSelfTest() {
     await check('Yahoo!쇼핑', f.yahoo, '키(YAHOO_CLIENT_ID)가 없습니다', async () => count((await searchYahoo('ナイキ', { results: 1 })).length)),
     await check('11번가', f.elevenst, '키(ELEVENST_API_KEY)가 없습니다', async () => count((await searchElevenst('나이키', { pageSize: 1 })).length)),
     await check('구글 쇼핑(DataForSEO)', f.dataforseo, '로그인/비밀번호(DATAFORSEO_LOGIN/PASSWORD)가 없습니다', () => probeDataforseo()),
+    await check('1688 이미지 검색(중국 소싱)', f.cn1688, '키(NEXSCOPE_API_KEY 또는 APIFY_TOKEN+CN_APIFY_ACTOR)가 없습니다', async () => ({ ok: true, detail: '키 있음 (건당 과금이라 시험 안 함 — `node --env-file=.env src/index.js --probe-cn` 으로 1회 확인)' })),
     await check('Claude(AI 이미지 비교)', f.llm, '키(ANTHROPIC_API_KEY)가 없습니다', async () => ({ ok: true, detail: '키 있음 (호출은 비용이 있어 시험하지 않음)' })),
   ];
 }

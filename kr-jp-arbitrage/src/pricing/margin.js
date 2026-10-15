@@ -163,6 +163,49 @@ export function breakEvenKrPrice({ jpLowestJpy, fx, weightG, category = 'apparel
 }
 
 // Sheets config_override 병합: key는 점 표기 경로 (예: intl_ship.over_per_kg_jpy)
+/**
+ * 중국(1688)에서 사서 일본에 파는 방향의 순마진(JPY).
+ *  판매가 = 일본 시세 × 계수 / 원가 = 위안×환율(+환율 안전마진) + 대행수수료 + 중국 내 배송 + 중국→일본 배송(무게)
+ *  + 관세 + 수입 소비세 + 플랫폼 수수료 + 포장 + 불량 충당금
+ * @param {{cnPriceCny:number, jpRefPriceJpy:number, jpyPerCny:number, weightG:number, dutyKey?:string}} p
+ */
+export function computeMarginCnToJp({ cnPriceCny, jpRefPriceJpy, jpyPerCny, weightG, dutyKey = 'default' }, costs) {
+  const c = costs.cn_to_jp || {};
+  const fxMargin = Number(process.env.FX_SAFETY_MARGIN ?? costs.fx_safety_margin ?? 0);
+  const sellJpy = Math.floor(jpRefPriceJpy * (c.sell_price_factor ?? 0.95));
+  const goodsJpy = Math.round(cnPriceCny * jpyPerCny * (1 + fxMargin));
+  const agentFeeJpy = Math.round(goodsJpy * (c.agent_fee_rate ?? 0.05));
+  const cnShipJpy = Math.round((c.cn_domestic_ship_cny ?? 6) * jpyPerCny);
+  const sh = c.intl_ship || {};
+  const intlShipJpy = Math.max(sh.min_jpy ?? 250, Math.round((weightG / 1000) * (sh.per_kg_jpy ?? 1100) + (sh.fixed_per_item_jpy ?? 120)));
+  const taxableJpy = goodsJpy + agentFeeJpy + cnShipJpy + intlShipJpy; // 과세가격(CIF 근사)
+  const dutyRate = (c.duty_rates || {})[dutyKey] ?? (c.duty_rates || {}).default ?? 0.05;
+  const customsDutyJpy = Math.round(taxableJpy * dutyRate);
+  const importTaxJpy = Math.round((taxableJpy + customsDutyJpy) * (c.import_consumption_tax ?? 0.1));
+  const platformFee = platformFeeJpy(sellJpy, costs);
+  const packing = c.packing_and_misc_jpy ?? 100;
+  const reserve = Math.round(sellJpy * (c.defect_reserve_rate ?? 0.03));
+  const netMarginJpy = sellJpy - goodsJpy - agentFeeJpy - cnShipJpy - intlShipJpy - customsDutyJpy - importTaxJpy - platformFee - packing - reserve;
+  const marginRate = sellJpy > 0 ? netMarginJpy / sellJpy : 0;
+  const passed = netMarginJpy >= (c.pass_min_margin_jpy ?? 800) && marginRate >= (c.pass_min_margin_rate ?? 0.3);
+  return {
+    jpRefPriceJpy, sellJpy, cnPriceCny, jpyPerCny, goodsJpy, agentFeeJpy, cnShipJpy, intlShipJpy, weightG,
+    taxableJpy, dutyRate, customsDutyJpy, importTaxJpy, platform: costs.platform, platformFeeJpy: platformFee,
+    packingJpy: packing, reserveJpy: reserve, netMarginJpy, marginRate: Math.round(marginRate * 1000) / 1000, passed,
+  };
+}
+
+// 이 일본 판매가에서 마진 기준을 통과하려면 중국 원가(위안)가 얼마 이하여야 하는가 (이진 탐색)
+export function breakEvenCnPriceCny({ jpRefPriceJpy, jpyPerCny, weightG, dutyKey }, costs) {
+  let lo = 0, hi = 5000;
+  for (let i = 0; i < 40; i++) {
+    const mid = (lo + hi) / 2;
+    if (computeMarginCnToJp({ cnPriceCny: mid, jpRefPriceJpy, jpyPerCny, weightG, dutyKey }, costs).passed) lo = mid;
+    else hi = mid;
+  }
+  return Math.floor(lo * 10) / 10;
+}
+
 export function mergeOverrides(costs, overrides) {
   const merged = structuredClone(costs);
   for (const [key, raw] of overrides) {
