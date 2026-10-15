@@ -11,6 +11,7 @@ import { runPipeline, STEP_ORDER } from './pipeline.js';
 import { rankCandidates, sourcingCandidates, buildCards } from './discover.js';
 import { buildStatus } from './status.js';
 import { lookup, toQuote } from './lookup.js';
+import { runSelfTest } from './selftest.js';
 import { getFxKrwPerJpy } from './pricing/fx.js';
 import { compareProducts } from './matcher/llm.js';
 import { startCommandBot } from './outputs/telegram.js';
@@ -29,7 +30,17 @@ const cliOpts = {
 };
 
 // --run-now / --step=... : 1회 실행 후 종료 (PM2 상주와 분리된 수동 모드)
-if (hasFlag('run-now') || argValue('step')) {
+if (hasFlag('selftest')) {
+  runSelfTest()
+    .then((rs) => {
+      for (const r of rs) console.log(`${r.state === 'ok' ? 'OK  ' : r.state === 'nokey' ? '키없음' : 'FAIL'} ${r.name} — ${r.detail}`);
+      process.exit(rs.some((r) => r.state === 'fail') ? 1 : 0);
+    })
+    .catch((e) => {
+      console.error(e.message);
+      process.exit(1);
+    });
+} else if (hasFlag('run-now') || argValue('step')) {
   warnMissingFeatures();
   const steps = argValue('step') ? argValue('step').split(',') : undefined;
   runPipeline({ ...cliOpts, steps })
@@ -110,6 +121,15 @@ function startServer() {
       cards: brand ? cards.filter((c) => c.brand === brand) : cards,
       sourcing: sourcingCandidates({ brand: brand || undefined, limit: 30 }),
     });
+  });
+
+  // 연결 시험: 서버의 키가 실제로 동작하는지 (유료 호출 없음)
+  app.get('/api/selftest', auth, async (req, res) => {
+    try {
+      res.json({ results: await runSelfTest() });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
   // 연결 현황: 브랜드별 어떤 사이트에서 몇 건 수집했는지

@@ -28,7 +28,9 @@ export function authHeader({ method, path, query, accessKey, secretKey, now }) {
 // 파트너스 링크(추적 파라미터가 매번 달라짐) 대신 상품 ID로 고정 URL을 만든다 (중복 누적 방지)
 export const canonicalUrl = (productId) => `https://www.coupang.com/vp/products/${productId}`;
 
-let blocked = false; // 403/401/429를 받으면 이번 프로세스에서는 중단
+let blockedUntil = 0; // 401/403/429를 받으면 15분간 쿠팡 호출을 멈춘다 (쿠팡 안내: 403이면 10분 이상 쉴 것)
+const isBlocked = () => Date.now() < blockedUntil;
+const blockNow = () => { blockedUntil = Date.now() + 15 * 60 * 1000; };
 const calls = []; // 최근 호출 시각 (시간당 한도 보호)
 const hourlyLimit = () => parseInt(process.env.COUPANG_HOURLY_LIMIT || '8', 10);
 function pruneCalls() {
@@ -38,13 +40,46 @@ function pruneCalls() {
 // 호출 가능 여부를 판단하고, 가능하면 호출 기록을 남긴다
 function takeCall() {
   pruneCalls();
-  if (blocked || calls.length >= hourlyLimit()) return false;
+  if (isBlocked() || calls.length >= hourlyLimit()) return false;
   calls.push(Date.now());
   return true;
 }
 export function coupangStatus() {
   pruneCalls();
-  return { blocked, usedLastHour: calls.length, limited: blocked || calls.length >= hourlyLimit() };
+  return { blocked: isBlocked(), usedLastHour: calls.length, limited: isBlocked() || calls.length >= hourlyLimit() };
+}
+
+// 연결 시험용: 1회 호출해서 상태와 실패 이유(키·승인·허용 IP·시간)를 알려준다. 키 값은 절대 반환하지 않는다
+export async function probeCoupang(keyword = '나이키') {
+  const ak = process.env.COUPANG_ACCESS_KEY;
+  const sk = process.env.COUPANG_SECRET_KEY;
+  if (!ak || !sk) return { ok: false, detail: '키가 서버 .env에 없습니다' };
+  if (!takeCall()) {
+    return { ok: false, detail: isBlocked() ? '직전 호출이 거절(401/403/429)돼서 15분간 쿠팡 호출을 멈춘 상태입니다. 원인(승인·허용 IP)을 고치고 15분 뒤 다시 시험하세요' : '시간당 호출 한도 보호로 건너뜀 — 잠시 뒤 다시 시험하세요' };
+  }
+  const query = `keyword=${encodeURIComponent(keyword)}&limit=10`;
+  const res = await fetch(`${HOST}${PATH}?${query}`, {
+    headers: {
+      Authorization: authHeader({ method: 'GET', path: PATH, query, accessKey: ak, secretKey: sk }),
+      'Content-Type': 'application/json;charset=UTF-8',
+    },
+    signal: AbortSignal.timeout(20000),
+  });
+  const text = await res.text();
+  let body = null;
+  try { body = JSON.parse(text); } catch { /* JSON이 아닌 응답 */ }
+  if (!res.ok) {
+    if ([401, 403, 429].includes(res.status)) blockNow();
+    const hint = {
+      401: '서명이 맞지 않거나 서버 시각이 어긋났습니다 (키 오타·시각 확인)',
+      403: '파트너스 최종 승인 전이거나 허용 IP 설정 문제일 수 있습니다. 쿠팡 파트너스의 API 메뉴에서 키 상태와 허용 IP를 확인하고 10분 뒤 다시 시도하세요',
+      429: '호출 한도를 넘었습니다. 1시간 뒤 다시 시도하세요',
+    }[res.status] || '쿠팡 응답 오류';
+    return { ok: false, status: res.status, detail: `HTTP ${res.status} · ${body?.message || body?.rMessage || text.slice(0, 120)} → ${hint}` };
+  }
+  if (body && body.rCode && body.rCode !== '0') return { ok: false, detail: `쿠팡 응답 코드 ${body.rCode} · ${body.rMessage || ''}` };
+  const n = body?.data?.productData?.length ?? 0;
+  return { ok: true, count: n, detail: `정상 (검색 결과 ${n}건)` };
 }
 
 // 화면의 "시세 찾기"용 즉석 검색 (1회 호출, DB에 저장하지 않음)
@@ -61,7 +96,7 @@ export async function searchCoupang(keyword) {
     signal: AbortSignal.timeout(20000),
   });
   if ([401, 403, 429].includes(res.status)) {
-    blocked = true;
+    blockNow();
     warn(`[coupang] HTTP ${res.status} — 쿠팡 호출 중단 (키·허용 IP·호출 한도 확인)`);
     return [];
   }
@@ -80,7 +115,7 @@ export async function searchCoupang(keyword) {
 }
 
 export async function collect(brandKey, brandCfg, { limit } = {}) {
-  if (blocked) return [];
+  if (isBlocked()) return [];
   const ak = process.env.COUPANG_ACCESS_KEY;
   const sk = process.env.COUPANG_SECRET_KEY;
   if (!ak || !sk) return [];
@@ -108,7 +143,7 @@ export async function collect(brandKey, brandCfg, { limit } = {}) {
       signal: AbortSignal.timeout(20000),
     });
     if ([401, 403, 429].includes(res.status)) {
-      blocked = true;
+      blockNow();
       warn(`[coupang] HTTP ${res.status} — 키·허용 IP·호출 한도 확인 필요. 이번 실행에서는 쿠팡 호출을 중단합니다 (403이면 10분 이상 쉴 것)`);
       break;
     }

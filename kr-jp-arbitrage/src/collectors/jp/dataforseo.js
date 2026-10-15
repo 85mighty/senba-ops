@@ -41,6 +41,16 @@ export function parseItems(task) {
     .filter((x) => x.name && x.price > 0 && x.url && (!x.currency || x.currency === 'JPY'));
 }
 
+// 연결 시험용: 무료 계정 조회로 로그인과 잔액만 확인한다
+export async function probeDataforseo() {
+  if (!dataforseoReady()) return { ok: false, detail: '로그인/비밀번호가 서버 .env에 없습니다' };
+  const j = await call('/appendix/user_data');
+  const t = j?.tasks?.[0];
+  if (!t || t.status_code !== 20000) return { ok: false, detail: `DataForSEO 응답 ${t?.status_code || ''} ${t?.status_message || j?.status_message || ''}` };
+  const bal = t.result?.[0]?.money?.balance;
+  return { ok: true, detail: `정상${typeof bal === 'number' ? ` · 잔액 $${bal.toFixed(2)}` : ''}` };
+}
+
 /**
  * 구글 쇼핑(일본)에서 키워드 검색. 결과가 나올 때까지 폴링하며 최대 timeoutMs 기다린다.
  * @returns {Array<{name, price, url, image_url, mall}>}

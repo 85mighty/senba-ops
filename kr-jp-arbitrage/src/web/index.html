@@ -331,6 +331,18 @@ async function openLookup(sd, id, google = false) {
   }
 }
 
+async function runSelfTestUi() {
+  const out = $('selfOut');
+  out.innerHTML = '<div class="hint">시험 중… (몇 초)</div>';
+  try {
+    const d = await api('/api/selftest');
+    const mark = { ok: '✅', fail: '❌', nokey: '⚪' };
+    out.innerHTML = `<div class="bc">${d.results.map((r) => `<div style="padding:5px 0;border-bottom:1px dashed var(--line)"><b>${mark[r.state] || ''} ${esc(r.name)}</b> <span class="sub">${r.state === 'nokey' ? '키 없음' : r.state === 'ok' ? '연결됨' : '실패'}</span><div class="sub" style="overflow-wrap:anywhere">${esc(r.detail)}</div></div>`).join('')}</div>`;
+  } catch (e) {
+    out.innerHTML = `<div class="note">${esc(e.message)}</div>`;
+  }
+}
+
 async function runCompare(i, btn) {
   const { side: sd, id, d } = lastLookup;
   const r = d.results[i];
@@ -358,7 +370,7 @@ async function renderStatus() {
   const d = await api('/api/status');
   const f = d.features;
   $('out').innerHTML =
-    `<div class="chips">${Object.entries({ naver:'네이버', coupang:'쿠팡', elevenst:'11번가', rakuten:'라쿠텐', yahoo:'Yahoo', dataforseo:'구글쇼핑(DataForSEO)', sheets:'구글시트', telegram:'텔레그램', llm:'Claude(LLM)' })
+    `<div class="bar"><button class="btn pri sm" id="selfTest">🔌 연결 시험 (키가 실제로 동작하는지 확인)</button><span class="sub">유료 호출 없이 몇 초 걸립니다</span></div><div id="selfOut"></div><div class="chips">${Object.entries({ naver:'네이버', coupang:'쿠팡', elevenst:'11번가', rakuten:'라쿠텐', yahoo:'Yahoo', dataforseo:'구글쇼핑(DataForSEO)', sheets:'구글시트', telegram:'텔레그램', llm:'Claude(LLM)' })
       .map(([k, n]) => `<span class="chip" style="${f[k] ? '' : 'opacity:.55'}">${f[k] ? '● ' : '○ '}${n}</span>`).join('')}</div>` +
     d.brands.map((b) => `<section class="bc"><h3>${esc(b.name)} <span class="sub">${b.enabled ? '' : '(꺼짐) '}· 총 ${b.total}건</span></h3>
       <div class="cm">${esc(b.comment).slice(0, 160)}</div>
@@ -394,6 +406,7 @@ document.addEventListener('click', (e) => {
   const gg = t.closest('[data-google]');
   if (gg) { const [sd2, id2] = gg.dataset.google.split(':'); openLookup(sd2, id2, true); }
   if (t.closest('[data-close]')) $('dlg').close();
+  if (t.closest('#selfTest')) runSelfTestUi();
   const dr = t.closest('[data-dir]');
   if (dr) { dir = dr.dataset.dir; load(); }
   const pf = t.closest('[data-profit]');
