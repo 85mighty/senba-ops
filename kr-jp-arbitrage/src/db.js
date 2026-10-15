@@ -121,7 +121,7 @@ try {
   /* 이미 있음 */
 }
 db.exec(`CREATE INDEX IF NOT EXISTS idx_jp_review ON products_jp(brand, review_count)`);
-for (const col of ['rev_net INTEGER', 'rev_rate REAL', 'rev_passed INTEGER DEFAULT 0']) {
+for (const col of ['rev_net INTEGER', 'rev_rate REAL', 'rev_passed INTEGER DEFAULT 0', 'alts TEXT']) {
   try {
     db.exec(`ALTER TABLE quotes ADD COLUMN ${col}`);
   } catch {
@@ -489,20 +489,20 @@ export function quoteTargets(side, { brand, minPrice = 0, limit = 400, force = f
   if (force) return rows.slice(0, limit);
   const todayStr = new Date().toISOString().slice(0, 10);
   const done = new Set(
-    db.prepare(`SELECT product_id FROM quotes WHERE side=? AND substr(checked_at,1,10)=? AND (rev_net IS NOT NULL OR best_price IS NULL)`).all(side, todayStr).map((r) => r.product_id)
+    db.prepare(`SELECT product_id FROM quotes WHERE side=? AND substr(checked_at,1,10)=? AND (rev_net IS NOT NULL OR best_price IS NULL) AND (alts IS NOT NULL OR best_price IS NULL OR kind='code')`).all(side, todayStr).map((r) => r.product_id)
   );
   return rows.filter((r) => !done.has(r.id)).slice(0, limit);
 }
 
 export function saveQuote(side, productId, q) {
   db.prepare(
-    `INSERT INTO quotes (side, product_id, kind, best_name, best_price, best_url, best_image, best_source, margin_net, margin_rate, passed, rev_net, rev_rate, rev_passed, checked_at)
-     VALUES (@side, @product_id, @kind, @best_name, @best_price, @best_url, @best_image, @best_source, @margin_net, @margin_rate, @passed, @rev_net, @rev_rate, @rev_passed, @checked_at)
+    `INSERT INTO quotes (side, product_id, kind, best_name, best_price, best_url, best_image, best_source, margin_net, margin_rate, passed, rev_net, rev_rate, rev_passed, alts, checked_at)
+     VALUES (@side, @product_id, @kind, @best_name, @best_price, @best_url, @best_image, @best_source, @margin_net, @margin_rate, @passed, @rev_net, @rev_rate, @rev_passed, @alts, @checked_at)
      ON CONFLICT(side, product_id) DO UPDATE SET
        kind=excluded.kind, best_name=excluded.best_name, best_price=excluded.best_price, best_url=excluded.best_url,
        best_image=excluded.best_image, best_source=excluded.best_source, margin_net=excluded.margin_net,
        margin_rate=excluded.margin_rate, passed=excluded.passed, rev_net=excluded.rev_net, rev_rate=excluded.rev_rate,
-       rev_passed=excluded.rev_passed, checked_at=excluded.checked_at,
+       rev_passed=excluded.rev_passed, alts=excluded.alts, checked_at=excluded.checked_at,
        verified = CASE WHEN quotes.best_url = excluded.best_url THEN quotes.verified ELSE NULL END,
        verified_reason = CASE WHEN quotes.best_url = excluded.best_url THEN quotes.verified_reason ELSE NULL END`
   ).run({
@@ -510,7 +510,7 @@ export function saveQuote(side, productId, q) {
     best_url: q.url ?? null, best_image: q.image ?? null, best_source: q.source ?? null, margin_net: q.net ?? null,
     margin_rate: q.rate ?? null, passed: q.passed ? 1 : 0,
     rev_net: q.rev?.net ?? null, rev_rate: q.rev?.rate ?? null, rev_passed: q.rev?.passed ? 1 : 0,
-    checked_at: nowIso(),
+    alts: JSON.stringify(q.alts || []), checked_at: nowIso(),
   });
 }
 
@@ -522,10 +522,22 @@ export function setQuoteVerdict(side, productId, verdict, reason) {
   db.prepare(`UPDATE quotes SET verified=?, verified_reason=? WHERE side=? AND product_id=?`).run(verdict, reason || null, side, productId);
 }
 
-// AI 이미지 비교 대상: 이름 검색으로 찾은(품번 일치가 아닌) 결과 중 마진이 + 이고 아직 확인 안 한 것
+// AI가 '다른 상품'이라 판정했을 때, 다음 후보로 대표 시세를 바꾼다 (이미 확인한 후보는 alts에서 뺌)
+export function swapQuoteBest(side, productId, alt, rest, verdict, reason) {
+  db.prepare(
+    `UPDATE quotes SET best_name=?, best_price=?, best_url=?, best_image=?, best_source=?, margin_net=?, margin_rate=?, passed=?,
+       rev_net=?, rev_rate=?, rev_passed=?, alts=?, verified=?, verified_reason=?, checked_at=? WHERE side=? AND product_id=?`
+  ).run(
+    alt.name, alt.price, alt.url, alt.image ?? null, alt.source ?? null, alt.net, alt.rate, alt.passed ? 1 : 0,
+    alt.rev?.net ?? null, alt.rev?.rate ?? null, alt.rev?.passed ? 1 : 0, JSON.stringify(rest || []), verdict ?? null, reason ?? null, nowIso(), side, productId
+  );
+}
+
+// AI 이미지 비교 대상: 이름 검색으로 찾은(품번 일치가 아닌) 결과 중 마진이 + 이고 아직 확인 안 한 것 (양방향 중 큰 이익 순)
 export function quotesToVerify(limit = 30) {
   return db
-    .prepare(`SELECT * FROM quotes WHERE (margin_net > 0 OR rev_net > 0) AND kind='search' AND verified IS NULL AND best_image IS NOT NULL ORDER BY margin_net DESC LIMIT ?`)
+    .prepare(`SELECT * FROM quotes WHERE (margin_net > 0 OR rev_net > 0) AND kind='search' AND verified IS NULL AND best_image IS NOT NULL
+              ORDER BY MAX(COALESCE(margin_net, -1000000), COALESCE(rev_net, -1000000) / 9.0) DESC LIMIT ?`)
     .all(limit);
 }
 

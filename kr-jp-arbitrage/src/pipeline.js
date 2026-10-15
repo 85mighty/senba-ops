@@ -158,9 +158,19 @@ async function stepQuote({ brand, limit } = {}) {
     for (const q of db.quotesToVerify(parseInt(process.env.LLM_VERIFY_LIMIT || '30', 10))) {
       try {
         const p = db.getProductById(q.side, q.product_id);
-        const v = await compareProducts({ name: p.name, image: p.image_url }, { name: q.best_name, image: q.best_image });
-        db.setQuoteVerdict(q.side, q.product_id, v.verdict, v.reason);
+        let v = await compareProducts({ name: p.name, image: p.image_url }, { name: q.best_name, image: q.best_image });
         verified++;
+        // '다른 상품'이면 다음 후보(최대 2개)를 이미지로 다시 확인해서, 같은 상품이 나오면 대표 시세를 그걸로 교체
+        let alts = [];
+        try { alts = JSON.parse(q.alts || '[]'); } catch { /* 없음 */ }
+        while (v.verdict === 'different' && alts.length) {
+          const alt = alts.shift();
+          if (!alt.image) continue;
+          const v2 = await compareProducts({ name: p.name, image: p.image_url }, { name: alt.name, image: alt.image });
+          verified++;
+          if (v2.verdict !== 'different') { db.swapQuoteBest(q.side, q.product_id, alt, alts, v2.verdict, v2.reason); v = null; break; }
+        }
+        if (v) db.setQuoteVerdict(q.side, q.product_id, v.verdict, v.reason);
       } catch (e) {
         warn(`[quote] AI 비교 중단: ${e.message}`);
         break;

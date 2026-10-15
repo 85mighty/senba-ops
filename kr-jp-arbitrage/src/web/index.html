@@ -129,6 +129,7 @@
   .rbox .v small { font-size:12px; font-weight:700; margin-left:6px; }
   .verd { font-size:13px; font-weight:900; border-radius:8px; padding:3px 10px; }
   .verd.kr2jp, .verd.jp2kr { background:var(--good-soft); color:var(--good); }
+  .cn { margin:2px 0 4px; overflow-wrap:anywhere; } .pr.unv .rbox { background:var(--surface2); } .pr.unv .rbox .v, .pr.unv .rbox small { color:var(--ink2); } .verd.unverified { background:var(--warn-soft); color:var(--warn); }
   .verd.loss { background:var(--surface2); color:var(--ink2); } .verd.mismatch { background:var(--warn-soft); color:var(--warn); }
   .bdt { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; font-size:13px; margin:4px 0 10px; }
   .bdt td { padding:3px 0; border-bottom:1px dashed var(--line); } .bdt td:last-child { text-align:right; white-space:nowrap; }
@@ -326,6 +327,7 @@ const VERD_TEXT = {
   jp2kr: '👉 일본에서 사서 한국에 팔기',
   loss: '둘 다 손해',
   mismatch: '⚠ 다른 상품 의심 (AI 판정)',
+  unverified: '🔍 같은 상품인지 확인 필요',
 };
 const viewBar = () => `<div class="bar"><div class="seg"><button data-view="pairs" aria-pressed="${exView === 'pairs'}">시세 비교 (한 줄 카드)</button><button data-view="all" aria-pressed="${exView === 'all'}">수집 상품 전체</button></div></div>`;
 
@@ -336,11 +338,17 @@ function pairHtml(r) {
   const link = (x) => (x.url ? `<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.site)} ↗</a>` : esc(x.site));
   const krThumb = r.side === 'jp' && r.counterImage ? `<img class="thumb" src="${esc(r.counterImage)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : '';
   const jpThumb = r.side === 'kr' && r.counterImage ? `<img class="thumb" src="${esc(r.counterImage)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : '';
-  return `<article class="pr">
+  const counterSide = r.side === 'kr' ? '일본' : '한국';
+  const counterLine = r.counterName && r.kind !== 'code'
+    ? `<div class="sub cn">비교한 ${counterSide} 상품: ${esc(r.counterName)}${r.reason ? ' · AI: ' + esc(r.reason) : ''}</div>`
+    : '';
+  const unv = r.verdict === 'unverified' || r.verdict === 'mismatch' ? ' unv' : '';
+  return `<article class="pr${unv}">
     ${r.image ? `<img class="pimg" src="${esc(r.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.visibility='hidden'">` : '<div class="pimg"></div>'}
     <div class="pbody">
       <div class="ptop"><span class="sub">${esc(r.brand)}${r.code ? ' · ' + esc(r.code) : ''} ${tag}</span><span class="verd ${r.verdict}">${VERD_TEXT[r.verdict]}</span></div>
       <div class="nm" style="-webkit-line-clamp:1">${esc(r.name)}</div>
+      ${counterLine}
       <div class="mk">
         <div class="m"><span class="flag">🇰🇷</span><b>${won(r.kr.price)}</b> <span class="sub">${toYenStr(r.kr.price)}</span> · ${link(r.kr)}${krThumb}</div>
         <div class="m"><span class="flag">🇯🇵</span><b>${yen(r.jp.price)}</b> <span class="sub">${toWonStr(r.jp.price)}</span> · ${link(r.jp)}${jpThumb}</div>
@@ -359,7 +367,7 @@ async function renderExplore() {
   const d = await api(`/api/pairs?filter=${pairFilter}${exBrand ? '&brand=' + enc(exBrand) : ''}${exQ ? '&q=' + enc(exQ) : ''}`);
   if (d.fx) fxRate = d.fx;
   const c = d.counts;
-  const filters = [['all', `전체 ${c.all}`], ['kr2jp', `🇰🇷→🇯🇵 한국에서 사서 일본에 팔면 이득 ${c.kr2jp}`], ['jp2kr', `🇯🇵→🇰🇷 일본에서 사서 한국에 팔면 이득 ${c.jp2kr}`], ['loss', `둘 다 손해 ${c.loss}`], ['pass', `통과 기준 충족 ${c.pass}`]];
+  const filters = [['all', `전체 ${c.all}`], ['kr2jp', `🇰🇷→🇯🇵 한국에서 사서 일본에 팔면 이득 ${c.kr2jp}`], ['jp2kr', `🇯🇵→🇰🇷 일본에서 사서 한국에 팔면 이득 ${c.jp2kr}`], ['loss', `둘 다 손해 ${c.loss}`], ['check', `🔍 같은 상품인지 확인 필요 ${c.check}`], ['pass', `통과 기준 충족 ${c.pass}`]];
   $('out').innerHTML = viewBar() +
     `<div class="chips">${filters.map(([v, l]) => `<button class="chip" data-pf="${v}" aria-pressed="${pairFilter === v}">${l}</button>`).join('')}</div>
     <div class="bar"><select id="exBrand"><option value="">모든 브랜드</option>${brandList.map(([k, n]) => `<option value="${esc(k)}"${k === exBrand ? ' selected' : ''}>${esc(n)}</option>`).join('')}</select>
@@ -416,7 +424,7 @@ async function openLookup(sd, id, google = false) {
     dlg.innerHTML = `<div class="dh"><img src="${esc(d.base.image || '')}" alt="" referrerpolicy="no-referrer" onerror="this.style.visibility='hidden'"><div class="t"><div class="sub">${isKr ? '한국 상품' : '일본 상품'}</div><b id="dlgTitle">${esc(d.base.name)}</b><div class="sub">${esc(d.base.label)} · <a href="${esc(d.base.url)}" target="_blank" rel="noopener">원본 ↗</a></div></div><button class="btn sm" data-close>닫기</button></div>
       <div class="dbody">${sum}${d.notes.map((n) => `<div class="note">${esc(n)}</div>`).join('')}
       ${d.results.length ? d.results.map((r) => `<div class="res">${r.image_url ? `<img src="${esc(r.image_url)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : '<div class="noimg"></div>'}
-        <div class="t"><div class="n">${esc(r.name)}</div><div class="sub">${r.byCode ? '<span class="tg code">품번 일치</span>' : ''}${esc(r.source)}${r.review_count ? ' · 리뷰 ' + r.review_count : ''} <span id="cmp-${d.results.indexOf(r)}"></span></div></div>
+        <div class="t"><div class="n">${esc(r.name)}</div><div class="sub">${r.byCode ? '<span class="tg code">품번 일치</span>' : r.likely === false ? '<span class="tg">브랜드명 없음 · 다른 상품일 가능성</span>' : ''}${esc(r.source)}${r.review_count ? ' · 리뷰 ' + r.review_count : ''} <span id="cmp-${d.results.indexOf(r)}"></span></div></div>
         <div class="r"><b>${isKr ? yen(r.price) : won(r.price)}</b><span class="sub">${isKr ? toWonStr(r.price) : toYenStr(r.price)}</span><span class="mg ${marginOf(r).net >= 0 ? 'pos' : 'neg'}">마진 ${marginMain(marginOf(r))}${marginOf(r).passed ? ' ✓통과' : ''}</span></div>
         <div style="display:flex;flex-direction:column;gap:4px"><a class="btn sm" href="${esc(r.url)}" target="_blank" rel="noopener">보기 ↗</a><button class="btn sm" data-compare="${d.results.indexOf(r)}">AI 이미지 비교</button></div></div>`).join('') : '<div class="empty">자동 검색 결과가 없습니다. 아래 링크로 직접 찾아보세요.</div>'}
       ${isKr && d.googleAvailable && !d.google ? `<button class="btn sm" data-google="${sd}:${id}">구글 쇼핑(일본)에서도 찾기 · 아마존·요도바시 등 포함, 1~2분</button>` : ''}

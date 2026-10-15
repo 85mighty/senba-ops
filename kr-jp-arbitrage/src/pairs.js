@@ -9,7 +9,7 @@ import { computeMargin, computeMarginJpToKr, estimateWeightG, categoryOfName } f
 const RAW = { rakuten: '라쿠텐', yahoo: 'Yahoo!쇼핑', coupang: '쿠팡', elevenst: '11번가', naver: '네이버' };
 const siteLabel = (src, country) => (src === 'brand_site' ? (country === 'kr' ? '한국 공식몰' : '일본 공식몰') : RAW[src] || src || '');
 
-export const VERDICTS = ['kr2jp', 'jp2kr', 'loss', 'mismatch'];
+export const VERDICTS = ['kr2jp', 'jp2kr', 'loss', 'mismatch', 'unverified'];
 
 /**
  * @param {{filter?, brand?, q?, limit?}} opt
@@ -36,7 +36,9 @@ export async function buildPairs({ filter = 'all', brand, q, limit = 100 } = {})
     };
     const aGood = a.net > 0;
     const bGood = !!b && b.net > 0;
+    // 이름 검색(추정)으로 찾았고 AI가 같은 상품이라고 확인하지 않은 건 '확인 필요' — 이득/손해 판정에 넣지 않는다 (엉뚱한 상품과 비교한 숫자일 수 있음)
     row.verdict = r.verified === 'different' ? 'mismatch'
+      : r.q_kind === 'search' && r.verified !== 'same' ? 'unverified'
       : aGood && bGood ? (a.net >= b.net / fx ? 'kr2jp' : 'jp2kr')
       : aGood ? 'kr2jp' : bGood ? 'jp2kr' : 'loss';
     const prev = seen.get(key);
@@ -52,12 +54,15 @@ export async function buildPairs({ filter = 'all', brand, q, limit = 100 } = {})
     kr2jp: count((r) => r.verdict === 'kr2jp'),
     jp2kr: count((r) => r.verdict === 'jp2kr'),
     loss: count((r) => r.verdict === 'loss' || r.verdict === 'mismatch'),
-    pass: count((r) => r.verdict !== 'mismatch' && (r.a.passed || r.b?.passed)),
+    check: count((r) => r.verdict === 'unverified'),
+    pass: count((r) => r.verdict !== 'mismatch' && r.verdict !== 'unverified' && (r.a.passed || r.b?.passed)),
   };
   if (filter === 'kr2jp' || filter === 'jp2kr') rows = rows.filter((r) => r.verdict === filter);
   else if (filter === 'loss') rows = rows.filter((r) => r.verdict === 'loss' || r.verdict === 'mismatch');
-  else if (filter === 'pass') rows = rows.filter((r) => r.verdict !== 'mismatch' && (r.a.passed || r.b?.passed));
-  rows.sort((x, y) => (x.verdict === 'mismatch') - (y.verdict === 'mismatch') || y.score - x.score);
+  else if (filter === 'check') rows = rows.filter((r) => r.verdict === 'unverified');
+  else if (filter === 'pass') rows = rows.filter((r) => r.verdict !== 'mismatch' && r.verdict !== 'unverified' && (r.a.passed || r.b?.passed));
+  const rank = (r) => (r.verdict === 'mismatch' ? 2 : r.verdict === 'unverified' ? 1 : 0);
+  rows.sort((x, y) => rank(x) - rank(y) || y.score - x.score);
   return { rows: rows.slice(0, Math.min(limit, 300)), counts, fx };
 }
 
