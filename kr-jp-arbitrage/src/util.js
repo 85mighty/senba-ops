@@ -73,6 +73,7 @@ export function features() {
   const e = process.env;
   return {
     naver: !!(e.NAVER_CLIENT_ID && e.NAVER_CLIENT_SECRET),
+    coupang: !!(e.COUPANG_ACCESS_KEY && e.COUPANG_SECRET_KEY),
     rakuten: !!(e.RAKUTEN_APP_ID && e.RAKUTEN_ACCESS_KEY),
     yahoo: !!e.YAHOO_CLIENT_ID,
     sheets: !!(e.GOOGLE_SHEET_ID && e.GOOGLE_SERVICE_ACCOUNT_JSON && fs.existsSync(e.GOOGLE_SERVICE_ACCOUNT_JSON)),
@@ -86,6 +87,7 @@ export function warnMissingFeatures() {
   const f = features();
   const msgs = {
     naver: '네이버쇼핑 API 키 없음 → 한국 시장가 보강 비활성화',
+    coupang: '쿠팡 파트너스 API 키 없음(COUPANG_ACCESS_KEY/SECRET_KEY) → 쿠팡 시장가 비활성화',
     rakuten: 'RAKUTEN_APP_ID/RAKUTEN_ACCESS_KEY 없음 → 라쿠텐 수집 비활성화 (신형 API는 둘 다 필요)',
     yahoo: 'YAHOO_CLIENT_ID 없음 → Yahoo!쇼핑 수집 비활성화',
     sheets: 'Google Sheets 설정 없음(GOOGLE_SHEET_ID / 서비스계정 JSON) → 시트 기록 비활성화',

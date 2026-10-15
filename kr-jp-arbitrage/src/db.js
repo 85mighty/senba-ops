@@ -334,7 +334,7 @@ export function jpDemandByCode(brand, code, fallbackId) {
 // 일본에서 수요(리뷰)는 높은데 아직 매칭/소싱이 없는 상품 — 사람이 한국 소싱처를 찾아볼 후보
 export function unmatchedHighDemandJp({ brand, minReviews = 50, limit = 10 } = {}) {
   let sql = `
-    SELECT j.id, j.brand, j.name, j.price_jpy, j.review_count, j.url, j.product_code
+    SELECT j.id, j.brand, j.name, j.price_jpy, j.review_count, j.url, j.product_code, j.image_url, j.source
     FROM products_jp j
     LEFT JOIN product_master m ON m.jp_product_id = j.id AND m.confidence != 'X'
     WHERE m.id IS NULL AND j.in_stock=1 AND j.review_count >= ?
@@ -383,6 +383,52 @@ export function kvIncr(key) {
   const n = parseInt(kvGet(key) || '0', 10) + 1;
   kvSet(key, n);
   return n;
+}
+
+// ---------- 화면용 조회 (카드·연결 현황·수집 상품) ----------
+// 마진 스냅샷 전체(통과+미달)를 양쪽 이미지·URL과 함께
+export function cardRows({ date } = {}) {
+  const d = date || db.prepare(`SELECT MAX(date) AS d FROM margin_snapshots`).get()?.d;
+  if (!d) return [];
+  return db
+    .prepare(
+      `SELECT s.*, m.brand, m.confidence, m.note AS master_note, k.product_code AS code,
+              k.name AS kr_name, k.color AS kr_color, k.url AS kr_url, k.image_url AS kr_image, k.source AS kr_source,
+              j.name AS jp_name, j.url AS jp_url, j.image_url AS jp_image, j.source AS jp_source
+       FROM margin_snapshots s
+       JOIN product_master m ON m.id = s.master_id
+       LEFT JOIN products_kr k ON k.id = m.kr_product_id
+       LEFT JOIN products_jp j ON j.id = m.jp_product_id
+       WHERE s.date=?`
+    )
+    .all(d);
+}
+
+// 브랜드·소스별 수집 건수와 마지막 수집 시각
+export function coverage(brand) {
+  const q = (table) =>
+    db.prepare(`SELECT source, COUNT(*) AS n, MAX(fetched_at) AS last FROM ${table} WHERE brand=? GROUP BY source`).all(brand);
+  return { kr: q('products_kr'), jp: q('products_jp') };
+}
+
+export function recentRuns(limit = 8) {
+  return db.prepare(`SELECT run_id, step, status, message, started_at, finished_at FROM run_log ORDER BY id DESC LIMIT ?`).all(limit);
+}
+
+// 수집된 상품 둘러보기 (이미지 포함)
+export function listProducts({ side = 'kr', brand, source, q, limit = 60, offset = 0 } = {}) {
+  const table = side === 'jp' ? 'products_jp' : 'products_kr';
+  const price = side === 'jp' ? 'price_jpy' : 'COALESCE(NULLIF(sale_price_krw,0), price_krw)';
+  const extra = side === 'jp' ? ', review_count' : ', price_krw, sale_price_krw';
+  let sql = `SELECT id, brand, source, product_code, name, ${price} AS price, url, image_url, in_stock, fetched_at${extra} FROM ${table} WHERE 1=1`;
+  const args = [];
+  if (brand) { sql += ` AND brand=?`; args.push(brand); }
+  if (source) { sql += ` AND source=?`; args.push(source); }
+  if (q) { sql += ` AND name LIKE ?`; args.push(`%${q}%`); }
+  sql += side === 'jp' ? ` ORDER BY review_count DESC, fetched_at DESC` : ` ORDER BY fetched_at DESC, id DESC`;
+  sql += ` LIMIT ? OFFSET ?`;
+  args.push(Math.min(limit, 200), offset);
+  return db.prepare(sql).all(...args);
 }
 
 export default db;

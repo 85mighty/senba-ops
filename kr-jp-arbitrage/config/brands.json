@@ -178,7 +178,27 @@
         "puffer",
         "점퍼"
       ],
-      "top": []
+      "top": [],
+      "shoes": [
+        "신발",
+        "운동화",
+        "스니커즈",
+        "스니커",
+        "에어포스",
+        "에어맥스",
+        "삼바",
+        "가젤",
+        "스피드캣",
+        "팔레르모",
+        "シューズ",
+        "スニーカー",
+        "sneaker",
+        "shoes",
+        "サンバ",
+        "ガゼル",
+        "スピードキャット",
+        "パレルモ"
+      ]
     }
   },
   "xexymix": {
@@ -608,6 +628,159 @@
       "yahoo": {
         "enabled": true,
         "query": "SCULPTOR 韓国 ブランド",
+        "seller_id": ""
+      }
+    }
+  },
+  "nike": {
+    "enabled": true,
+    "phase": "발굴",
+    "display_name": "NIKE",
+    "report_note": "NIKE: 정식 판매처에서만 매입 (가품 주의). 신발은 박스째 ~1.1kg라 배송비 비중 큼",
+    "_comment": "수요 검증된 글로벌 브랜드. 스타일 코드(예: DV3853-100)가 한·일 공통이라 코드 일치로 A등급 자동 매칭 가능. 공식몰 수집은 꺼둠(시장가 매칭). 한국 세일(공식·무신사 등) vs 일본 시세 비교가 핵심. 신발보다 의류·모자가 배송비상 유리",
+    "brand_words": [
+      "나이키",
+      "nike",
+      "ナイキ"
+    ],
+    "product_code_regex": "\\b[A-Z]{2}\\d{4}-\\d{3}\\b",
+    "kr": {
+      "brand_site": {
+        "enabled": false,
+        "base_url": "",
+        "list_urls": [],
+        "selectors": {}
+      },
+      "naver": {
+        "enabled": true,
+        "queries": [
+          "나이키 테크 플리스 후디",
+          "나이키 에어포스 1 07",
+          "나이키 캡 볼캡"
+        ],
+        "mall_names": [
+          "나이키",
+          "NIKE"
+        ]
+      }
+    },
+    "jp": {
+      "brand_site": {
+        "enabled": false,
+        "base_url": "",
+        "list_urls": [],
+        "selectors": {}
+      },
+      "rakuten": {
+        "enabled": true,
+        "keyword": "ナイキ ナイキ正規品 パーカー スニーカー",
+        "shop_code": ""
+      },
+      "yahoo": {
+        "enabled": true,
+        "query": "ナイキ 正規品 パーカー スニーカー",
+        "seller_id": ""
+      }
+    }
+  },
+  "adidas": {
+    "enabled": true,
+    "phase": "발굴",
+    "display_name": "adidas",
+    "report_note": "adidas: 정식 판매처에서만 매입 (가품 주의). 신발은 배송비 비중 큼",
+    "_comment": "수요 검증된 글로벌 브랜드. 아티클 번호(예: IF3405)가 한·일 공통 → 코드 매칭. 삼바·가젤 등 인기 스니커즈 + 트랙탑 의류",
+    "brand_words": [
+      "아디다스",
+      "adidas",
+      "アディダス"
+    ],
+    "product_code_regex": "\\b[A-Z]{2}\\d{4}\\b",
+    "kr": {
+      "brand_site": {
+        "enabled": false,
+        "base_url": "",
+        "list_urls": [],
+        "selectors": {}
+      },
+      "naver": {
+        "enabled": true,
+        "queries": [
+          "아디다스 삼바 OG",
+          "아디다스 트랙탑 져지",
+          "아디다스 가젤"
+        ],
+        "mall_names": [
+          "아디다스",
+          "adidas"
+        ]
+      }
+    },
+    "jp": {
+      "brand_site": {
+        "enabled": false,
+        "base_url": "",
+        "list_urls": [],
+        "selectors": {}
+      },
+      "rakuten": {
+        "enabled": true,
+        "keyword": "アディダス 正規品 サンバ トラックジャケット",
+        "shop_code": ""
+      },
+      "yahoo": {
+        "enabled": true,
+        "query": "アディダス 正規品 サンバ トラックジャケット",
+        "seller_id": ""
+      }
+    }
+  },
+  "puma": {
+    "enabled": true,
+    "phase": "발굴",
+    "display_name": "PUMA",
+    "report_note": "PUMA: 정식 판매처에서만 매입 (가품 주의)",
+    "_comment": "수요 검증된 글로벌 브랜드. 아티클 번호(예: 389068-01)가 한·일 공통 → 코드 매칭. 스피드캣·팔레르모 등",
+    "brand_words": [
+      "푸마",
+      "puma",
+      "プーマ"
+    ],
+    "product_code_regex": "\\b\\d{6}[- ]\\d{2}\\b",
+    "kr": {
+      "brand_site": {
+        "enabled": false,
+        "base_url": "",
+        "list_urls": [],
+        "selectors": {}
+      },
+      "naver": {
+        "enabled": true,
+        "queries": [
+          "푸마 스피드캣",
+          "푸마 팔레르모",
+          "푸마 트랙탑"
+        ],
+        "mall_names": [
+          "푸마",
+          "PUMA"
+        ]
+      }
+    },
+    "jp": {
+      "brand_site": {
+        "enabled": false,
+        "base_url": "",
+        "list_urls": [],
+        "selectors": {}
+      },
+      "rakuten": {
+        "enabled": true,
+        "keyword": "プーマ 正規品 スピードキャット パレルモ",
+        "shop_code": ""
+      },
+      "yahoo": {
+        "enabled": true,
+        "query": "プーマ 正規品 スピードキャット パレルモ",
         "seller_id": ""
       }
     }

@@ -8,7 +8,8 @@ import cron from 'node-cron';
 import { ROOT, info, warn, error, warnMissingFeatures, today } from './util.js';
 import * as db from './db.js';
 import { runPipeline, STEP_ORDER } from './pipeline.js';
-import { rankCandidates, sourcingCandidates } from './discover.js';
+import { rankCandidates, sourcingCandidates, buildCards } from './discover.js';
+import { buildStatus } from './status.js';
 import { startCommandBot } from './outputs/telegram.js';
 
 // ---------- CLI 인자 ----------
@@ -96,6 +97,33 @@ function startServer() {
       }
     }
     res.json({ rows });
+  });
+
+  // 판단용 카드 (이미지·가격·판정) + 소싱 후보(이미지 포함)
+  app.get('/api/cards', auth, (req, res) => {
+    const cards = buildCards({ date: req.query.date || undefined, limit: parseInt(req.query.limit || '80', 10) });
+    const brand = req.query.brand;
+    res.json({
+      cards: brand ? cards.filter((c) => c.brand === brand) : cards,
+      sourcing: sourcingCandidates({ brand: brand || undefined, limit: 30 }),
+    });
+  });
+
+  // 연결 현황: 브랜드별 어떤 사이트에서 몇 건 수집했는지
+  app.get('/api/status', auth, (req, res) => res.json(buildStatus()));
+
+  // 수집된 상품 둘러보기
+  app.get('/api/products', auth, (req, res) => {
+    res.json({
+      rows: db.listProducts({
+        side: req.query.side === 'jp' ? 'jp' : 'kr',
+        brand: req.query.brand || undefined,
+        source: req.query.source || undefined,
+        q: req.query.q || undefined,
+        limit: parseInt(req.query.limit || '60', 10),
+        offset: parseInt(req.query.offset || '0', 10),
+      }),
+    });
   });
 
   // 발굴: 주시 후보 + 소싱 후보

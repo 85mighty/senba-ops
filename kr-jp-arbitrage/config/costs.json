@@ -43,6 +43,7 @@
   "pass_min_margin_rate": 0.25,
 
   "default_weight_g": {
+    "shoes": 1100,
     "cap": 150,
     "bag": 400,
     "top": 300,
