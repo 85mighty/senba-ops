@@ -22,6 +22,8 @@
       "orange": ["오렌지", "オレンジ", "orange"]
     },
     "weight_keywords": {
+      "cap": ["볼캡", "캡", "모자", "キャップ", "帽子", "cap", "버킷햇", "バケットハット", "비니", "ビーニー"],
+      "bag": ["가방", "백", "バッグ", "bag", "숄더", "ショルダー", "토트", "トート", "크로스백"],
       "leggings": ["레깅스", "レギンス", "leggings", "팬츠", "パンツ", "pants", "쇼츠", "ショーツ"],
       "padding": ["패딩", "다운", "눕시", "ダウン", "ヌプシ", "nuptse", "puffer", "점퍼"],
       "top": []
@@ -160,6 +162,7 @@
     "enabled": true,
     "phase": 3,
     "display_name": "THE NORTH FACE",
+    "report_note": "TNF: 병행수입 리스크 확인 필요",
     "auto_match": false,
     "_auto_match_comment": "한국(영원아웃도어)·일본(Goldwin)은 별도 라이선시 — 품번·사양이 달라 자동 매칭 기대 금지. 승인 UI 또는 product_master에 사람이 쌍을 등록. 병행수입 리스크 비고는 보고서에 자동 삽입됨",
     "brand_words": ["노스페이스", "더 노스페이스", "the north face", "ザ・ノース・フェイス", "ノースフェイス"],
@@ -219,6 +222,96 @@
         "query": "ノースフェイス ヌプシ",
         "seller_id": ""
       }
+    }
+  },
+  "emis": {
+    "enabled": true,
+    "phase": "발굴",
+    "display_name": "emis",
+    "_comment": "발굴 후보 1순위. 일본 상설매장 시부야 1곳뿐인데 Yahoo/라쿠텐 대행이 캡을 6,300~7,980엔에 판매 중 (한국 공식가 4만원대 ≈ 4,300엔). 모자 ~150g = 배송비 최저구간. 일본 공식몰 없음 → 시장가(대행 시세) 매칭",
+    "brand_words": ["이미스", "emis", "エミス", "イミス"],
+    "product_code_regex": null,
+    "kr": {
+      "brand_site": {
+        "enabled": false,
+        "_comment": "emis.kr — 셀렉터 확인 후 활성화",
+        "base_url": "https://emis.kr",
+        "list_urls": [],
+        "max_pages": 3,
+        "selectors": {}
+      },
+      "naver": { "enabled": true, "query": "이미스 볼캡", "mall_names": ["이미스", "EMIS"] }
+    },
+    "jp": {
+      "brand_site": { "enabled": false, "base_url": "", "list_urls": [], "selectors": {} },
+      "rakuten": { "enabled": true, "keyword": "emis キャップ 韓国", "shop_code": "" },
+      "yahoo": { "enabled": true, "query": "emis キャップ 韓国", "seller_id": "" }
+    }
+  },
+  "matin_kim": {
+    "enabled": true,
+    "phase": "발굴",
+    "display_name": "Matin Kim",
+    "_comment": "발굴 후보 2순위. BUYMA 한국브랜드 구매 3위, 일본 매장(시부야·나고야·하라주쿠) 급성장 중이지만 '한국 경유가 싸고 구색 유리' — 라쿠텐 한국발송 백 16,800~18,800엔. 가방 = 가볍고 단가 높음",
+    "brand_words": ["마뗑킴", "마틴킴", "matin kim", "matinkim", "マーティンキム", "マタンキム"],
+    "product_code_regex": null,
+    "kr": {
+      "brand_site": {
+        "enabled": false,
+        "_comment": "matinkim.com — 셀렉터 확인 후 활성화",
+        "base_url": "https://matinkim.com",
+        "list_urls": [],
+        "max_pages": 3,
+        "selectors": {}
+      },
+      "naver": { "enabled": true, "query": "마뗑킴 가방", "mall_names": ["마뗑킴", "MATIN KIM"] }
+    },
+    "jp": {
+      "brand_site": { "enabled": false, "base_url": "", "list_urls": [], "selectors": {} },
+      "rakuten": { "enabled": true, "keyword": "マーティンキム Matin Kim", "shop_code": "" },
+      "yahoo": { "enabled": true, "query": "マーティンキム Matin Kim", "seller_id": "" }
+    }
+  },
+  "mlb_korea": {
+    "enabled": true,
+    "phase": "발굴",
+    "display_name": "MLB Korea",
+    "report_note": "MLB: F&F 라이선스 지역(한국 등) 외 판매 — 병행수입·상표권 리스크 확인 필요",
+    "_comment": "발굴 후보 3순위. BUYMA 레디스 5위. F&F 라이선스라 일본 정식 전개 제한 → 희소성으로 대행 수요 높음. 모자 중심 = 가볍다. 단 TNF와 같은 라이선스 리스크 — 소량 테스트 전 확인",
+    "brand_words": ["엠엘비", "mlb", "MLB Korea", "エムエルビー"],
+    "product_code_regex": "\\b3[A-Z]{3}\\d{4}N?[A-Z0-9]{0,6}\\b",
+    "kr": {
+      "brand_site": {
+        "enabled": false,
+        "_comment": "mlb-korea.com — 셀렉터 확인 후 활성화. 볼캡 33,000~43,000원대",
+        "base_url": "https://www.mlb-korea.com",
+        "list_urls": [],
+        "max_pages": 3,
+        "selectors": {}
+      },
+      "naver": { "enabled": true, "query": "MLB 볼캡", "mall_names": ["MLB", "엠엘비"] }
+    },
+    "jp": {
+      "brand_site": { "enabled": false, "base_url": "", "list_urls": [], "selectors": {} },
+      "rakuten": { "enabled": true, "keyword": "MLB Korea キャップ 韓国 正規", "shop_code": "" },
+      "yahoo": { "enabled": true, "query": "MLB Korea キャップ 韓国 正規", "seller_id": "" }
+    }
+  },
+  "sculptor": {
+    "enabled": true,
+    "phase": "발굴",
+    "display_name": "SCULPTOR",
+    "_comment": "발굴 후보. BUYMA 레디스 4위 — '일본 미전개 신작을 현지가로'가 셀링포인트 = 대행 모델 그 자체. 수집 데이터로 가격차 검증 후 본격 투입",
+    "brand_words": ["스컬프터", "스컬퍼터", "sculptor", "スカルプター"],
+    "product_code_regex": null,
+    "kr": {
+      "brand_site": { "enabled": false, "base_url": "", "list_urls": [], "selectors": {} },
+      "naver": { "enabled": true, "query": "스컬프터 SCULPTOR", "mall_names": ["스컬프터", "SCULPTOR"] }
+    },
+    "jp": {
+      "brand_site": { "enabled": false, "base_url": "", "list_urls": [], "selectors": {} },
+      "rakuten": { "enabled": true, "keyword": "SCULPTOR 韓国 ブランド", "shop_code": "" },
+      "yahoo": { "enabled": true, "query": "SCULPTOR 韓国 ブランド", "seller_id": "" }
     }
   }
 }

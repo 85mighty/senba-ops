@@ -75,9 +75,12 @@ async function stepMatch({ brand } = {}) {
   const summary = [];
   let allCPairs = [];
   for (const { key, cfg } of enabledBrands(brand)) {
-    // 공식몰 상품끼리 매칭 (시장가 상품은 품번으로 가격 보강에만 사용)
-    const kr = db.getProducts('kr', key).filter((p) => p.source === 'brand_site');
-    const jp = db.getProducts('jp', key).filter((p) => p.source === 'brand_site');
+    // 기본은 공식몰끼리 매칭. 공식몰 수집이 없는 브랜드(일본 미진출 등)는
+    // 시장 상품(네이버/라쿠텐/Yahoo 대행 시세)으로 매칭한다.
+    let kr = db.getProducts('kr', key).filter((p) => p.source === 'brand_site');
+    if (!kr.length) kr = db.getProducts('kr', key);
+    let jp = db.getProducts('jp', key).filter((p) => p.source === 'brand_site');
+    if (!jp.length) jp = db.getProducts('jp', key);
     // TNF는 품번 체계가 달라 자동 매칭 기대 금지 — 품번 일치(우연)와 사람 등록만
     if (cfg.auto_match === false) {
       info(`[match] ${key}: 자동 이름 매칭 비활성화 (사람이 product_master에 쌍 등록)`);
@@ -160,10 +163,14 @@ async function stepReport() {
   const date = today();
   const rows = db.topSnapshots({ date, onlyPassed: true, limit: 100 });
 
-  // 법·운영 비고 자동 삽입 (§12)
+  // 법·운영 비고 자동 삽입 (§12) — 브랜드별 비고는 brands.json의 report_note
+  const brandNotes = {};
+  for (const [k, cfg] of Object.entries(loadBrands())) {
+    if (!k.startsWith('_') && cfg.report_note) brandNotes[k] = cfg.report_note;
+  }
   for (const r of rows) {
     const notes = [];
-    if (r.brand === 'tnf') notes.push('TNF: 병행수입 리스크 확인 필요');
+    if (brandNotes[r.brand]) notes.push(brandNotes[r.brand]);
     if (r.master_note) notes.push(r.master_note);
     r.note = notes.join(' / ');
   }

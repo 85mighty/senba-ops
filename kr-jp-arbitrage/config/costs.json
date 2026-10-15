@@ -9,10 +9,12 @@
   "intl_ship": {
     "_comment": "배대지 요율표 placeholder — 실제 이용 배대지 요율로 교체 필요. g 단위 구간",
     "tiers": [
+      { "max_g": 300, "jpy": 1400 },
       { "max_g": 500, "jpy": 1800 },
       { "max_g": 1000, "jpy": 2600 },
       { "max_g": 2000, "jpy": 3800 }
     ],
+    "_tiers_comment": "단건 발송 기준 placeholder. 일본집에 5~10개 묶음 반입 후 일본 국내 발송하는 운영이면 개당 국제배송이 300~500엔대로 떨어짐 — config_override 시트에서 intl_ship.tiers를 실제 요율로 교체할 것",
     "over_per_kg_jpy": 1500
   },
 
@@ -41,6 +43,8 @@
   "pass_min_margin_rate": 0.25,
 
   "default_weight_g": {
+    "cap": 150,
+    "bag": 400,
     "top": 300,
     "leggings": 250,
     "padding": 900,
