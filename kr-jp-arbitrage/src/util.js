@@ -72,7 +72,8 @@ export function enabledBrands(brandFilter) {
 export function features() {
   const e = process.env;
   return {
-    naver: !!(e.NAVER_CLIENT_ID && e.NAVER_CLIENT_SECRET),
+    // 네이버 쇼핑 검색 API는 2026-07-31 종료됨. 혹시 되살아난 경우를 위해 NAVER_SHOP_ENABLED=1 일 때만 시도
+    naver: !!(e.NAVER_CLIENT_ID && e.NAVER_CLIENT_SECRET && e.NAVER_SHOP_ENABLED === '1'),
     coupang: !!(e.COUPANG_ACCESS_KEY && e.COUPANG_SECRET_KEY),
     rakuten: !!(e.RAKUTEN_APP_ID && e.RAKUTEN_ACCESS_KEY),
     yahoo: !!e.YAHOO_CLIENT_ID,
@@ -86,7 +87,7 @@ export function features() {
 export function warnMissingFeatures() {
   const f = features();
   const msgs = {
-    naver: '네이버쇼핑 API 키 없음 → 한국 시장가 보강 비활성화',
+    naver: '네이버 쇼핑 검색 API는 2026-07-31 종료되어 사용하지 않음 (한국 가격은 공식몰·쿠팡 키로 보강)',
     coupang: '쿠팡 파트너스 API 키 없음(COUPANG_ACCESS_KEY/SECRET_KEY) → 쿠팡 시장가 비활성화',
     rakuten: 'RAKUTEN_APP_ID/RAKUTEN_ACCESS_KEY 없음 → 라쿠텐 수집 비활성화 (신형 API는 둘 다 필요)',
     yahoo: 'YAHOO_CLIENT_ID 없음 → Yahoo!쇼핑 수집 비활성화',

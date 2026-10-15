@@ -93,8 +93,9 @@ export async function lookup({ side, id }) {
   const query = tokens ? `${tokens}` : `${brandWord(brandCfg, 'kr')} ${cleanName(p.name)}`.trim();
   const jobs = [];
   if (feats.naver) jobs.push(searchNaver(query, { display: 30 }).then((r) => r.map((x) => ({ ...x, source: x.mall ? `네이버·${x.mall}` : '네이버' }))));
-  else notes.push('네이버 API 키가 없어 한국 시세를 자동으로 찾지 못합니다. 아래 검색 링크로 직접 확인하세요. (키 발급: developers.naver.com)');
+  else notes.push('네이버 쇼핑 검색 API가 2026-07-31에 종료되어 한국 시장 가격은 자동 검색되지 않습니다. 아래에는 수집해 둔 한국 공식몰 가격만 나옵니다. 다른 한국 쇼핑몰은 아래 "직접 찾기" 링크로 확인하세요.');
   if (feats.coupang) jobs.push(searchCoupang(query).then((r) => r.map((x) => ({ ...x, source: x.mall || '쿠팡' }))));
+  if (!feats.coupang) notes.push('쿠팡 파트너스 키를 넣으면 쿠팡 가격도 함께 나옵니다.');
   const settled = await Promise.allSettled(jobs);
   let list = [];
   for (const s of settled) {

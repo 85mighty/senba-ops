@@ -146,7 +146,7 @@ const photo = (src, label, extra = '') =>
 
 /* 바로가기 검색 링크 */
 const jpLinks = (q) => [['라쿠텐', `https://search.rakuten.co.jp/search/mall/${enc(q)}/`], ['Yahoo', `https://shopping.yahoo.co.jp/search?p=${enc(q)}`], ['메루카리', `https://jp.mercari.com/search?keyword=${enc(q)}`], ['구글', `https://www.google.com/search?q=${enc(q)}`]];
-const krLinks = (q) => [['네이버', `https://search.shopping.naver.com/search/all?query=${enc(q)}`], ['쿠팡', `https://www.coupang.com/np/search?q=${enc(q)}`], ['무신사', `https://www.musinsa.com/search/goods?keyword=${enc(q)}`], ['구글', `https://www.google.com/search?q=${enc(q)}`]];
+const krLinks = (q) => [['네이버', `https://search.shopping.naver.com/search/all?query=${enc(q)}`], ['쿠팡', `https://www.coupang.com/np/search?q=${enc(q)}`], ['무신사', `https://www.musinsa.com/search/goods?keyword=${enc(q)}`], ['다나와', `https://search.danawa.com/dsearch.php?query=${enc(q)}`], ['구글', `https://www.google.com/search?q=${enc(q)}`]];
 const linkRow = (arr) => arr.map(([n, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener">${n}</a>`).join('');
 
 /* ---------- 오늘의 후보 ---------- */
