@@ -536,4 +536,23 @@ export function productsByCode(side, brand, code) {
   return db.prepare(`SELECT * FROM ${table} WHERE brand=? AND product_code=? AND in_stock=1`).all(brand, code);
 }
 
+// 시세 비교 목록용: 시세가 확인된 모든 상품(한국·일본 양쪽)과 반대편 최저 시세
+export function listPairRows() {
+  const qcols = `q.kind AS q_kind, q.best_name, q.best_price, q.best_url, q.best_image, q.best_source,
+                 q.margin_net, q.margin_rate, q.passed, q.rev_net, q.rev_rate, q.rev_passed,
+                 q.verified, q.verified_reason, q.checked_at`;
+  return db
+    .prepare(
+      `SELECT 'kr' AS side, k.id AS pid, k.brand, k.source AS psource, k.name AS pname, k.product_code AS pcode, k.url AS purl,
+              k.image_url AS pimage, COALESCE(NULLIF(k.sale_price_krw,0), k.price_krw) AS pprice, 0 AS review_count, ${qcols}
+       FROM quotes q JOIN products_kr k ON q.side='kr' AND k.id=q.product_id
+       WHERE q.best_price IS NOT NULL
+       UNION ALL
+       SELECT 'jp', j.id, j.brand, j.source, j.name, j.product_code, j.url, j.image_url, j.price_jpy, j.review_count, ${qcols}
+       FROM quotes q JOIN products_jp j ON q.side='jp' AND j.id=q.product_id
+       WHERE q.best_price IS NOT NULL`
+    )
+    .all();
+}
+
 export default db;

@@ -12,6 +12,7 @@ import { rankCandidates, sourcingCandidates, buildCards } from './discover.js';
 import { buildStatus } from './status.js';
 import { lookup, toQuote } from './lookup.js';
 import { runSelfTest } from './selftest.js';
+import { buildPairs, explainPair } from './pairs.js';
 import { getFxKrwPerJpy } from './pricing/fx.js';
 import { compareProducts } from './matcher/llm.js';
 import { startCommandBot } from './outputs/telegram.js';
@@ -121,6 +122,25 @@ function startServer() {
       cards: brand ? cards.filter((c) => c.brand === brand) : cards,
       sourcing: sourcingCandidates({ brand: brand || undefined, limit: 30 }),
     });
+  });
+
+  // 시세 비교 목록: 상품마다 한국/일본 가격·판매처와 양방향 손익
+  app.get('/api/pairs', auth, async (req, res) => {
+    try {
+      res.json(await buildPairs({ filter: req.query.filter || 'all', brand: req.query.brand || undefined, q: req.query.q || undefined, limit: parseInt(req.query.limit || '100', 10) }));
+    } catch (e) {
+      error(`[pairs] ${e.message}`);
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // 이 쌍의 비용 내역(양방향)
+  app.get('/api/breakdown', auth, async (req, res) => {
+    try {
+      res.json(await explainPair(req.query.side, parseInt(req.query.id, 10)));
+    } catch (e) {
+      res.status(e.status || 500).json({ error: e.message });
+    }
   });
 
   // 연결 시험: 서버의 키가 실제로 동작하는지 (유료 호출 없음)

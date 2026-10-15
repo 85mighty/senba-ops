@@ -113,6 +113,27 @@
   .qb .main > span { display:block; }
   .qb .lab { font-size:11px; font-weight:700; color:var(--ink2); }
   .flag { margin-right:4px; }
+  .pr { display:grid; grid-template-columns:104px 1fr; gap:14px; background:var(--surface); border-radius:14px; box-shadow:var(--shadow); padding:12px; margin-bottom:10px; }
+  .pr .pimg { width:104px; height:104px; border-radius:10px; object-fit:cover; background:var(--surface2); display:block; }
+  .pr .pbody { min-width:0; display:flex; flex-direction:column; gap:7px; }
+  .pr .ptop { display:flex; justify-content:space-between; gap:8px; align-items:flex-start; flex-wrap:wrap; }
+  .mk { display:grid; grid-template-columns:1fr 1fr; gap:4px 16px; font-size:13.5px; }
+  .mk .m { min-width:0; overflow-wrap:anywhere; } .mk .m b { font-size:15px; }
+  .mk .thumb { width:26px; height:26px; border-radius:5px; object-fit:cover; vertical-align:middle; margin-left:4px; background:var(--surface2); }
+  .res2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .rbox { border-radius:10px; padding:7px 10px; background:var(--surface2); }
+  .rbox.pos { background:var(--good-soft); } .rbox.neg { background:var(--bad-soft); }
+  .rbox .t { font-size:11.5px; font-weight:700; color:var(--ink2); }
+  .rbox .v { font-size:19px; font-weight:900; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+  .rbox.pos .v { color:var(--good); } .rbox.neg .v { color:var(--bad); }
+  .rbox .v small { font-size:12px; font-weight:700; margin-left:6px; }
+  .verd { font-size:13px; font-weight:900; border-radius:8px; padding:3px 10px; }
+  .verd.kr2jp, .verd.jp2kr { background:var(--good-soft); color:var(--good); }
+  .verd.loss { background:var(--surface2); color:var(--ink2); } .verd.mismatch { background:var(--warn-soft); color:var(--warn); }
+  .bdt { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; font-size:13px; margin:4px 0 10px; }
+  .bdt td { padding:3px 0; border-bottom:1px dashed var(--line); } .bdt td:last-child { text-align:right; white-space:nowrap; }
+  .bdt tr.tot td { font-weight:900; border-top:2px solid var(--line); border-bottom:0; }
+  @media (max-width:640px){ .pr { grid-template-columns:76px 1fr; } .pr .pimg { width:76px; height:76px; } .mk, .res2 { grid-template-columns:1fr; } }
   .dirbar { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:0 0 12px; }
   .dirbar button { border:2px solid var(--line); background:var(--surface); border-radius:14px; padding:11px 12px; text-align:left; font-weight:700; line-height:1.35; }
   .dirbar button small { display:block; font-weight:400; color:var(--ink2); font-size:12px; }
@@ -164,6 +185,7 @@ const marginMain = (m) => (dir === 'jp2kr' ? signKrw(m.net) : signYen(m.net));
 const marginSub = (m) => (dir === 'jp2kr' ? signYenFromWon(m.net) : signWon(m.net));
 const signYen = (n) => (n >= 0 ? '+' : '−') + '¥' + Math.abs(Math.round(n)).toLocaleString();
 const enc = encodeURIComponent;
+let exView = 'pairs', pairFilter = 'all'; // 상품 탐색 보기: 'pairs' 시세 비교(한 줄 카드) | 'all' 수집 상품 전체
 let dir = 'kr2jp'; // 'kr2jp' 한국에서 사서 일본에 팔기 | 'jp2kr' 일본에서 사서 한국에 팔기
 let tab = 'cards', brandFilter = '', levelFilter = '', side = 'kr', exBrand = '', exQ = '', exSort = 'margin', exProfit = '', brandList = [], products = [], lastLookup = null;
 try { $('token').value = localStorage.getItem('ui_token') || ''; } catch {}
@@ -276,7 +298,7 @@ function productHtml(p) {
       <div class="quick">${linkRow(isKr ? jpLinks(q) : krLinks(q))}</div>
     </div></article>`;
 }
-async function renderExplore() {
+async function renderExploreAll() {
   if (!brandList.length) { try { brandList = (await api('/api/status')).brands.map((b) => [b.key, b.name]); } catch {} }
   const d = await api(`/api/products?side=${side}&dir=${dir}&limit=96&sort=${exSort}${exProfit ? '&profit=' + exProfit : ''}${exBrand ? '&brand=' + enc(exBrand) : ''}${exQ ? '&q=' + enc(exQ) : ''}`);
   products = d.rows;
@@ -286,7 +308,7 @@ async function renderExplore() {
   const plus = quoted.filter((r) => mOf(r).net > 0).length;
   const pass = quoted.filter((r) => mOf(r).passed).length;
   const profits = [['', '전체'], ['plus', '마진 + 만'], ['pass', '통과 기준 충족만']];
-  $('out').innerHTML =
+  $('out').innerHTML = viewBar() +
     `<div class="dirbar"><button data-dir="kr2jp" aria-pressed="${dir === 'kr2jp'}">🇰🇷 → 🇯🇵 한국에서 사서 일본에 팔기<small>마진은 엔(¥) 기준 · 메루카리Shops 등 일본에서 판매</small></button><button data-dir="jp2kr" aria-pressed="${dir === 'jp2kr'}">🇯🇵 → 🇰🇷 일본에서 사서 한국에 팔기<small>마진은 원(₩) 기준 · 쿠팡·스마트스토어 등 한국에서 판매</small></button></div>
     <div class="bar"><div class="seg"><button data-side="kr" aria-pressed="${side === 'kr'}">보기: 🇰🇷 한국 상품</button><button data-side="jp" aria-pressed="${side === 'jp'}">🇯🇵 일본 상품</button></div>
       <select id="exBrand"><option value="">모든 브랜드</option>${brandList.map(([k, n]) => `<option value="${esc(k)}"${k === exBrand ? ' selected' : ''}>${esc(n)}</option>`).join('')}</select>
@@ -297,6 +319,80 @@ async function renderExplore() {
     <p class="sumline">${dir === 'jp2kr' ? '일본에서 사서 한국에 팔 때' : '한국에서 사서 일본에 팔 때'}의 예상 순마진입니다. 이 화면 상품 중 시세 확인 <b>${quoted.length}건</b> · 마진 + <b>${plus}건</b> · 통과 <b>${pass}건</b>.
       <b>품번 일치</b>는 같은 상품일 가능성이 높고, <b>이름 검색(추정)</b>은 이미지로 확인이 필요합니다.</p>` +
     (d.rows.length ? `<div class="grid">${d.rows.map(productHtml).join('')}</div>` : '<div class="empty">조건에 맞는 상품이 없습니다.</div>');
+}
+
+const VERD_TEXT = {
+  kr2jp: '👉 한국에서 사서 일본에 팔기',
+  jp2kr: '👉 일본에서 사서 한국에 팔기',
+  loss: '둘 다 손해',
+  mismatch: '⚠ 다른 상품 의심 (AI 판정)',
+};
+const viewBar = () => `<div class="bar"><div class="seg"><button data-view="pairs" aria-pressed="${exView === 'pairs'}">시세 비교 (한 줄 카드)</button><button data-view="all" aria-pressed="${exView === 'all'}">수집 상품 전체</button></div></div>`;
+
+function pairHtml(r) {
+  const tag = `${KIND_TAG[r.kind] || ''}${AI_TAG[r.verified] || ''}`;
+  const cls = (n) => (n > 0 ? 'pos' : 'neg');
+  const a = r.a, b = r.b;
+  const link = (x) => (x.url ? `<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.site)} ↗</a>` : esc(x.site));
+  const krThumb = r.side === 'jp' && r.counterImage ? `<img class="thumb" src="${esc(r.counterImage)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : '';
+  const jpThumb = r.side === 'kr' && r.counterImage ? `<img class="thumb" src="${esc(r.counterImage)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : '';
+  return `<article class="pr">
+    ${r.image ? `<img class="pimg" src="${esc(r.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.visibility='hidden'">` : '<div class="pimg"></div>'}
+    <div class="pbody">
+      <div class="ptop"><span class="sub">${esc(r.brand)}${r.code ? ' · ' + esc(r.code) : ''} ${tag}</span><span class="verd ${r.verdict}">${VERD_TEXT[r.verdict]}</span></div>
+      <div class="nm" style="-webkit-line-clamp:1">${esc(r.name)}</div>
+      <div class="mk">
+        <div class="m"><span class="flag">🇰🇷</span><b>${won(r.kr.price)}</b> <span class="sub">${toYenStr(r.kr.price)}</span> · ${link(r.kr)}${krThumb}</div>
+        <div class="m"><span class="flag">🇯🇵</span><b>${yen(r.jp.price)}</b> <span class="sub">${toWonStr(r.jp.price)}</span> · ${link(r.jp)}${jpThumb}</div>
+      </div>
+      <div class="res2">
+        <div class="rbox ${cls(a.net)}"><div class="t">🇰🇷→🇯🇵 한국에서 사서 일본에 팔면</div><div class="v">${signYen(a.net)}<small>${signWon(a.net)}</small></div></div>
+        <div class="rbox ${b ? cls(b.net) : ''}"><div class="t">🇯🇵→🇰🇷 일본에서 사서 한국에 팔면</div><div class="v">${b ? signKrw(b.net) : '계산 전'}<small>${b ? signYenFromWon(b.net) : ''}</small></div></div>
+      </div>
+      <div class="acts"><button class="btn sm" data-breakdown="${r.side}:${r.id}">왜 이 숫자? 비용 내역</button><button class="btn sm" data-lookup="${r.side}:${r.id}">다시 찾기·AI 비교</button></div>
+    </div></article>`;
+}
+
+async function renderExplore() {
+  if (exView === 'all') return renderExploreAll();
+  if (!brandList.length) { try { brandList = (await api('/api/status')).brands.map((b) => [b.key, b.name]); } catch {} }
+  const d = await api(`/api/pairs?filter=${pairFilter}${exBrand ? '&brand=' + enc(exBrand) : ''}${exQ ? '&q=' + enc(exQ) : ''}`);
+  if (d.fx) fxRate = d.fx;
+  const c = d.counts;
+  const filters = [['all', `전체 ${c.all}`], ['kr2jp', `🇰🇷→🇯🇵 한국에서 사서 일본에 팔면 이득 ${c.kr2jp}`], ['jp2kr', `🇯🇵→🇰🇷 일본에서 사서 한국에 팔면 이득 ${c.jp2kr}`], ['loss', `둘 다 손해 ${c.loss}`], ['pass', `통과 기준 충족 ${c.pass}`]];
+  $('out').innerHTML = viewBar() +
+    `<div class="chips">${filters.map(([v, l]) => `<button class="chip" data-pf="${v}" aria-pressed="${pairFilter === v}">${l}</button>`).join('')}</div>
+    <div class="bar"><select id="exBrand"><option value="">모든 브랜드</option>${brandList.map(([k, n]) => `<option value="${esc(k)}"${k === exBrand ? ' selected' : ''}>${esc(n)}</option>`).join('')}</select>
+      <input id="exQ" placeholder="상품명·품번 검색" value="${esc(exQ)}"><button class="btn" id="exGo">검색</button></div>
+    <div class="legend"><span>🇰🇷 <b>₩ 원</b> = 한국 가격</span><span>🇯🇵 <b>¥ 엔</b> = 일본 가격</span><span>한국→일본 손익은 <b>엔(¥)</b>, 일본→한국 손익은 <b>원(₩)</b> 기준 (괄호 안은 환산)</span>${fxRate ? `<span>환율 <b>1엔 = ${fxRate.toFixed(2)}원</b></span>` : ''}</div>` +
+    (d.rows.length ? d.rows.map(pairHtml).join('') : '<div class="empty">조건에 맞는 상품이 없습니다.<br>시세 확인은 서버에서 <code>node src/index.js --step=quote</code> 로 만들어집니다.</div>');
+}
+
+async function openBreakdown(sd, id) {
+  const dlg = $('dlg');
+  dlg.innerHTML = '<div class="dbody"><div class="empty">계산 내역을 불러오는 중…</div></div>';
+  dlg.showModal();
+  try {
+    const d = await api(`/api/breakdown?side=${sd}&id=${id}`);
+    fxRate = d.fx;
+    const a = d.a, b = d.b;
+    const row = (label, v, cur) => `<tr><td>${label}</td><td>${cur === 'jpy' ? '−' + yen(v) + ' <span class="sub">' + toWonStr(v) + '</span>' : '−' + won(v) + ' <span class="sub">' + toYenStr(v) + '</span>'}</td></tr>`;
+    dlg.innerHTML = `<div class="dh"><div class="t"><div class="sub">비용 내역 · 환율 1엔 = ${d.fx.toFixed(2)}원 · 무게 ${d.weightG}g 가정 · 품목 ${esc(d.category)}</div><b>${esc(d.name)}</b>
+      <div class="sub">🇰🇷 ₩${d.kr.price.toLocaleString()} · 🇯🇵 ¥${d.jp.price.toLocaleString()}</div></div><button class="btn sm" data-close>닫기</button></div>
+      <div class="dbody">
+        <b>🇰🇷→🇯🇵 한국에서 사서 일본에 팔 때 (엔 기준)</b>
+        <table class="bdt"><tr><td>일본 판매가 (최저가 ¥${a.jpLowestJpy.toLocaleString()} × 0.95)</td><td>${yen(a.jpSellPriceJpy)} <span class="sub">${toWonStr(a.jpSellPriceJpy)}</span></td></tr>
+          ${row('한국 매입 (환율 안전마진 ' + (a.fxSafetyMargin * 100).toFixed(0) + '% 포함)', a.krGoodsJpy, 'jpy')}${row('한국 국내배송', a.krShipJpy, 'jpy')}${row('한국→일본 국제배송', a.intlShipJpy, 'jpy')}${row('일본 관세', a.customsDutyJpy, 'jpy')}${row('일본 수입 소비세', a.importTaxJpy, 'jpy')}${row('판매 수수료(' + a.platform + ')', a.platformFeeJpy, 'jpy')}${row('포장·잡비', a.packingJpy, 'jpy')}
+          <tr class="tot"><td>순마진</td><td class="${a.netMarginJpy >= 0 ? 'pos' : 'neg'}">${signYen(a.netMarginJpy)} <span class="sub">${signWon(a.netMarginJpy)}</span></td></tr></table>
+        <b>🇯🇵→🇰🇷 일본에서 사서 한국에 팔 때 (원 기준)</b>
+        <table class="bdt"><tr><td>한국 판매가 (시세 ₩${b.krSellKrw.toLocaleString()} × 0.95)</td><td>${won(b.krSellPriceKrw)} <span class="sub">${toYenStr(b.krSellPriceKrw)}</span></td></tr>
+          ${row('일본 매입', b.jpGoodsKrw, 'krw')}${row('일본 국내배송', b.jpShipKrw, 'krw')}${row('일본→한국 국제배송', b.intlShipKrw, 'krw')}${row('한국 관세 ' + (b.dutyRate * 100).toFixed(0) + '%', b.customsDutyKrw, 'krw')}${row('한국 수입 부가세', b.importVatKrw, 'krw')}${row('판매 수수료', b.platformFeeKrw, 'krw')}${row('포장·잡비', b.packingKrw, 'krw')}
+          <tr class="tot"><td>순마진</td><td class="${b.netMarginKrw >= 0 ? 'pos' : 'neg'}">${signKrw(b.netMarginKrw)} <span class="sub">${signYenFromWon(b.netMarginKrw)}</span></td></tr></table>
+        <div class="sub">배송비·관세율·수수료는 임시 가정값입니다. 실제 계약 요율로 바꾸면 결과가 달라집니다 (설정 파일 또는 구글시트 config_override).</div>
+      </div>`;
+  } catch (e) {
+    dlg.innerHTML = `<div class="dh"><b>불러오지 못했습니다</b><span class="spacer"></span><button class="btn sm" data-close>닫기</button></div><div class="dbody"><div class="note">${esc(e.message)}</div></div>`;
+  }
 }
 
 /* ---------- 시세 찾기 창 ---------- */
@@ -400,13 +496,19 @@ document.addEventListener('click', (e) => {
   else if (chip && chip.dataset.brand !== undefined) { brandFilter = chip.dataset.brand; load(); }
   const sg = t.closest('[data-side]');
   if (sg) { side = sg.dataset.side; load(); }
-  if (t.closest('#exGo')) { exBrand = $('exBrand').value; exSort = $('exSort').value; exQ = $('exQ').value.trim(); load(); }
+  if (t.closest('#exGo')) { exBrand = $('exBrand').value; exSort = $('exSort') ? $('exSort').value : exSort; exQ = $('exQ').value.trim(); load(); }
   const lk = t.closest('[data-lookup]');
   if (lk) { const [sd, id] = lk.dataset.lookup.split(':'); openLookup(sd, id); }
   const gg = t.closest('[data-google]');
   if (gg) { const [sd2, id2] = gg.dataset.google.split(':'); openLookup(sd2, id2, true); }
   if (t.closest('[data-close]')) $('dlg').close();
   if (t.closest('#selfTest')) runSelfTestUi();
+  const vw = t.closest('[data-view]');
+  if (vw) { exView = vw.dataset.view; load(); }
+  const pfl = t.closest('[data-pf]');
+  if (pfl) { pairFilter = pfl.dataset.pf; load(); }
+  const bd = t.closest('[data-breakdown]');
+  if (bd) { const [sd3, id3] = bd.dataset.breakdown.split(':'); openBreakdown(sd3, id3); }
   const dr = t.closest('[data-dir]');
   if (dr) { dir = dr.dataset.dir; load(); }
   const pf = t.closest('[data-profit]');
