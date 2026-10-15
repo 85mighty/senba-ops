@@ -612,6 +612,44 @@ async function apiStatus(p) {
   await gcal('PATCH', '/events/' + encodeURIComponent(p.id), { extendedProperties: { private: priv } });
 }
 
+// ── 근무 안내 (마미짱·아이미짱) — 매일 20:05 JST 에 다음날 예약 기준 출퇴근을 텔레그램(근태봇 그룹)으로 발송
+const SHIFT = require('./shift-rules');
+const SHIFT_ENV = { ...envOf('/opt/senba-attend/.env'), ...envOf('/opt/senba-booking-view/.env') };
+const SHIFT_TOKEN = E.SHIFT_BOT_TOKEN || SHIFT_ENV.SHIFT_BOT_TOKEN || SHIFT_ENV.ATTEND_BOT_TOKEN || '';
+const SHIFT_CHAT = E.SHIFT_CHAT_ID || SHIFT_ENV.SHIFT_CHAT_ID || SHIFT_ENV.ATTEND_CHAT_ID || '';
+const SHIFT_ON = (E.SHIFT_NOTIFY || SHIFT_ENV.SHIFT_NOTIFY || '1') !== '0';
+const SHIFT_SENT_FILE = require('path').join(__dirname, '.shift-last');
+const jstDay = off => new Date(Date.now() + 9 * 3600e3 + off * 86400e3).toISOString().slice(0, 10);
+async function shiftFor(ymd) {
+  const evs = await dayEvents(ymd);
+  const p = SHIFT.plan(ymd, evs.map(e => ({ s: e.s, e: e.e })));
+  return { p, text: SHIFT.message(ymd, p) };
+}
+async function shiftSend(text) {
+  if (!SHIFT_TOKEN || !SHIFT_CHAT) throw new Error('텔레그램 토큰/채팅ID 없음 (/opt/senba-attend/.env 의 ATTEND_BOT_TOKEN·ATTEND_CHAT_ID)');
+  const r = await fetch(`https://api.telegram.org/bot${SHIFT_TOKEN}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: SHIFT_CHAT, text }) });
+  const j = await r.json(); if (!j.ok) throw new Error('telegram: ' + (j.description || r.status));
+}
+let shiftTries = 0, shiftTryDay = '';
+async function shiftTick() {
+  if (!SHIFT_ON) return;
+  const now = new Date(Date.now() + 9 * 3600e3), min = now.getUTCHours() * 60 + now.getUTCMinutes();
+  if (min < 20 * 60 + 5 || min > 22 * 60) return;                 // 20:05~22:00 사이에만 (재시도 구간)
+  const tom = jstDay(1);
+  let last = ''; try { last = fs.readFileSync(SHIFT_SENT_FILE, 'utf8').trim(); } catch {}
+  if (last === tom) return;
+  if (shiftTryDay !== tom) { shiftTryDay = tom; shiftTries = 0; }
+  if (shiftTries >= 6) return;
+  shiftTries++;
+  try {
+    const { text } = await shiftFor(tom);
+    await shiftSend(text);
+    fs.writeFileSync(SHIFT_SENT_FILE, tom);
+    console.log('[shift] 발송 완료', tom);
+  } catch (e) { console.error('[shift] 실패(' + shiftTries + '/6):', e.message); }
+}
+setInterval(shiftTick, 60 * 1000);
+
 http.createServer(async (req, res) => {
   const json = (code, obj) => { res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(obj)); };
   try {
@@ -625,6 +663,14 @@ http.createServer(async (req, res) => {
     if (req.method === 'POST' && u.pathname === '/api/reshuffle') { try { const r = await apiReshuffle(await readBody(req)); return json(200, { ok: 1, ...r }); } catch (e) { return json(400, { error: e.message }); } }
     if (req.method === 'POST' && u.pathname === '/api/rowswap') { try { const r = await apiRowSwap(await readBody(req)); return json(200, { ok: 1, ...r }); } catch (e) { return json(400, { error: e.message }); } }
     if (req.method === 'POST' && u.pathname === '/api/allout') { try { const r = await apiAllOut(await readBody(req)); return json(200, { ok: 1, ...r }); } catch (e) { return json(400, { error: e.message }); } }
+    if (u.searchParams.get('view') === 'shift') {   // 근무 안내 미리보기: ?view=shift&date=YYYY-MM-DD (기본=내일) · &send=1 이면 지금 발송
+      const d = /^\d{4}-\d{2}-\d{2}$/.test(u.searchParams.get('date') || '') ? u.searchParams.get('date') : jstDay(1);
+      const { text } = await shiftFor(d);
+      let note = '(미리보기 — 발송 안 됨. 지금 보내려면 주소 끝에 &send=1)';
+      if (u.searchParams.get('send') === '1') { await shiftSend(text); note = '✅ 텔레그램으로 발송했습니다'; }
+      res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+      return res.end(text + '\n\n' + note);
+    }
     if (u.searchParams.get('view') === 'month') {
       const ym = /^\d{4}-\d{2}$/.test(u.searchParams.get('ym') || '') ? u.searchParams.get('ym') : new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 7);
       const cells = monthCells(ym);
