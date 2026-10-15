@@ -332,19 +332,19 @@ export function jpDemandByCode(brand, code, fallbackId) {
 }
 
 // 일본에서 수요(리뷰)는 높은데 아직 매칭/소싱이 없는 상품 — 사람이 한국 소싱처를 찾아볼 후보
-export function unmatchedHighDemandJp({ brand, minReviews = 50, limit = 10 } = {}) {
+export function unmatchedHighDemandJp({ brand, minReviews = 50, minPrice = 0, limit = 10 } = {}) {
   let sql = `
     SELECT j.id, j.brand, j.name, j.price_jpy, j.review_count, j.url, j.product_code, j.image_url, j.source
     FROM products_jp j
     LEFT JOIN product_master m ON m.jp_product_id = j.id AND m.confidence != 'X'
-    WHERE m.id IS NULL AND j.in_stock=1 AND j.review_count >= ?
+    WHERE m.id IS NULL AND j.in_stock=1 AND j.review_count >= ? AND j.price_jpy >= ?
       AND j.source IN ('rakuten','yahoo')
       -- 같은 품번이 이미 매칭돼 있으면 소싱 후보가 아님 (시장가 보강용 중복 행)
       AND NOT (j.product_code IS NOT NULL AND EXISTS (
         SELECT 1 FROM product_master m2 JOIN products_jp j2 ON j2.id = m2.jp_product_id
         WHERE m2.confidence != 'X' AND j2.brand = j.brand AND j2.product_code = j.product_code
       ))`;
-  const args = [minReviews];
+  const args = [minReviews, minPrice];
   if (brand) {
     sql += ` AND j.brand=?`;
     args.push(brand);
@@ -416,7 +416,7 @@ export function recentRuns(limit = 8) {
 }
 
 // 수집된 상품 둘러보기 (이미지 포함). 같은 이름·가격의 색상별 중복은 1건으로 묶고 variants로 개수 표시
-export function listProducts({ side = 'kr', brand, source, q, limit = 60, offset = 0 } = {}) {
+export function listProducts({ side = 'kr', brand, source, q, minPrice = 0, limit = 60, offset = 0 } = {}) {
   const table = side === 'jp' ? 'products_jp' : 'products_kr';
   const price = side === 'jp' ? 'price_jpy' : 'COALESCE(NULLIF(sale_price_krw,0), price_krw)';
   const extra = side === 'jp' ? ', MAX(review_count) AS review_count' : ', price_krw, sale_price_krw';
@@ -427,6 +427,7 @@ export function listProducts({ side = 'kr', brand, source, q, limit = 60, offset
   if (brand) { sql += ` AND brand=?`; args.push(brand); }
   if (source) { sql += ` AND source=?`; args.push(source); }
   if (q) { sql += ` AND name LIKE ?`; args.push(`%${q}%`); }
+  if (minPrice) { sql += ` AND ${price} >= ?`; args.push(minPrice); }
   sql += ` GROUP BY brand, source, name, price`;
   sql += side === 'jp' ? ` ORDER BY review_count DESC, fetched_at DESC` : ` ORDER BY fetched_at DESC, id DESC`;
   sql += ` LIMIT ? OFFSET ?`;

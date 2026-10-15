@@ -5,7 +5,7 @@ import 'dotenv/config';
 import path from 'node:path';
 import express from 'express';
 import cron from 'node-cron';
-import { ROOT, info, warn, error, warnMissingFeatures, today } from './util.js';
+import { ROOT, info, warn, error, warnMissingFeatures, today, loadCostsBase } from './util.js';
 import * as db from './db.js';
 import { runPipeline, STEP_ORDER } from './pipeline.js';
 import { rankCandidates, sourcingCandidates, buildCards } from './discover.js';
@@ -131,6 +131,7 @@ function startServer() {
         brand: req.query.brand || undefined,
         source: req.query.source || undefined,
         q: req.query.q || undefined,
+        minPrice: req.query.side === 'jp' && req.query.all !== '1' ? loadCostsBase().market_min_price_jpy || 0 : 0,
         limit: parseInt(req.query.limit || '60', 10),
         offset: parseInt(req.query.offset || '0', 10),
       }),

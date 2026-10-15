@@ -2,6 +2,7 @@
 // 재고 위험을 줄이는 원칙: 일본에서 이미 팔리는 상품(리뷰 수 = 수요)을 우선하고,
 // 지금 기준 미달이어도 "목표 매입가"(이 가격까지 떨어지면 통과)를 붙여 주시 목록으로 만든다.
 import db, { unmatchedHighDemandJp, cardRows } from './db.js';
+import { loadCostsBase } from './util.js';
 
 // 발굴 점수 = 현재 순마진 + 수요 보정(리뷰 수 로그 × 300엔)
 // 마진이 같으면 리뷰 많은 쪽(=빨리 팔려 재고 위험 낮은 쪽)이 위로 온다.
@@ -131,5 +132,5 @@ export function buildCards({ date, limit = 60 } = {}) {
  * 일본 수요 상위인데 아직 매칭 없는 상품 — 사람이 한국 소싱처를 찾아볼 후보.
  */
 export function sourcingCandidates({ brand, limit = 10 } = {}) {
-  return unmatchedHighDemandJp({ brand, limit });
+  return unmatchedHighDemandJp({ brand, limit, minPrice: loadCostsBase().market_min_price_jpy || 0 });
 }

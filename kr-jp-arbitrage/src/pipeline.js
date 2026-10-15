@@ -61,7 +61,9 @@ async function stepCollect(side, { brand, limit } = {}) {
         continue;
       }
       try {
-        const items = await mod.collect(key, cfg, { limit });
+        let items = await mod.collect(key, cfg, { limit });
+        const floor = side === 'jp' ? loadCostsBase().market_min_price_jpy || 0 : 0;
+        if (floor) items = items.filter((it) => it.price >= floor);
         const n = db.saveProducts(side, items);
         info(`[collect-${side}] ${key}/${name}: ${n}건 저장`);
         total += n;

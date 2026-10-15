@@ -39,6 +39,9 @@
   "jp_sell_price_factor": 0.95,
   "_jp_sell_price_factor_comment": "일본 최저가 × 0.95 — 팔리려면 최저가보다 싸야 함. 조정 가능",
 
+  "market_min_price_jpy": 3000,
+  "_market_min_price_jpy_comment": "라쿠텐·Yahoo 시장 수집에서 이 가격 미만 상품(액세서리·소모품)은 제외. 판매가 3,000엔 미만은 배송비·수수료만으로도 마진이 날 수 없음",
+
   "pass_min_margin_jpy": 2200,
   "pass_min_margin_rate": 0.25,
 
