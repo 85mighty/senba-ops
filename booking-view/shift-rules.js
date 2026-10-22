@@ -1,9 +1,9 @@
-// 근무 안내 규칙 (순수 함수) — 마미짱(목·토·일 고정) / 아이미짱(금·토·일·월 고정, 화는 예약 있을 때만) (2026-10-22 개정)
+// 근무 안내 규칙 (순수 함수) — 마미짱(화·토·일 오전 고정) / 아이미짱(목·금·토·일·월 고정) (2026-10-22 개정 2)
 // 입력: 다음날 날짜 + 그날 예약 [{s,e}] (분 단위, JST). 출력: 출퇴근 계획 + 한·일 안내문.
 // 규칙 (사장님 확정):
-//  · 화: 아이미짱, 예약 있으면 13:45 ~ 마지막 종료 +15분 (예약은 14:00부터 받음). 예약 0건 → 휴무(가게 휴업)
+//  · 화: 마미짱 13:45 고정 출근 (예약은 14:00부터 받음). 예약 있으면 마지막 종료 +15분까지, 없으면 15:45까지 대기 후 퇴근 (2시간 보장)
 //  · 수: 정기휴무 (예약이 들어와 있으면 경고만)
-//  · 목: 마미짱 13:45 고정 출근. 예약 있으면 마지막 종료 +15분까지, 없으면 15:45까지 대기 후 퇴근 (2시간 보장)
+//  · 목: 아이미짱 13:45 고정 출근 (예약은 14:00부터). 퇴근은 다른 날과 같이 마지막 종료 +15분, 17:00~18:15. 예약 없으면 청소·SNS
 //  · 토·일·공휴일(금·월 공휴일 포함): 마미짱 11:00 고정 출근 (11:15 전 예약이 있으면 그 15분 전, 10:30 예약이면 10:15).
 //    예약 없어도 13:00까지 보장. 14:00 전 시작 예약이 있으면 그 종료 +15분까지(최대 14:15).
 //    아이미짱은 마미짱 퇴근 15분 전에 출근 (12:45~14:00)
@@ -52,14 +52,15 @@ function planBase(ymd, bookings, opts = {}) {
     return out;
   }
   if (kind === 'tue') {
-    if (bk.length) { out.aimi = shift(T(13, 45), lastEnd + 15); early(T(14), NAME.aimi); }
-    else { out.closed = true; out.offNoBooking = 'aimi'; }
-    return out;
-  }
-  if (kind === 'thu') {
     out.mami = shift(T(13, 45), bk.length ? Math.max(lastEnd + 15, T(15, 45)) : T(15, 45));
     out.mami.standby = bk.length === 0;      // 15:45까지 당일 예약 대기 후 퇴근
     if (bk.length) early(T(14), NAME.mami);
+    return out;
+  }
+  if (kind === 'thu') {
+    out.aimi = shift(T(13, 45), lastEnd === null ? T(17) : Math.min(Math.max(lastEnd + 15, T(17)), T(18, 15)));
+    out.aimi.cleanOnly = bk.length === 0;
+    if (bk.length) early(T(14), NAME.aimi);
     return out;
   }
   if (kind === 'weekend') {
@@ -83,11 +84,10 @@ function planBase(ymd, bookings, opts = {}) {
 // 아이미짱 휴무일: 아이미짱 몫을 마미짱이 대신 (하루 한 사람)
 function plan(ymd, bookings, opts = {}) {
   const out = planBase(ymd, bookings, opts);
-  if (!out.aimiOff || out.kind === 'wed' || out.kind === 'thu') return out;
+  if (!out.aimiOff || out.kind === 'wed' || out.kind === 'tue') return out;
   const shift = (start, end) => { const mins = ceil15(end - start); return { start, end, hours: mins / 60, pay: Math.round(mins / 60 * WAGE), sub: true }; };
-  if (out.kind === 'tue') {
-    if (out.aimi) out.mami = shift(out.aimi.start, out.aimi.end);
-    else out.offNoBooking = 'mami';
+  if (out.kind === 'thu') {   // 13:45 고정, 예약 없으면 2시간 대기
+    out.mami = out.bookings.length ? shift(out.aimi.start, out.aimi.end) : { ...shift(T(13, 45), T(15, 45)), standby: true };
   } else if (out.kind === 'weekend') {
     out.mami = out.bookings.length ? shift(out.mami.start, out.aimi.end) : { ...shift(out.mami.start, out.mami.start + 120), standby: true };
   } else {   // 금·월: 아이미짱 시간대 그대로, 예약 없으면 12:45~14:45 대기
@@ -107,24 +107,14 @@ function message(ymd, p) {
     : '🎨 예약 0組 / 予約 0組');
   const fmt = s => `${hm(s.start)} → ${hm(s.end)} (${s.hours}h · ¥${s.pay.toLocaleString('ja-JP')})`;
   const both = (who, ko, ja) => lines.push(`👩 ${who[0]}: ${ko}\n   ${who[1]}: ${ja}`);
-  if (p.aimiOff && p.kind !== 'wed' && p.kind !== 'thu') lines.push(`🔁 ${NAME.aimi[0]} 휴무 → ${NAME.mami[0]} 대신 출근 / ${NAME.aimi[1]}お休み → ${NAME.mami[1]}が代わりに出勤`);
+  if (p.aimiOff && p.kind !== 'wed' && p.kind !== 'tue') lines.push(`🔁 ${NAME.aimi[0]} 휴무 → ${NAME.mami[0]} 대신 출근 / ${NAME.aimi[1]}お休み → ${NAME.mami[1]}が代わりに出勤`);
   if (p.kind === 'wed') lines.push('🚫 수요일 정기휴무 / 水曜日は定休日');
-  else if (p.aimiOff && p.kind !== 'thu') {
-    if (p.mami) both(NAME.mami, `출근 ${fmt(p.mami)}${p.mami.standby ? ' · 예약 없음 — 2시간 대기 후 퇴근(당일 예약 들어오면 연장)' : ''}`,
-      `出勤 ${fmt(p.mami)}${p.mami.standby ? ' · 予約なし — 2時間待機して退勤(当日予約が入れば延長)' : ''}`);
-    else both(NAME.mami, '내일은 예약이 없어 휴무입니다 🙌', '明日は予約がないためお休みです 🙌');
-  } else if (p.kind === 'tue') {
-    if (p.aimi) both(NAME.aimi, `출근 ${fmt(p.aimi)}`, `出勤 ${fmt(p.aimi)}`);
-    else both(NAME.aimi, '내일은 예약이 없어 휴무입니다 🙌', '明日は予約がないためお休みです 🙌');
-  } else if (p.kind === 'thu') {
-    both(NAME.mami, `출근 ${fmt(p.mami)}${p.mami.standby ? ' · 예약 없음 — 15:45까지 당일 예약 대기 후 퇴근' : ''}`,
-      `出勤 ${fmt(p.mami)}${p.mami.standby ? ' · 予約なし — 15:45まで当日予約を待って退勤' : ''}`);
-  } else {
-    if (p.mami) both(NAME.mami, `출근 ${fmt(p.mami)}${p.mami.standby ? ' · 오전 예약 없음 — 13:00까지 보장' : ''}`,
-      `出勤 ${fmt(p.mami)}${p.mami.standby ? ' · 午前の予約なし — 13:00まで保証' : ''}`);
-    both(NAME.aimi, `출근 ${fmt(p.aimi)}${p.aimi.cleanOnly ? ' · 예약 없음(청소·SNS)' : ''}`,
-      `出勤 ${fmt(p.aimi)}${p.aimi.cleanOnly ? ' · 予約なし(清掃・SNS)' : ''}`);
+  if (p.mami) {
+    const note = p.mami.standby ? (p.kind === 'weekend' && !p.aimiOff ? ' · 오전 예약 없음 — 13:00까지 보장' : ' · 예약 없음 — 2시간 대기 후 퇴근(당일 예약 들어오면 연장)') : '';
+    const noteJa = p.mami.standby ? (p.kind === 'weekend' && !p.aimiOff ? ' · 午前の予約なし — 13:00まで保証' : ' · 予約なし — 2時間待機して退勤(当日予約が入れば延長)') : '';
+    both(NAME.mami, `출근 ${fmt(p.mami)}${note}`, `出勤 ${fmt(p.mami)}${noteJa}`);
   }
+  if (p.aimi) both(NAME.aimi, `출근 ${fmt(p.aimi)}${p.aimi.cleanOnly ? ' · 예약 없음(청소·SNS)' : ''}`, `出勤 ${fmt(p.aimi)}${p.aimi.cleanOnly ? ' · 予約なし(清掃・SNS)' : ''}`);
   for (const w of p.warns) lines.push(w.ko + '\n   ' + w.ja);
   return lines.join('\n');
 }
