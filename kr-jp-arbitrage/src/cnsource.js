@@ -122,7 +122,8 @@ export async function costCandidates({ budget } = {}) {
   const maxMoq = parseInt(process.env.CN_MAX_MOQ || '100', 10);
   let costed = 0, none = 0, errors = 0;
   const cfg = loadCnConfig();
-  for (const item of db.cnItemsToCost(max * 4).filter((i) => !isExcluded(i.name, cfg)).slice(0, max)) {
+  const catKeys = new Set(cfg.categories.map((c) => c.key));
+  for (const item of db.cnItemsToCost(max * 6).filter((i) => catKeys.has(i.category) && !isExcluded(i.name, cfg)).slice(0, max)) {
     if (!item.image_url) continue;
     try {
       const found = await searchBy1688Image(item.image_url, { pageSize: 20 });
@@ -207,7 +208,8 @@ export async function buildCnRows({ filter = 'all', category, q, limit = 100 } =
   const fxInfo = await getFxJpyPerCny().catch(() => null);
   const jpyPerCny = fxInfo?.rate || null;
   const cnCfg = loadCnConfig();
-  const rows = db.listCnRows().filter((r) => !isExcluded(r.name, cnCfg)).map((r) => {
+  const catKeys = new Set(cnCfg.categories.map((c) => c.key));
+  const rows = db.listCnRows().filter((r) => catKeys.has(r.category) && !isExcluded(r.name, cnCfg)).map((r) => {
     let verdict;
     if (r.q_status !== 'ok') verdict = 'nocost';
     else if (r.verified === 'different') verdict = 'mismatch';
