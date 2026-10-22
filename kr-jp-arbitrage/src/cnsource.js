@@ -39,7 +39,9 @@ export function isExcluded(name, cfg) {
   const t = squash(name);
   const words = [...(cfg.exclude_words?.regulated || []), ...(cfg.exclude_words?.brand_ip || [])];
   const hit = words.find((w) => t.includes(squash(w)));
-  return hit || (USED.test(name) ? '중고' : null);
+  if (hit) return hit;
+  if (cfg.exclude_jan !== false && /(?<!\d)(45|49)\d{11}(?!\d)/.test(String(name).normalize('NFKC'))) return 'JAN코드(정규 브랜드 상품)';
+  return USED.test(name) ? '중고' : null;
 }
 
 // ---------- 1) 후보 선별 ----------
@@ -119,7 +121,8 @@ export async function costCandidates({ budget } = {}) {
   const max = budget ?? parseInt(process.env.CN_IMAGE_BUDGET || '10', 10);
   const maxMoq = parseInt(process.env.CN_MAX_MOQ || '100', 10);
   let costed = 0, none = 0, errors = 0;
-  for (const item of db.cnItemsToCost(max)) {
+  const cfg = loadCnConfig();
+  for (const item of db.cnItemsToCost(max * 4).filter((i) => !isExcluded(i.name, cfg)).slice(0, max)) {
     if (!item.image_url) continue;
     try {
       const found = await searchBy1688Image(item.image_url, { pageSize: 20 });
@@ -203,7 +206,8 @@ export async function buildCnRows({ filter = 'all', category, q, limit = 100 } =
   const costs = loadCostsBase();
   const fxInfo = await getFxJpyPerCny().catch(() => null);
   const jpyPerCny = fxInfo?.rate || null;
-  const rows = db.listCnRows().map((r) => {
+  const cnCfg = loadCnConfig();
+  const rows = db.listCnRows().filter((r) => !isExcluded(r.name, cnCfg)).map((r) => {
     let verdict;
     if (r.q_status !== 'ok') verdict = 'nocost';
     else if (r.verified === 'different') verdict = 'mismatch';

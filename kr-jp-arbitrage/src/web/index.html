@@ -506,7 +506,7 @@ async function renderChina() {
   const d = await api(`/api/cn?filter=${cnFilter}${cnCat ? '&category=' + enc(cnCat) : ''}${cnQ ? '&q=' + enc(cnQ) : ''}`);
   cnFx = d.fx; cnCats = d.categories;
   const c = d.counts;
-  const filters = [['all', `전체 ${c.all}`], ['pass', `✅ 남음 ${c.pass}`], ['thin', `△ 얇음 ${c.thin}`], ['loss', `손해 ${c.loss}`], ['unverified', `🔍 확인 필요 ${c.unverified}`], ['nocost', `원가 조회 전 ${c.nocost}`]];
+  const filters = [['all', `전체 ${c.all}`], ['pass', `✅ 남음 ${c.pass}`], ['thin', `△ 얇음 ${c.thin}`], ['loss', `손해 ${c.loss}`], ['unverified', `🔍 확인 필요 ${c.unverified}`], ['mismatch', `⚠ 다른 상품 ${c.mismatch}`], ['nocost', `원가 조회 전 ${c.nocost}`]];
   $('out').innerHTML =
     `<div class="note">일본(라쿠텐)에서 <b>리뷰가 많이 쌓인 = 수요가 검증된</b> 상품을 규제·브랜드 상품을 빼고 골라서, 1688(중국 도매)에서 같은 상품의 원가를 찾아 마진을 계산합니다. 판매가는 라쿠텐 가격 × 0.95로 가정합니다.
       ${d.provider ? `이미지 검색 제공자: <b>${esc(d.provider)}</b>` : '<b>1688 이미지 검색 키가 아직 없습니다</b> — 후보 선별까지만 동작하고, 원가는 "직접 입력"으로 넣을 수 있습니다.'}${d.fx ? ` · 환율 1위안 = ${d.fx.toFixed(2)}엔` : ''}</div>
