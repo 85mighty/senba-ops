@@ -34,7 +34,7 @@ const num = (v) => {
 // 응답 안에서 '상품 목록처럼 보이는 배열'을 찾는다 (깊이 4까지)
 function findList(node, depth = 0) {
   if (Array.isArray(node)) {
-    if (node.length && typeof node[0] === 'object' && node[0] && (first(node[0], TITLE) !== undefined || first(node[0], PRICE) !== undefined)) return node;
+    if (node.length && typeof node[0] === 'object' && node[0] && first(node[0], TITLE) !== undefined && first(node[0], PRICE) !== undefined) return node; // 제목과 가격이 둘 다 있는 배열만 (columns 같은 메타 배열 제외)
     for (const x of node) { const r = depth < 4 ? findList(x, depth + 1) : null; if (r) return r; }
     return null;
   }
@@ -62,7 +62,7 @@ export function parseMatches(payload) {
   const list = findList(payload) || [];
   return list
     .map((it) => {
-      const id = first(it, ['offerId', 'id', 'itemId', 'productId']);
+      const id = first(it, ['offerId', 'productCode', 'id', 'itemId', 'productId']);
       let url = first(it, ['url', 'detailUrl', 'link', 'productUrl', 'offerUrl', 'itemUrl']);
       if (!url && id) url = `https://detail.1688.com/offer/${id}.html`;
       return {
@@ -71,11 +71,13 @@ export function parseMatches(payload) {
         url: url ? String(url) : '',
         image: first(it, ['image', 'imageUrl', 'imgUrl', 'picUrl', 'pic', 'mainImage', 'productImage', 'images.0']) || null,
         moq: num(first(it, ['moq', 'minOrderQuantity', 'minOrder', 'quantityBegin', 'minQuantity', 'minOrderQty'])),
-        monthSold: num(first(it, ['monthSold', 'monthSoldCount', 'monthSales', 'saleQuantity', 'sold', 'soldCount', 'last30DaysSold'])),
+        monthSold: num(first(it, ['salesQuantity', 'monthSold', 'monthSoldCount', 'monthSales', 'saleQuantity', 'sold', 'soldCount', 'last30DaysSold'])),
         repurchase: num(first(it, ['rePurchaseRate', 'repurchaseRate', 'repeatRate', 'rebuyRate'])),
         currency: detectCurrency(it),
+        patent: it.isPatentProduct === true, // 특허·권리 침해 표시가 붙은 상품은 제외 대상
+        dropship: it.isOnePsale === true, // 一件代发(1개부터 대행 발송) 가능
         site: /aliexpress|alibaba\.com/i.test(url || '') ? 'AliExpress' : '1688',
-        supplier: String(first(it, ['seller', 'sellerName', 'companyName', 'shopName', 'supplier', 'sellerIdentity.name', 'seller.name', 'shop.name']) ?? ''),
+        supplier: String(first(it, ['sellerIdentities', 'seller', 'sellerName', 'companyName', 'shopName', 'supplier', 'sellerIdentity.name', 'seller.name', 'shop.name']) ?? ''),
       };
     })
     .filter((m) => m.title && m.priceCny > 0 && m.url);
@@ -154,14 +156,10 @@ export async function searchBy1688Image(imageUrl, { pageSize = 20 } = {}) {
   if (!/\.(jpe?g|png)$/i.test(url)) warn(`[1688] 이미지 확장자가 jpg/png가 아닙니다(검색이 실패할 수 있음): ${url.slice(-40)}`);
   let raw;
   if (provider === 'nexscope') {
-    try {
-      raw = await callNexscope({ url }, pageSize);
-    } catch (e) {
-      if (e.nexscopeCode === undefined) throw e;
-      // 이미지 URL 방식이 거절되면 이미지를 직접 내려받아 base64로 한 번 더 시도
-      warn(`[1688] URL 방식 실패(${e.message.slice(0, 80)}) → base64로 재시도`);
-      raw = await callNexscope({ base64: await toBase64(url) }, pageSize);
-    }
+    // 상대 서버가 라쿠텐 이미지를 직접 가져오다 시간 초과가 나는 경우가 있어서, 이미지를 우리가 내려받아 base64로 먼저 보낸다
+    let b64 = null;
+    try { b64 = await toBase64(url); } catch (e) { warn(`[1688] 이미지 내려받기 실패(${e.message}) → URL 방식으로 시도`); }
+    raw = await callNexscope(b64 ? { base64: b64 } : { url }, pageSize);
   } else raw = await callApify(url, pageSize);
-  return { matches: parseMatches(raw), raw, provider };
+  return { matches: parseMatches(raw), raw, provider, cost: raw?.cost };
 }

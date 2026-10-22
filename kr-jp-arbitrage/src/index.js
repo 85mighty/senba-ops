@@ -38,7 +38,7 @@ if (hasFlag('probe-cn')) {
     const image = argValue('image') || dbm.default.prepare(`SELECT image_url FROM cn_items WHERE image_url IS NOT NULL ORDER BY score DESC LIMIT 1`).get()?.image_url;
     if (!image) throw new Error('시험할 이미지가 없습니다. 먼저 --step=china 로 후보를 만들거나 --image=https://...jpg 를 주세요');
     const r = await searchBy1688Image(image, { pageSize: 5 });
-    console.log(`제공자: ${r.provider} · 파싱된 결과 ${r.matches.length}건`);
+    console.log(`제공자: ${r.provider} · 파싱된 결과 ${r.matches.length}건${r.cost !== undefined ? ' · 응답의 cost=' + r.cost : ''}`);
     console.log('응답 구조(키만):', JSON.stringify(describeShape(r.raw)));
     const m = r.matches[0];
     if (m) console.log(`첫 결과: ${m.priceCny}위안 · MOQ ${m.moq} · 월판매 ${m.monthSold} · 제목 ${m.title.slice(0, 40)}`);

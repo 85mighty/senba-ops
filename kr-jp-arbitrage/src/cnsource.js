@@ -95,7 +95,7 @@ export async function normalizeCurrency(matches, jpyPerCny) {
 }
 
 export function pickMatch(matches, { maxMoq = 100 } = {}) {
-  const top = matches.slice(0, 12);
+  const top = matches.filter((m) => !m.patent).slice(0, 12);
   if (!top.length) return { best: null, alts: [] };
   const prices = top.map((m) => m.priceCny).sort((a, b) => a - b);
   const median = prices[Math.floor(prices.length / 2)];
