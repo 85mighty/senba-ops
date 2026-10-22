@@ -2,8 +2,8 @@
 // 데이터: 매출 시트 「예약관리」 탭 (취소 제외, 코스에서 시간 추출, 없으면 2시간) · 2026-09 (확정) / 2026-10 (접수분 기준)
 // 시나리오:
 //  ① 현행: 아이미짱만 금토일월 (12:45~13:45 출근, 17:00~18:15 퇴근) — 화수목·주말 오전은 사장님
-//  ② 새 규칙(고정): 화 마미 13:45 고정(2h 보장) · 수 휴무 · 목 아이미 13:45 고정 · 토일 마미 11:00 고정(13:00 보장)+아이미 · 금월 아이미
-//  ③ ②에서 보장 제외: 화·토일 예약 없는 날 마미짱 출근 안 함 (보장 비용이 얼마인지)
+//  ② 새 규칙(고정): 화 마미 13:45 고정(2h) · 수 휴무 · 목 아이미 13:45 고정(2h) · 토일 마미 11:00 고정(13:00 보장)+아이미 · 금월 아이미
+//  ③ ②에서 보장 제외: 화·목·토일 예약 없는 날 2시간 대기 출근 안 함 (보장 비용이 얼마인지)
 //  ④ ②에서 금요일도 "예약 있을 때만" 아이미짱 출근
 const path = require('path');
 const { google } = require(path.join('/opt/senba-sales-sync/node_modules/googleapis'));
@@ -12,6 +12,7 @@ const SHIFT = require(path.join(__dirname, '..', 'booking-view', 'shift-rules.js
 const LEDGER_ID = '1sUXyrXxYzl_n6n5T4dV_flQ6Ocli3c0B-Ggbwzw5YC4';
 const SHEET_ID = '1OiQnj_slGsZvQ8BBQBP6a6eK3_j4J35nCReSTT2HRgc';
 const TAB = '인건비 시뮬';
+const RULE_TAG = '규칙v3(화 마미2h·목 아이미2h)';
 const MONTHS = ['2026-09', '2026-10'];
 const WAGE = 1200;
 const WD = '日月火水木金土';
@@ -60,7 +61,7 @@ function current(ymd, bk) {
       const bk = (byDay[ymd] || []).sort((a, b) => a.s - b.s);
       const p = SHIFT.plan(ymd, bk);
       const m = p.mami ? p.mami.pay : 0, a = p.aimi ? p.aimi.pay : 0;
-      const standby = p.mami && p.mami.standby ? p.mami.pay : 0;
+      const standby = (p.mami && p.mami.standby ? p.mami.pay : 0) + (p.aimi && p.aimi.standby ? p.aimi.pay : 0);
       const friClean = dow(ymd) === 5 && p.aimi && p.aimi.cleanOnly ? p.aimi.pay : 0;
       const cur = current(ymd, bk);
       tot.cur += cur; tot.fix += m + a; tot.noGuar += m + a - standby; tot.friOff += m + a - friClean;
@@ -71,7 +72,7 @@ function current(ymd, bk) {
       dayRows.push([ymd.slice(5).replace('-', '/') + '(' + WD[dow(ymd)] + ')', bk.length, p.closed ? '휴무' : fmtS(p.mami), m || '', p.closed ? '' : fmtS(p.aimi), a || '', m + a, cur, p.warns.length ? p.warns[0].ko : '']);
     }
     monthSummary[ym] = tot;
-    const label = ym === '2026-10' ? ym + ' (접수분 기준)' : ym;
+    const label = (ym === '2026-10' ? ym + ' (접수분 기준)' : ym) + ' ' + RULE_TAG;
     titles.push(push([`${label} 인건비 — ①현행 ${tot.cur.toLocaleString('ja-JP')}엔 → ②새 규칙(고정) ${tot.fix.toLocaleString('ja-JP')}엔 (마미 ${tot.mami.toLocaleString('ja-JP')} + 아이미 ${tot.aimi.toLocaleString('ja-JP')}) | ③보장 제외 ${tot.noGuar.toLocaleString('ja-JP')}엔 (보장비용 ${tot.guar.toLocaleString('ja-JP')}·${tot.standbyDays}일) | ④금요일 예약시만 ${tot.friOff.toLocaleString('ja-JP')}엔`]));
     hdrIdx.push(push(['요일', '일수', '마미짱 출근일', '마미짱 급여', '아이미짱 출근일', '아이미짱 급여', '합계', '', '']));
     const b0 = rows.length;
