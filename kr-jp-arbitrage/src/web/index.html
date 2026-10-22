@@ -480,7 +480,7 @@ function cnHtml(r) {
   const c = r.cn;
   const jpy = (v) => (cnFx ? '≈' + yen(v * cnFx) : '');
   const cnLine = c
-    ? `<div class="m"><span class="flag">🇨🇳</span><b>${cnYuan(c.priceCny)}</b> <span class="sub">${jpy(c.priceCny)}${c.moq ? ' · 최소 ' + c.moq + '개' : ''}${c.monthSold ? ' · 월 ' + c.monthSold + '건' : ''}</span> · ${c.url ? `<a href="${esc(c.url)}" target="_blank" rel="noopener">1688 ↗</a>` : '직접 입력'}${c.image ? `<img class="thumb" src="${esc(c.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}</div>`
+    ? `<div class="m"><span class="flag">🇨🇳</span><b>${cnYuan(c.priceCny)}</b> <span class="sub">${jpy(c.priceCny)}${c.moq ? ' · 최소 ' + c.moq + '개' : ''}${c.monthSold ? ' · 월 ' + c.monthSold + '건' : ''}</span> · ${c.url ? `<a href="${esc(c.url)}" target="_blank" rel="noopener">${/aliexpress/i.test(c.url) ? 'AliExpress' : '1688'} ↗</a>` : '직접 입력'}${c.image ? `<img class="thumb" src="${esc(c.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}</div>`
     : `<div class="m"><span class="flag">🇨🇳</span><span class="sub">${esc(r.cnNote || '아직 1688 원가를 찾지 않았습니다')}</span>${r.targetCny >= 1 ? ` <span class="sub">· 1688에서 <b>${cnYuan(r.targetCny)} 이하</b>면 마진 기준 통과</span>` : ''}</div>`;
   const resBox = r.net != null
     ? `<div class="rbox ${r.net > 0 ? 'pos' : 'neg'}"><div class="t">🇨🇳→🇯🇵 중국에서 사서 일본에 팔면 (판매가 ${yen(r.sell)} 가정)</div><div class="v">${signYen(r.net)}<small>마진율 ${((r.rate || 0) * 100).toFixed(0)}%${r.targetCny >= 1 ? ' · 원가 ' + cnYuan(r.targetCny) + ' 이하면 통과' : r.targetCny != null ? ' · 판매가가 낮아 원가와 무관하게 기준 통과 어려움' : ''}</small></div></div>`

@@ -59,3 +59,24 @@ export async function getFxJpyPerCny() {
     throw new Error(`위안 환율 조회 실패, 캐시도 없음: ${e.message}`);
   }
 }
+
+// 임의 통화(USD 등) 1단위가 몇 엔인지 — AliExpress처럼 달러로 가격이 나오는 소싱처 환산용 (6시간 캐시)
+export async function getFxJpyPer(code) {
+  if (code === 'JPY') return 1;
+  if (code === 'CNY') return (await getFxJpyPerCny()).rate;
+  const file = path.join(DATA_DIR, `fx-${code}.json`);
+  let cached = null;
+  try { cached = JSON.parse(fs.readFileSync(file, 'utf8')); } catch { /* 없음 */ }
+  if (cached && Date.now() - new Date(cached.fetchedAt).getTime() < TTL_MS) return cached.rate;
+  try {
+    const res = await fetch(`https://open.er-api.com/v6/latest/${code}`, { signal: AbortSignal.timeout(15000) });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const rate = (await res.json())?.rates?.JPY;
+    if (!rate || rate <= 0) throw new Error('JPY 환율 없음');
+    fs.writeFileSync(file, JSON.stringify({ rate, fetchedAt: nowIso() }));
+    return rate;
+  } catch (e) {
+    if (cached) return cached.rate;
+    throw new Error(`${code} 환율 조회 실패: ${e.message}`);
+  }
+}

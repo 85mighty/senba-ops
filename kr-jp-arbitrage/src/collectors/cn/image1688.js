@@ -47,6 +47,17 @@ function findList(node, depth = 0) {
 const TITLE = ['title', 'subject', 'name', 'productTitle', 'offerTitle', 'itemTitle'];
 const PRICE = ['price', 'priceMin', 'minPrice', 'salePrice', 'unitPrice', 'priceInfo.price', 'priceInfo.minPrice', 'price.current', 'priceRange'];
 
+// 가격 통화: 응답에 통화 필드가 있으면 그것, 없으면 가격 문자열의 기호(US $, $, ¥/元/CNY)로 추정. 기본은 위안.
+function detectCurrency(it) {
+  const c = String(first(it, ['currency', 'priceCurrency', 'currencyCode', 'price.currency', 'priceInfo.currency']) || '').toUpperCase();
+  if (/^(USD|US\$)$/.test(c) || c === 'DOLLAR') return 'USD';
+  if (c === 'CNY' || c === 'RMB') return 'CNY';
+  if (c === 'JPY') return 'JPY';
+  const raw = String(first(it, PRICE) ?? '');
+  if (/US\s*\$|\$|USD/i.test(raw)) return 'USD';
+  return 'CNY';
+}
+
 export function parseMatches(payload) {
   const list = findList(payload) || [];
   return list
@@ -62,6 +73,8 @@ export function parseMatches(payload) {
         moq: num(first(it, ['moq', 'minOrderQuantity', 'minOrder', 'quantityBegin', 'minQuantity', 'minOrderQty'])),
         monthSold: num(first(it, ['monthSold', 'monthSoldCount', 'monthSales', 'saleQuantity', 'sold', 'soldCount', 'last30DaysSold'])),
         repurchase: num(first(it, ['rePurchaseRate', 'repurchaseRate', 'repeatRate', 'rebuyRate'])),
+        currency: detectCurrency(it),
+        site: /aliexpress|alibaba\.com/i.test(url || '') ? 'AliExpress' : '1688',
         supplier: String(first(it, ['seller', 'sellerName', 'companyName', 'shopName', 'supplier', 'sellerIdentity.name', 'seller.name', 'shop.name']) ?? ''),
       };
     })

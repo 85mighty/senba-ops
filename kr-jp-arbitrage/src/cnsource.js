@@ -9,7 +9,7 @@ import * as db from './db.js';
 import { ROOT, info, warn, features, loadCostsBase, sleep } from './util.js';
 import { searchRakuten } from './collectors/jp/rakuten.js';
 import { searchBy1688Image, cnProvider, fullImageUrl } from './collectors/cn/image1688.js';
-import { getFxJpyPerCny } from './pricing/fx.js';
+import { getFxJpyPerCny, getFxJpyPer } from './pricing/fx.js';
 import { computeMarginCnToJp, breakEvenCnPriceCny } from './pricing/margin.js';
 import { compareProducts } from './matcher/llm.js';
 
@@ -81,6 +81,19 @@ export async function discoverCandidates({ perKeyword = 30, maxNew } = {}) {
 
 // ---------- 2) 원가 조회 ----------
 // 1688 결과(시각 유사도 순)에서 대표 원가를 고른다: 지나치게 싼 이상치(부속품·샘플)는 빼고, MOQ가 너무 큰 것도 뺀 뒤 가장 싼 것.
+// 1688은 위안이지만 AliExpress 등은 달러로 나올 수 있다 → 위안 환산값으로 통일 (마진 계산이 위안 기준)
+export async function normalizeCurrency(matches, jpyPerCny) {
+  const out = [];
+  for (const m of matches) {
+    if (!m.currency || m.currency === 'CNY') { out.push(m); continue; }
+    try {
+      const jpy = (await getFxJpyPer(m.currency)) * m.priceCny;
+      out.push({ ...m, priceOrig: m.priceCny, priceCny: Math.round((jpy / jpyPerCny) * 100) / 100 });
+    } catch { /* 환율을 못 구하면 그 결과는 버림 */ }
+  }
+  return out;
+}
+
 export function pickMatch(matches, { maxMoq = 100 } = {}) {
   const top = matches.slice(0, 12);
   if (!top.length) return { best: null, alts: [] };
@@ -109,8 +122,8 @@ export async function costCandidates({ budget } = {}) {
   for (const item of db.cnItemsToCost(max)) {
     if (!item.image_url) continue;
     try {
-      const { matches } = await searchBy1688Image(item.image_url, { pageSize: 20 });
-      const { best, alts } = pickMatch(matches, { maxMoq });
+      const found = await searchBy1688Image(item.image_url, { pageSize: 20 });
+      const { best, alts } = pickMatch(await normalizeCurrency(found.matches, fx), { maxMoq });
       if (!best) {
         db.saveCnQuote({ item_id: item.id, status: 'none', provider, note: '1688에서 비슷한 상품을 못 찾음' });
         none++;
