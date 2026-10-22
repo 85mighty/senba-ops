@@ -51,10 +51,11 @@ export async function discoverCandidates({ perKeyword = 30, maxNew } = {}) {
   if (!features().rakuten) return { added: 0, seen: 0, excluded: 0, note: '라쿠텐 키가 없어 후보를 못 가져옴' };
   const f = cfg.filters;
   let added = 0, seen = 0, excluded = 0;
-  const cap = maxNew ?? parseInt(process.env.CN_CANDIDATES_PER_RUN || '60', 10);
+  // 한 키워드(예: '車 ハンドルカバー')가 후보를 독점하지 않도록 키워드마다 상한을 둔다 — 모든 카테고리·키워드가 고르게 나온다
+  const perKw = maxNew ?? parseInt(process.env.CN_PER_KEYWORD || '4', 10);
   for (const cat of cfg.categories) {
     for (const keyword of cat.keywords) {
-      if (added >= cap) break;
+      let kwAdded = 0;
       let rows = [];
       try {
         rows = await searchRakuten(keyword, { hits: Math.min(perKeyword, 30), sort: '-reviewCount' });
@@ -63,6 +64,7 @@ export async function discoverCandidates({ perKeyword = 30, maxNew } = {}) {
         continue;
       }
       for (const r of rows) {
+        if (kwAdded >= perKw) break;
         seen++;
         if (!r.in_stock || !r.price || r.price < f.min_price_jpy || r.price > f.max_price_jpy) continue;
         if ((r.review_count || 0) < f.min_reviews) continue;
@@ -74,6 +76,7 @@ export async function discoverCandidates({ perKeyword = 30, maxNew } = {}) {
           score, reasons: JSON.stringify(reasons), weight_g: cat.weight_g,
         });
         added++;
+        kwAdded++;
       }
       await sleep(1200); // 라쿠텐 API 예절
     }
@@ -113,6 +116,29 @@ export function marginFor(item, cnPriceCny, jpyPerCny, costs) {
 
 const clean = (v) => (Number.isFinite(v) ? v : null);
 
+// 원가 조회 대상을 고르게 뽑는다: 카테고리를 번갈아, 카테고리 안에서는 키워드를 번갈아, 키워드 안에서는 점수 순
+export function diversify(items, n) {
+  const cats = new Map();
+  for (const it of items.slice().sort((a, b) => b.score - a.score)) {
+    if (!cats.has(it.category)) cats.set(it.category, new Map());
+    const kws = cats.get(it.category);
+    if (!kws.has(it.keyword)) kws.set(it.keyword, []);
+    kws.get(it.keyword).push(it);
+  }
+  const out = [];
+  const catList = [...cats.values()].map((kws) => ({ kws: [...kws.values()], i: 0 }));
+  while (out.length < n && catList.some((c) => c.kws.some((k) => k.length))) {
+    for (const c of catList) {
+      if (out.length >= n) break;
+      for (let tries = 0; tries < c.kws.length; tries++) {
+        const bucket = c.kws[c.i++ % c.kws.length];
+        if (bucket.length) { out.push(bucket.shift()); break; }
+      }
+    }
+  }
+  return out;
+}
+
 export async function costCandidates({ budget } = {}) {
   const provider = cnProvider();
   if (!provider) return { costed: 0, none: 0, note: '1688 이미지 검색 키가 없어 원가 조회를 건너뜀' };
@@ -123,7 +149,8 @@ export async function costCandidates({ budget } = {}) {
   let costed = 0, none = 0, errors = 0;
   const cfg = loadCnConfig();
   const catKeys = new Set(cfg.categories.map((c) => c.key));
-  for (const item of db.cnItemsToCost(max * 6).filter((i) => catKeys.has(i.category) && !isExcluded(i.name, cfg)).slice(0, max)) {
+  const pending = db.cnItemsToCost(1000).filter((i) => catKeys.has(i.category) && !isExcluded(i.name, cfg));
+  for (const item of diversify(pending, max)) {
     if (!item.image_url) continue;
     try {
       const found = await searchBy1688Image(item.image_url, { pageSize: 20 });
