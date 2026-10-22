@@ -646,14 +646,14 @@ async function shiftTick() {
   if (!SHIFT_ON) return;
   const now = new Date(Date.now() + 9 * 3600e3), min = now.getUTCHours() * 60 + now.getUTCMinutes();
   const tom = jstDay(1), cut = SHIFT_CUTOFF * 60;
-  // ① 사전 점검: 내일 마미짱이 휴무로 나오면, 전화·현장 예약이 누락됐는지 사장님께 먼저 확인
+  // ① 사전 점검: 내일 '예약 없어 휴무'로 안내될 사람이 있으면, 전화·현장 예약이 누락됐는지 사장님께 먼저 확인
   if (min >= cut - 30 && min < cut + 5 && readFlag(SHIFT_PRE_FILE) !== tom && preTried !== tom) {
     preTried = tom;
     try {
       const { p } = await shiftFor(tom);
-      if (!p.mami) {
-        const [, M, D] = tom.split('-').map(Number);
-        await ownerSend(`🔔 내일 ${M}/${D}(${'일월화수목금토'[new Date(tom + 'T12:00:00Z').getUTCDay()]}) 마미짱 휴무로 안내될 예정입니다 (예약 ${p.bookings.length}組)\n\n📞 전화·현장 예약이 있으면 ${SHIFT_CUTOFF}:05 전에 예약 보드에서 추가하세요 (빈 칸 탭 → 수동 예약).\n🟦 Square 요청은 수락해야 반영됩니다.\n\n보드: ${BOARD_URL}/?key=${KEY}&date=${tom}\n없으면 ${SHIFT_CUTOFF}:05에 그룹으로 휴무 안내가 자동 발송됩니다.`);
+      if (p.offNoBooking) {   // 예약이 없어 휴무로 안내될 사람이 있을 때만 (현재 화요일 아이미짱)
+        const [, M, D] = tom.split('-').map(Number), who = SHIFT.NAME[p.offNoBooking][0];
+        await ownerSend(`🔔 내일 ${M}/${D}(${'일월화수목금토'[new Date(tom + 'T12:00:00Z').getUTCDay()]}) ${who} 휴무로 안내될 예정입니다 (예약 ${p.bookings.length}組)\n\n📞 전화·현장 예약이 있으면 ${SHIFT_CUTOFF}:05 전에 예약 보드에서 추가하세요 (빈 칸 탭 → 수동 예약).\n🟦 Square 요청은 수락해야 반영됩니다.\n\n보드: ${BOARD_URL}/?key=${KEY}&date=${tom}\n없으면 ${SHIFT_CUTOFF}:05에 그룹으로 휴무 안내가 자동 발송됩니다.`);
       }
       fs.writeFileSync(SHIFT_PRE_FILE, tom);
     } catch (e) { console.error('[shift] 사전점검 실패:', e.message); }
