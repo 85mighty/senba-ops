@@ -91,19 +91,44 @@ export function describeShape(node, depth = 0) {
   return typeof node;
 }
 
-async function callNexscope(imageUrl, pageSize) {
+// 이미지를 서버에서 내려받아 base64로 (상대 서버가 이미지 URL을 못 가져올 때 대비). jpg/png만, 4MB 이하
+async function toBase64(url) {
+  const res = await fetch(url, { headers: { 'user-agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(20000) });
+  if (!res.ok) throw new Error(`이미지 다운로드 실패 HTTP ${res.status}`);
+  const type = (res.headers.get('content-type') || '').toLowerCase();
+  if (!/image\/(jpeg|jpg|png)/.test(type)) throw new Error(`jpg/png가 아닌 이미지(${type || '알 수 없음'})`);
+  const buf = Buffer.from(await res.arrayBuffer());
+  if (buf.length > 4 * 1024 * 1024) throw new Error('이미지가 4MB를 넘음');
+  return buf.toString('base64');
+}
+
+// 응답 봉투에서 data를 뺀 나머지(코드·메시지 등)를 짧게 — 오류 원인 확인용 (키·상품 데이터는 포함되지 않음)
+const envelopeOf = (json) => {
+  if (!json || typeof json !== 'object') return '';
+  const { data, ...rest } = json;
+  return JSON.stringify(rest).slice(0, 300);
+};
+
+async function callNexscope(image, pageSize) {
+  const body = { page: 1, pageSize };
+  if (image.base64) body.imageBase64 = image.base64;
+  else body.imageUrl = image.url;
   const res = await fetch('https://api.nexscope.ai/api/skill-api/v1/skills/1688-search-by-image/run', {
     method: 'POST',
     headers: { Authorization: `Bearer ${process.env.NEXSCOPE_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ imageUrl, page: 1, pageSize }),
+    body: JSON.stringify(body),
     signal: AbortSignal.timeout(90000),
   });
   const text = await res.text();
   let json = null;
   try { json = JSON.parse(text); } catch { /* JSON 아님 */ }
-  if (!res.ok) throw new Error(`Nexscope HTTP ${res.status}${json?.message ? ' · ' + String(json.message).slice(0, 120) : ''}`);
+  if (!res.ok) throw new Error(`Nexscope HTTP ${res.status} ${envelopeOf(json) || text.slice(0, 150)}`);
   // 문서: HTTP 200이어도 code가 0이 아니면 실패
-  if (json && json.code !== undefined && json.code !== 0 && json.code !== '0') throw new Error(`Nexscope 응답 코드 ${json.code}${json.message ? ' · ' + String(json.message).slice(0, 120) : ''}`);
+  if (json && json.code !== undefined && json.code !== 0 && json.code !== '0') {
+    const e = new Error(`Nexscope 응답 코드 ${json.code} ${envelopeOf(json)}`);
+    e.nexscopeCode = json.code;
+    throw e;
+  }
   return json;
 }
 
@@ -127,6 +152,16 @@ export async function searchBy1688Image(imageUrl, { pageSize = 20 } = {}) {
   if (!provider) throw new Error('1688 이미지 검색 키가 없습니다 (NEXSCOPE_API_KEY 또는 APIFY_TOKEN+CN_APIFY_ACTOR)');
   const url = fullImageUrl(imageUrl);
   if (!/\.(jpe?g|png)$/i.test(url)) warn(`[1688] 이미지 확장자가 jpg/png가 아닙니다(검색이 실패할 수 있음): ${url.slice(-40)}`);
-  const raw = provider === 'nexscope' ? await callNexscope(url, pageSize) : await callApify(url, pageSize);
+  let raw;
+  if (provider === 'nexscope') {
+    try {
+      raw = await callNexscope({ url }, pageSize);
+    } catch (e) {
+      if (e.nexscopeCode === undefined) throw e;
+      // 이미지 URL 방식이 거절되면 이미지를 직접 내려받아 base64로 한 번 더 시도
+      warn(`[1688] URL 방식 실패(${e.message.slice(0, 80)}) → base64로 재시도`);
+      raw = await callNexscope({ base64: await toBase64(url) }, pageSize);
+    }
+  } else raw = await callApify(url, pageSize);
   return { matches: parseMatches(raw), raw, provider };
 }
