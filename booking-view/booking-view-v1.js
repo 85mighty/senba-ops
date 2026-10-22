@@ -620,9 +620,16 @@ const SHIFT_CHAT = E.SHIFT_CHAT_ID || SHIFT_ENV.SHIFT_CHAT_ID || SHIFT_ENV.ATTEN
 const SHIFT_ON = (E.SHIFT_NOTIFY || SHIFT_ENV.SHIFT_NOTIFY || '1') !== '0';
 const SHIFT_SENT_FILE = require('path').join(__dirname, '.shift-last');
 const jstDay = off => new Date(Date.now() + 9 * 3600e3 + off * 86400e3).toISOString().slice(0, 10);
+const SHIFT_OVR_FILE = require('path').join(__dirname, '.shift-overrides.json');   // { 'YYYY-MM-DD': { aimiOff: true } }
+const shiftOvr = () => { try { return JSON.parse(fs.readFileSync(SHIFT_OVR_FILE, 'utf8')); } catch { return {}; } };
+function shiftOvrSet(ymd, patch) {
+  const o = shiftOvr(); o[ymd] = { ...(o[ymd] || {}), ...patch };
+  for (const k of Object.keys(o)) if (!Object.values(o[k]).some(Boolean) || k < jstDay(-7)) delete o[k];   // 꺼진 값·지난 날짜 정리
+  fs.writeFileSync(SHIFT_OVR_FILE, JSON.stringify(o, null, 1));
+}
 async function shiftFor(ymd) {
   const evs = await dayEvents(ymd);
-  const p = SHIFT.plan(ymd, evs.map(e => ({ s: e.s, e: e.e })));
+  const p = SHIFT.plan(ymd, evs.map(e => ({ s: e.s, e: e.e })), shiftOvr()[ymd] || {});
   return { p, text: SHIFT.message(ymd, p) };
 }
 async function shiftSend(text) {
@@ -688,8 +695,11 @@ http.createServer(async (req, res) => {
     if (req.method === 'POST' && u.pathname === '/api/allout') { try { const r = await apiAllOut(await readBody(req)); return json(200, { ok: 1, ...r }); } catch (e) { return json(400, { error: e.message }); } }
     if (u.searchParams.get('view') === 'shift') {   // 근무 안내 미리보기: ?view=shift&date=YYYY-MM-DD (기본=내일) · &send=1 이면 지금 발송
       const d = /^\d{4}-\d{2}-\d{2}$/.test(u.searchParams.get('date') || '') ? u.searchParams.get('date') : jstDay(1);
+      if (u.searchParams.has('aimioff')) shiftOvrSet(d, { aimiOff: u.searchParams.get('aimioff') === '1' });   // &aimioff=1 아이미짱 휴무 등록 / =0 해제
       const { text } = await shiftFor(d);
-      let note = '(미리보기 — 발송 안 됨. 지금 보내려면 주소 끝에 &send=1)';
+      const offDays = Object.keys(shiftOvr()).filter(k => shiftOvr()[k].aimiOff).sort();
+      let note = '(미리보기 — 발송 안 됨. 지금 보내려면 주소 끝에 &send=1 · 아이미짱 휴무 등록 &aimioff=1 / 해제 &aimioff=0)'
+        + (offDays.length ? '\n아이미짱 휴무 등록일: ' + offDays.join(', ') : '');
       if (u.searchParams.get('send') === '1') { await shiftSend(text); note = '✅ 텔레그램으로 발송했습니다'; }
       res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
       return res.end(text + '\n\n' + note);
