@@ -150,15 +150,17 @@ export async function compareProducts(a, b) {
   const res = await fetch(API_URL, {
     method: 'POST',
     headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model: process.env.LLM_VISION_MODEL || 'claude-sonnet-5-5', max_tokens: 300, messages: [{ role: 'user', content }] }),
+    body: JSON.stringify({ model: process.env.LLM_VISION_MODEL || 'claude-sonnet-5-5', max_tokens: 500, messages: [{ role: 'user', content }] }),
     signal: AbortSignal.timeout(60000),
   });
   if (!res.ok) throw new Error(`Anthropic API HTTP ${res.status}`);
   const data = await res.json();
   const text = data.content?.find((c) => c.type === 'text')?.text || '';
+  // JSON을 못 읽는 응답(거절·잡담·잘림)은 오류로 중단하지 않고 '불확실'로 처리 — 나머지 비교가 계속되게
   const m = text.match(/\{[\s\S]*\}/);
-  if (!m) throw new Error('AI 응답에 JSON이 없습니다');
-  const parsed = JSON.parse(m[0]);
+  let parsed = null;
+  try { parsed = m ? JSON.parse(m[0]) : null; } catch { parsed = null; }
+  if (!parsed) return { verdict: 'unsure', reason: `AI 응답을 해석하지 못함${data.stop_reason ? ' (' + data.stop_reason + ')' : ''}`, usedImages: !!(imgA && imgB) };
   const verdict = ['same', 'different', 'unsure'].includes(parsed.verdict) ? parsed.verdict : 'unsure';
   return { verdict, reason: String(parsed.reason || '').slice(0, 200), usedImages: !!(imgA && imgB) };
 }
