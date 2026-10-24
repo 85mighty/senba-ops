@@ -2,9 +2,9 @@
 // 데이터: 매출 시트 「예약관리」 탭 (취소 제외, 코스에서 시간 추출, 없으면 2시간) · 2026-09 (확정) / 2026-10 (접수분 기준)
 // 시나리오:
 //  ① 현행: 아이미짱만 금토일월 (12:45~13:45 출근, 17:00~18:15 퇴근) — 화수목·주말 오전은 사장님
-//  ② 새 규칙(고정): 화 마미 13:45 고정(2h) · 수 휴무 · 목 아이미 13:45 고정(2h) · 토일 마미 11:00 고정(13:00 보장)+아이미 · 금월 아이미
-//  ③ ②에서 보장 제외: 화·목·토일 예약 없는 날 2시간 대기 출근 안 함 (보장 비용이 얼마인지)
-//  ④ ②에서 금요일도 "예약 있을 때만" 아이미짱 출근
+//  ② 새 규칙(고정): 화·목 아이미 13:45 고정(2h) · 수 휴무 · 금 마미 13:45 고정(2h) · 토일 마미 11:00 고정(13:00 보장)+아이미 · 월 아이미
+//  ③ ②에서 보장 제외: 화·목·금·토일 예약 없는 날 2시간 대기 출근 안 함 (보장 비용이 얼마인지)
+//  ④ ②에서 수요일도 마미짱 13:45 고정으로 영업 (SHIFT_WED_OPEN=1)
 const path = require('path');
 const { google } = require(path.join('/opt/senba-sales-sync/node_modules/googleapis'));
 const SHIFT = require(path.join(__dirname, '..', 'booking-view', 'shift-rules.js'));
@@ -12,7 +12,7 @@ const SHIFT = require(path.join(__dirname, '..', 'booking-view', 'shift-rules.js
 const LEDGER_ID = '1sUXyrXxYzl_n6n5T4dV_flQ6Ocli3c0B-Ggbwzw5YC4';
 const SHEET_ID = '1OiQnj_slGsZvQ8BBQBP6a6eK3_j4J35nCReSTT2HRgc';
 const TAB = '인건비 시뮬';
-const RULE_TAG = '규칙v3(화 마미2h·목 아이미2h)';
+const RULE_TAG = '규칙v4(아이미 토일월화목·마미 금+토일오전)';
 const MONTHS = ['2026-09', '2026-10'];
 const WAGE = 1200;
 const WD = '日月火水木金土';
@@ -54,18 +54,19 @@ function current(ymd, bk) {
   const hdrIdx = [], bandRanges = [], noteIdx = [];
   const monthSummary = {};
   for (const ym of MONTHS) {
-    const tot = { cur: 0, fix: 0, noGuar: 0, friOff: 0, mami: 0, aimi: 0, guar: 0, standbyDays: 0, friCleanDays: 0, bookings: 0, openDays: 0 };
+    const tot = { cur: 0, fix: 0, noGuar: 0, wedOpen: 0, wedDays: 0, mami: 0, aimi: 0, guar: 0, standbyDays: 0, bookings: 0, openDays: 0 };
     const byWd = Array.from({ length: 7 }, () => ({ days: 0, mami: 0, aimi: 0, mamiDays: 0, aimiDays: 0 }));
     const dayRows = [];
     for (const ymd of daysIn(ym)) {
       const bk = (byDay[ymd] || []).sort((a, b) => a.s - b.s);
       const p = SHIFT.plan(ymd, bk);
+      const pw = SHIFT.plan(ymd, bk, { wedOpen: true });   // ④ 수요일 영업 시
       const m = p.mami ? p.mami.pay : 0, a = p.aimi ? p.aimi.pay : 0;
       const standby = (p.mami && p.mami.standby ? p.mami.pay : 0) + (p.aimi && p.aimi.standby ? p.aimi.pay : 0);
-      const friClean = dow(ymd) === 5 && p.aimi && p.aimi.cleanOnly ? p.aimi.pay : 0;
+      const wedExtra = (pw.mami ? pw.mami.pay : 0) + (pw.aimi ? pw.aimi.pay : 0) - (m + a);   // 수요일 영업 추가분
       const cur = current(ymd, bk);
-      tot.cur += cur; tot.fix += m + a; tot.noGuar += m + a - standby; tot.friOff += m + a - friClean;
-      tot.mami += m; tot.aimi += a; tot.guar += standby; if (standby) tot.standbyDays++; if (friClean) tot.friCleanDays++;
+      tot.cur += cur; tot.fix += m + a; tot.noGuar += m + a - standby; tot.wedOpen += m + a + wedExtra;
+      tot.mami += m; tot.aimi += a; tot.guar += standby; if (standby) tot.standbyDays++; if (wedExtra) tot.wedDays++;
       tot.bookings += bk.length; if (!p.closed) tot.openDays++;
       const w = byWd[dow(ymd)]; w.days++; w.mami += m; w.aimi += a; if (m) w.mamiDays++; if (a) w.aimiDays++;
       const fmtS = s => s ? `${SHIFT.hm(s.start)}-${SHIFT.hm(s.end)}${s.standby ? '(대기)' : ''}${s.cleanOnly ? '(청소)' : ''}` : '';
@@ -73,7 +74,7 @@ function current(ymd, bk) {
     }
     monthSummary[ym] = tot;
     const label = (ym === '2026-10' ? ym + ' (접수분 기준)' : ym) + ' ' + RULE_TAG;
-    titles.push(push([`${label} 인건비 — ①현행 ${tot.cur.toLocaleString('ja-JP')}엔 → ②새 규칙(고정) ${tot.fix.toLocaleString('ja-JP')}엔 (마미 ${tot.mami.toLocaleString('ja-JP')} + 아이미 ${tot.aimi.toLocaleString('ja-JP')}) | ③보장 제외 ${tot.noGuar.toLocaleString('ja-JP')}엔 (보장비용 ${tot.guar.toLocaleString('ja-JP')}·${tot.standbyDays}일) | ④금요일 예약시만 ${tot.friOff.toLocaleString('ja-JP')}엔`]));
+    titles.push(push([`${label} 인건비 — ①현행 ${tot.cur.toLocaleString('ja-JP')}엔 → ②새 규칙(고정) ${tot.fix.toLocaleString('ja-JP')}엔 (마미 ${tot.mami.toLocaleString('ja-JP')} + 아이미 ${tot.aimi.toLocaleString('ja-JP')}) | ③보장 제외 ${tot.noGuar.toLocaleString('ja-JP')}엔 (보장비용 ${tot.guar.toLocaleString('ja-JP')}·${tot.standbyDays}일) | ④수요일도 영업 ${tot.wedOpen.toLocaleString('ja-JP')}엔`]));
     hdrIdx.push(push(['요일', '일수', '마미짱 출근일', '마미짱 급여', '아이미짱 출근일', '아이미짱 급여', '합계', '', '']));
     const b0 = rows.length;
     for (const d of [2, 3, 4, 5, 6, 0, 1]) { const w = byWd[d]; push([WD[d], w.days, w.mamiDays, w.mami, w.aimiDays, w.aimi, w.mami + w.aimi, '', '']); }
@@ -109,5 +110,5 @@ function current(ymd, bk) {
   await sheets.spreadsheets.batchUpdate({ spreadsheetId: SHEET_ID, requestBody: { requests: R } });
 
   console.log(`[인건비 시뮬 완료]`);
-  for (const ym of MONTHS) { const t = monthSummary[ym]; console.log(`${ym}: 예약 ${t.bookings}건 영업 ${t.openDays}일 | ①현행 ${t.cur.toLocaleString('ja-JP')} | ②고정 ${t.fix.toLocaleString('ja-JP')} (마미 ${t.mami.toLocaleString('ja-JP')} / 아이미 ${t.aimi.toLocaleString('ja-JP')}) | ③보장제외 ${t.noGuar.toLocaleString('ja-JP')} (보장 ${t.guar.toLocaleString('ja-JP')}·${t.standbyDays}일) | ④금요일 예약시만 ${t.friOff.toLocaleString('ja-JP')} (청소만 ${t.friCleanDays}일)`); }
+  for (const ym of MONTHS) { const t = monthSummary[ym]; console.log(`${ym}: 예약 ${t.bookings}건 영업 ${t.openDays}일 | ①현행 ${t.cur.toLocaleString('ja-JP')} | ②고정 ${t.fix.toLocaleString('ja-JP')} (마미 ${t.mami.toLocaleString('ja-JP')} / 아이미 ${t.aimi.toLocaleString('ja-JP')}) | ③보장제외 ${t.noGuar.toLocaleString('ja-JP')} (보장 ${t.guar.toLocaleString('ja-JP')}·${t.standbyDays}일) | ④수요일도 영업 ${t.wedOpen.toLocaleString('ja-JP')} (${t.wedDays}일)`); }
 })().catch(e => { console.error('ERROR:', e.response?.data?.error?.message || e.message); process.exit(1); });

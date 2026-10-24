@@ -620,6 +620,7 @@ const SHIFT_CHAT = E.SHIFT_CHAT_ID || SHIFT_ENV.SHIFT_CHAT_ID || SHIFT_ENV.ATTEN
 const SHIFT_ON = (E.SHIFT_NOTIFY || SHIFT_ENV.SHIFT_NOTIFY || '1') !== '0';
 const SHIFT_SENT_FILE = require('path').join(__dirname, '.shift-last');
 const jstDay = off => new Date(Date.now() + 9 * 3600e3 + off * 86400e3).toISOString().slice(0, 10);
+const SHIFT_WED_OPEN = (E.SHIFT_WED_OPEN || SHIFT_ENV.SHIFT_WED_OPEN || '0') === '1';   // 1이면 수요일도 마미짱 13:45 고정 영업
 const SHIFT_OVR_FILE = require('path').join(__dirname, '.shift-overrides.json');   // { 'YYYY-MM-DD': { aimiOff: true } }
 const shiftOvr = () => { try { return JSON.parse(fs.readFileSync(SHIFT_OVR_FILE, 'utf8')); } catch { return {}; } };
 function shiftOvrSet(ymd, patch) {
@@ -629,7 +630,7 @@ function shiftOvrSet(ymd, patch) {
 }
 async function shiftFor(ymd) {
   const evs = await dayEvents(ymd);
-  const p = SHIFT.plan(ymd, evs.map(e => ({ s: e.s, e: e.e })), shiftOvr()[ymd] || {});
+  const p = SHIFT.plan(ymd, evs.map(e => ({ s: e.s, e: e.e })), { wedOpen: SHIFT_WED_OPEN, ...(shiftOvr()[ymd] || {}) });
   return { p, text: SHIFT.message(ymd, p) };
 }
 async function shiftSend(text) {
