@@ -27,7 +27,9 @@ cp ~/Downloads/매장사진*.jpg assets/photos/      # 실내 사진 (있으면)
 # 2) 파이프라인: 검증·정렬 → 노이즈 정리 → 벽/기둥 복원
 python3 scripts/inspect_scan.py           # reports/scan_analysis.md, screenshots/diag_*.png
 python3 scripts/clean_scan.py             # reports/clean_log.md  (--keep/--drop ID 로 되돌리기)
-python3 scripts/reconstruct_room.py       # reports/geometry_assumptions.md, screenshots/recon_footprint.png
+python3 scripts/reconstruct_room.py       # 벽/기둥 평면 검출 (reports/geometry_assumptions.md, screenshots/recon_footprint.png)
+python3 scripts/flatten_scan.py           # ② 평탄화: 정점을 검출 평면에 스냅 (scan_cleaned_raw.glb 보관)
+python3 scripts/reconstruct_room.py       # ③ 텍스처 베이크: 평탄화 스캔 색을 벽·기둥·바닥·천장에 입힘 (--no-bake 면 회색 박스)
 #    사진으로 확인한 값이 있으면:  --chair-rail 0.92 --baseboard 0.08 --central-column wide_column_3
 
 # 3) 뷰어
@@ -45,7 +47,7 @@ npm run dev                               # 터미널에 뜨는 http://localhost
 ## 뷰어 사용법
 | 버튼/옵션 | 동작 |
 |---|---|
-| ① 원본 스캔 / ② 노이즈 정리 / ③ 공간 보정 / ④ 인테리어 A안 | 모델 전환. **카메라는 유지**되어 전후 비교 가능 |
+| ① 원본 스캔 / ② 노이즈 정리 / ③ 공간 보정 / ④ 인테리어 A안 | 모델 전환. **카메라는 유지**되어 전후 비교 가능. ②는 떠 있는 조각 제거 + 벽·바닥·기둥 평면 스냅, ③은 평면 모델에 스캔 텍스처를 구워 입힌 것 |
 | 북마크 | 메인·전체(위)·창가·입구·주방(설비 후보)·큰 기둥 — 메타데이터에서 자동 계산 |
 | 천장 숨기기 / 단면 높이 | 클리핑 평면으로 위에서 내려다보기 |
 | 치수 표시 | 가로·세로·천장고 + 요소별 footprint (초록=measured, 주황=inferred) |

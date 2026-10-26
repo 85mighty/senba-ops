@@ -109,7 +109,7 @@ export class Viewer {
     this.clipping = on; if (y !== undefined) this.clipPlane.constant = y;
     const ceil = this.meta.ceiling_height_m || 3.0;
     this.clipPlane.constant = on ? this.clipPlane.constant : ceil + 10;
-    for (const k of Object.keys(this.groups)) this.groups[k].traverse((o) => { if (o.isMesh && o.name === 'ceiling') o.visible = !on; });
+    for (const k of Object.keys(this.groups)) this.groups[k].traverse((o) => { if (o.isMesh && o.name.startsWith('ceiling')) o.visible = !on; });
     this.interior.traverse((o) => { if (o.isMesh && o.material) { const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach((m) => (m.clippingPlanes = [this.clipPlane])); } });
   }
 
@@ -124,10 +124,10 @@ export class Viewer {
   }
   computeBookmarks() {
     const box = this.roomBox(); const c = box.getCenter(new THREE.Vector3()); const s = box.getSize(new THREE.Vector3());
-    const els = this.meta.elements || []; const eye = 1.6; const bm = [];
-    bm.push({ name: '메인', pos: [c.x + s.x * 0.35, 1.9, c.z + s.z * 0.4], tgt: [c.x, 1.1, c.z] });
+    const els = this.meta.elements || []; const eye = 1.6; const bm = []; const lm = this.meta.landmarks || {};
+    if (lm.main && lm.main_from) bm.push({ name: '메인', pos: [lm.main_from.x, 1.7, lm.main_from.z], tgt: [lm.main.x, 1.1, lm.main.z] });
+    else bm.push({ name: '메인', pos: [c.x + s.x * 0.35, 1.9, c.z + s.z * 0.4], tgt: [c.x, 1.1, c.z] });
     bm.push({ name: '전체(위)', pos: [c.x + s.x * 0.9, s.y * 1.8, c.z + s.z * 0.9], tgt: [c.x, 0.8, c.z] });
-    const lm = this.meta.landmarks || {};
     // 랜드마크 X 를 바라보는 북마크. X_from 이 있으면 그 자리에서, 없으면 방 중심 쪽으로 dist 만큼 물러난 자리에서.
     const look = (name, label, dist = 1.2) => { const p = lm[name]; if (!p) return; const f = lm[name + '_from']; if (f) { bm.push({ name: label, pos: [f.x, eye, f.z], tgt: [p.x, 1.2, p.z] }); return; } const dx = c.x - p.x, dz = c.z - p.z; const d = Math.hypot(dx, dz) || 1; bm.push({ name: label, pos: [p.x + dx / d * dist, eye, p.z + dz / d * dist], tgt: [p.x, 1.2, p.z] }); };
     const lookFrom = (name, label, dist = 2.2) => look(name, label, dist);
