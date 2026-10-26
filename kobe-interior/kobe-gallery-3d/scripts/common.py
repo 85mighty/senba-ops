@@ -200,8 +200,25 @@ def save_meta(meta: dict) -> None:
     print(f"[메타] {META_PATH.relative_to(ROOT)} 저장")
 
 
+def _jpeg_texture(mesh: trimesh.Trimesh) -> None:
+    """큰 스캔 텍스처는 JPEG 로 내보낸다 (PNG 로 바뀌면 GLB 가 4배 커짐)."""
+    vis = mesh.visual
+    if getattr(vis, "kind", None) != "texture" or vis.material is None:
+        return
+    from io import BytesIO
+    from PIL import Image
+    mat = vis.material
+    for attr in ("image", "baseColorTexture"):
+        img = getattr(mat, attr, None)
+        if img is None or getattr(img, "format", None) == "JPEG" or img.width * img.height < 1_000_000:
+            continue
+        buf = BytesIO(); img.convert("RGB").save(buf, "JPEG", quality=92, subsampling=0); buf.seek(0)  # 4:4:4 — 아틀라스 패딩 색 번짐 방지
+        j = Image.open(buf); j.load(); setattr(mat, attr, j)
+
+
 def export_glb(mesh: trimesh.Trimesh, name: str) -> Path:
     out = MODELS_DIR / name
+    _jpeg_texture(mesh)
     mesh.export(out)
     print(f"[GLB] {out.relative_to(ROOT)}  ({out.stat().st_size/1e6:.1f} MB, 삼각형 {len(mesh.faces):,})")
     return out

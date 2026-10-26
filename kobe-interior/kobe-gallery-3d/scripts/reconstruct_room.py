@@ -22,6 +22,7 @@ from scipy import ndimage
 
 import common as C
 import texsample as T
+import bake_textures as B
 
 WOOD = [142, 96, 60, 255]; GRAY = [181, 178, 173, 255]; BLACK = [28, 28, 28, 255]; CEIL = [236, 234, 228, 255]
 TILE = [225, 228, 226, 255]; WALL_T = 0.10; CELL = 0.10
@@ -107,6 +108,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--chair-rail", type=float); ap.add_argument("--baseboard", type=float)
     ap.add_argument("--central-column"); ap.add_argument("--landmark", action="append", default=[], help="name=x,z")
+    ap.add_argument("--no-bake", action="store_true", help="스캔 텍스처 베이크 생략 (회색 박스만)")
     args = ap.parse_args()
 
     meta = C.load_meta()
@@ -118,6 +120,14 @@ def main():
     scan = trimesh.load(src, force="mesh", process=False)
     if isinstance(scan, trimesh.Scene):
         scan = trimesh.util.concatenate(list(scan.dump()))
+    # 텍스처는 재인코딩 전 원본(scan_cleaned_raw.glb)의 것을 쓴다 — 평탄화본과 위상이 같으므로 UV 는 그대로 유효
+    raw_p = C.MODELS_DIR / "scan_cleaned_raw.glb"
+    if raw_p.exists() and src.name == "scan_cleaned.glb":
+        raw = trimesh.load(raw_p, force="mesh", process=False)
+        if isinstance(raw, trimesh.Scene):
+            raw = trimesh.util.concatenate(list(raw.dump()))
+        if len(raw.faces) == len(scan.faces) and getattr(raw.visual, "kind", None) == "texture":
+            scan.visual.material = raw.visual.material
     ceil_h = meta.get("ceiling_height_m") or float(scan.bounds[1][1])
     n, c, a = scan.face_normals, scan.triangles_center, scan.area_faces
     bmin, bmax = scan.bounds
@@ -413,6 +423,28 @@ def main():
         parts.append(box([fx[1] - fx[0], ceil_h, fz[1] - fz[0]], [np.mean(fx), ceil_h / 2, np.mean(fz)], GRAY, b["id"]))
         for t, hh, nm in ((base / 2, base, "_baseboard"), (chair - chair_thick / 2, chair_thick, "_chairrail")):
             parts.append(box([fx[1] - fx[0] + 0.012, hh, fz[1] - fz[0] + 0.012], [np.mean(fx), t, np.mean(fz)], BLACK, b["id"] + nm))
+    # ---------------- 스캔 텍스처 베이크 (벽면·기둥면·바닥·천장) → 실제 모습
+    if not args.no_bake:
+        tex_parts = []
+        for w in walls:
+            ax = 0 if w["axis"] == "x" else 2
+            sides = [w["inward"], -w["inward"]] if w["two_sided"] else [w["inward"]]
+            for sd in sides:
+                q = B.bake_vertical(scan, ax, w["offset"], w["from"], w["to"], sd, ceil_h, f"{w['id']}_tex{'' if sd == w['inward'] else '_b'}", w["openings"])
+                if q is not None: tex_parts.append(q)
+        for b in blobs:
+            if b["type"] not in ("wide_column", "thin_column", "enclosure"):
+                continue
+            fx, fz = b["footprint"]["x"], b["footprint"]["z"]
+            for ax, (lo, hi), (olo, ohi) in ((0, fx, fz), (2, fz, fx)):
+                for val, sd in ((lo, -1), (hi, 1)):
+                    q = B.bake_vertical(scan, ax, val, olo, ohi, sd, ceil_h, f"{b['id']}_tex_{ax}{'p' if sd > 0 else 'n'}")
+                    if q is not None: tex_parts.append(q)
+        fq = B.bake_horizontal(scan, 0.0, +1, floor_occ, origin, CELL, "floor_tex")
+        cq = B.bake_horizontal(scan, ceil_h, -1, floor_occ, origin, CELL, "ceiling_tex")
+        tex_parts += [q for q in (fq, cq) if q is not None]
+        parts += tex_parts
+        print(f"[텍스처] 베이크 {len(tex_parts)} 면")
     scene = trimesh.Scene()
     for p in parts:
         if p is not None:
