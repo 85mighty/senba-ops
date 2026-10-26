@@ -37,7 +37,11 @@ def main():
     bmin, bmax = mesh.bounds
 
     # 컴포넌트 라벨 (face 단위) — visual(UV) 보존을 위해 서브메쉬 대신 face mask 사용
-    labels = trimesh.graph.connected_component_labels(mesh.face_adjacency, node_count=len(mesh.faces))
+    # OBJ 는 텍스처 좌표가 다른 정점이 분리돼 있어 그대로 두면 한 벽이 수천 조각으로 보인다.
+    # 연결성 판정만 위치 기준으로 정점을 합친 복사본에서 계산하고, 내보내는 메쉬(UV)는 건드리지 않는다.
+    conn = mesh.copy(); conn.merge_vertices(merge_tex=True, merge_norm=True)
+    assert len(conn.faces) == len(mesh.faces), "merge_vertices 가 면 수를 바꿈"
+    labels = trimesh.graph.connected_component_labels(conn.face_adjacency, node_count=len(mesh.faces))
     ids, counts = np.unique(labels, return_counts=True)
     main_id = ids[np.argmax(counts)]
     main_mask = labels == main_id

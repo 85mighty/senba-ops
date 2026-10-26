@@ -19,7 +19,7 @@ await new Promise((res, rej) => { const t = setTimeout(() => rej(new Error('vite
 const problems = [];
 const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 try {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  const page = await browser.newPage({ viewport: { width: 1100, height: 700 } }); page.setDefaultTimeout(90000);
   page.on('console', (m) => { if (m.type() === 'error') problems.push(`console.error: ${m.text()}`); });
   page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));
   page.on('response', (r) => { if (r.status() >= 400) problems.push(`HTTP ${r.status()} ${r.url()}`); });
@@ -29,7 +29,7 @@ try {
   console.log('불러온 모델:', loaded); if (errs.length) problems.push(...errs.map((e) => `viewer: ${e}`));
   const modes = ['original', 'cleaned', 'reconstructed', 'interior'];
   for (const m of modes) {
-    await page.click(`button[data-mode=${m}]`); await wait(600);
+    await page.click(`button[data-mode=${m}]`, { force: true }); await wait(600);
     const f0 = await page.evaluate(() => window.__viewer.frames); await wait(400); const f1 = await page.evaluate(() => window.__viewer.frames);
     if (f1 <= f0) problems.push(`렌더 루프 정지 (mode=${m})`);
     const cam = await page.evaluate(() => window.__viewer.camera.position.toArray().map((v) => +v.toFixed(3)));
@@ -40,7 +40,14 @@ try {
   await page.check('#hideCeiling'); await page.check('#showDims'); await wait(300); await page.screenshot({ path: path.join(root, 'screenshots', 'interior_section_dims.png') });
   await page.uncheck('#hideCeiling');
   // 큰 기둥 북마크로 이동한 뒤 실시간 반사 모드 캡처 (소프트웨어 GL 에선 매우 느리므로 캡처 후 환경맵으로 복귀)
-  const bms = await page.$$('#bookmarks button'); for (const b of bms) { await b.click({ timeout: 10000 }); await wait(700); }
+  // 북마크마다 ① 원본 / ③ 복원 / ④ A안 캡처 → 사진과 대조용 (screenshots/compare_*.png)
+  const bms = await page.$$('#bookmarks button');
+  for (const b of bms) {
+    const name = (await b.textContent()).replace(/[^가-힣a-zA-Z0-9]/g, '');
+    await b.click({ timeout: 90000, force: true }); await wait(800);
+    for (const m of ['original', 'reconstructed', 'interior']) { await page.click(`button[data-mode=${m}]`, { force: true }); await wait(500); await page.screenshot({ path: path.join(root, 'screenshots', `compare_${name}_${m}.png`) }); }
+  }
+  await page.click('button[data-mode=interior]');
   await page.screenshot({ path: path.join(root, 'screenshots', 'interior_column_mirror_env.png') });
   await page.selectOption('#mirrorMode', 'reflector'); await wait(1500);
   await page.screenshot({ path: path.join(root, 'screenshots', 'interior_column_mirror_reflector.png'), timeout: 60000 });

@@ -109,10 +109,15 @@ export class Viewer {
     const els = this.meta.elements || []; const eye = 1.6; const bm = [];
     bm.push({ name: '메인', pos: [c.x + s.x * 0.35, 1.9, c.z + s.z * 0.4], tgt: [c.x, 1.1, c.z] });
     bm.push({ name: '전체(위)', pos: [c.x + s.x * 0.9, s.y * 1.8, c.z + s.z * 0.9], tgt: [c.x, 0.8, c.z] });
+    const lm = this.meta.landmarks || {};
+    // 랜드마크 X 를 바라보는 북마크. X_from 이 있으면 그 자리에서, 없으면 방 중심 쪽으로 dist 만큼 물러난 자리에서.
+    const look = (name, label, dist = 1.2) => { const p = lm[name]; if (!p) return; const f = lm[name + '_from']; if (f) { bm.push({ name: label, pos: [f.x, eye, f.z], tgt: [p.x, 1.2, p.z] }); return; } const dx = c.x - p.x, dz = c.z - p.z; const d = Math.hypot(dx, dz) || 1; bm.push({ name: label, pos: [p.x + dx / d * dist, eye, p.z + dz / d * dist], tgt: [p.x, 1.2, p.z] }); };
+    const lookFrom = (name, label, dist = 2.2) => look(name, label, dist);
+    if (lm.entrance) look('entrance', '입구'); if (lm.windows) lookFrom('windows', '창가', 2.5); if (lm.kitchen) lookFrom('kitchen', '주방'); if (lm.toilet) lookFrom('toilet', '화장실');
     const walls = els.filter((e) => e.type === 'wall');
     const openings = walls.flatMap((w) => w.openings.map((o) => ({ w, o })));
     const atOpening = (w, o, dist) => { const t = (o.from + o.to) / 2; const p = w.axis === 'x' ? [w.offset + w.inward * dist, eye, t] : [t, eye, w.offset + w.inward * dist]; return p; };
-    if (openings.length) {
+    if (Object.keys(lm).length) { /* 랜드마크 기반 북마크 사용 */ } else if (openings.length) {
       // 가장 긴 공백 = 창 후보, 가장 짧은 = 문(입구) 후보
       const sorted = [...openings].sort((a, b) => (b.o.to - b.o.from) - (a.o.to - a.o.from));
       const win = sorted[0], door = sorted[sorted.length - 1];

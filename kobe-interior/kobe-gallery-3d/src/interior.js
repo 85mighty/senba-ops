@@ -21,7 +21,8 @@ export class InteriorA {
   get chair() { return this.meta.chair_rail_height_m || 0.95; }
   get base() { return this.meta.baseboard_height_m || 0.10; }
   walls() { return (this.meta.elements || []).filter((e) => e.type === 'wall'); }
-  columns() { return (this.meta.elements || []).filter((e) => ['wide_column', 'thin_column', 'partition'].includes(e.type)); }
+  columns() { return (this.meta.elements || []).filter((e) => ['wide_column', 'thin_column'].includes(e.type)); }
+  blockers() { return (this.meta.elements || []).filter((e) => e.footprint); }
   central() { return (this.meta.elements || []).find((e) => e.id === this.opts.central); }
 
   buildAll() { for (const k of LAYERS) this['build_' + k](); }
@@ -110,7 +111,7 @@ export class InteriorA {
     const g = this.layers.gallery_art; const gold = new THREE.MeshStandardMaterial({ color: GOLD, metalness: 0.8, roughness: 0.35 });
     const yC = this.chair + (this.ceil - this.chair) * 0.42; let i = 0;
     for (const w of this.walls()) for (const [a, b] of this.wallRuns(w, 0.5)) {
-      const L = b - a; const n = Math.floor(L / 1.7); if (n < 1) continue; const step = L / n;
+      const L = b - a; const n = Math.floor(L / 1.3); if (n < 1) continue; const step = L / n;
       for (let k = 0; k < n; k++) {
         const t = a + step * (k + 0.5); const big = i % 2 === 0; const wd = big ? 0.72 : 0.56, ht = big ? 0.92 : 0.72;
         const grp = new THREE.Group(); grp.name = 'artwork';
@@ -144,7 +145,7 @@ export class InteriorA {
   build_furniture() {
     const g = this.layers.furniture; const box = this.v.roomBox(); const m = box.min, M = box.max;
     const wood = new THREE.MeshStandardMaterial({ color: 0xdccbb0, roughness: 0.7 }); const leg = new THREE.MeshStandardMaterial({ color: BLACK, roughness: 0.5 });
-    const blocks = this.columns().map((c) => c.footprint).concat((this.meta.elements || []).filter((e) => e.type === 'fixture_candidate').map((e) => e.footprint));
+    const blocks = this.blockers().map((c) => c.footprint);
     const clear = (x, z, r) => blocks.every((f) => x + r < f.x[0] || x - r > f.x[1] || z + r < f.z[0] || z - r > f.z[1]);
     let placements = this.furniturePlacements;
     if (!placements) {
