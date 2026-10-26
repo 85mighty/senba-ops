@@ -13,7 +13,9 @@ const LEDGER_ID = '1sUXyrXxYzl_n6n5T4dV_flQ6Ocli3c0B-Ggbwzw5YC4';
 const SHEET_ID = '1OiQnj_slGsZvQ8BBQBP6a6eK3_j4J35nCReSTT2HRgc';
 const TAB = '인건비 시뮬';
 const RULE_TAG = '규칙v5 확정(아이미 토일월화목·마미 금+토일 10:15-12:45)';
-const MONTHS = ['2026-09', '2026-10'];
+const HOLI = { '2026-11-03': '文化の日', '2026-11-23': '勤労感謝の日' };
+const MONTHS = ['2026-09', '2026-10', '2026-11'];
+const PROJ = { month: '2026-11', base: '2026-10' };   // 11월 예상 = 10월 요일별 평균 일당 × 11월 요일 수
 const WAGE = 1200;
 const WD = '日月火水木金土';
 const NCOL = 9;
@@ -52,7 +54,7 @@ function current(ymd, bk) {
   const rows = [], titles = [];
   const push = r => { rows.push(r); return rows.length - 1; };
   const hdrIdx = [], bandRanges = [], noteIdx = [];
-  const monthSummary = {};
+  const monthSummary = {}, wdCost = {};   // wdCost[ym][dow] = { cost, days }
   for (const ym of MONTHS) {
     const tot = { cur: 0, fix: 0, noGuar: 0, wedOpen: 0, wedDays: 0, mami: 0, aimi: 0, guar: 0, standbyDays: 0, bookings: 0, openDays: 0 };
     const byWd = Array.from({ length: 7 }, () => ({ days: 0, mami: 0, aimi: 0, mamiDays: 0, aimiDays: 0 }));
@@ -69,11 +71,12 @@ function current(ymd, bk) {
       tot.mami += m; tot.aimi += a; tot.guar += standby; if (standby) tot.standbyDays++; if (wedExtra) tot.wedDays++;
       tot.bookings += bk.length; if (!p.closed) tot.openDays++;
       const w = byWd[dow(ymd)]; w.days++; w.mami += m; w.aimi += a; if (m) w.mamiDays++; if (a) w.aimiDays++;
+      const wc = ((wdCost[ym] = wdCost[ym] || {})[dow(ymd)] = wdCost[ym][dow(ymd)] || { cost: 0, days: 0 }); wc.cost += m + a; wc.days++;
       const fmtS = s => s ? `${SHIFT.hm(s.start)}-${SHIFT.hm(s.end)}${s.standby ? '(대기)' : ''}${s.cleanOnly ? '(청소)' : ''}` : '';
       dayRows.push([ymd.slice(5).replace('-', '/') + '(' + WD[dow(ymd)] + ')', bk.length, p.closed ? '휴무' : fmtS(p.mami), m || '', p.closed ? '' : fmtS(p.aimi), a || '', m + a, cur, p.warns.length ? p.warns[0].ko : '']);
     }
     monthSummary[ym] = tot;
-    const label = (ym === '2026-10' ? ym + ' (접수분 기준)' : ym) + ' ' + RULE_TAG;
+    const label = (ym >= '2026-10' ? ym + ' (접수분 기준)' : ym) + ' ' + RULE_TAG;
     titles.push(push([`${label} 인건비 — ①현행 ${tot.cur.toLocaleString('ja-JP')}엔 → ②새 규칙(고정) ${tot.fix.toLocaleString('ja-JP')}엔 (마미 ${tot.mami.toLocaleString('ja-JP')} + 아이미 ${tot.aimi.toLocaleString('ja-JP')}) | ③보장 제외 ${tot.noGuar.toLocaleString('ja-JP')}엔 (보장비용 ${tot.guar.toLocaleString('ja-JP')}·${tot.standbyDays}일) | ④수요일도 영업 ${tot.wedOpen.toLocaleString('ja-JP')}엔`]));
     hdrIdx.push(push(['요일', '일수', '마미짱 출근일', '마미짱 급여', '아이미짱 출근일', '아이미짱 급여', '합계', '', '']));
     const b0 = rows.length;
@@ -83,6 +86,15 @@ function current(ymd, bk) {
     hdrIdx.push(push(['날짜', '예약', '마미짱', '급여', '아이미짱', '급여', '합계(새 규칙)', '①현행', '비고']));
     const d0 = rows.length; for (const r of dayRows) push(r); bandRanges.push([d0, rows.length]);
     push([]);
+  }
+  {   // 11월 예상 (10월 요일별 평균 일당 기준)
+    const base = wdCost[PROJ.base] || {}; let est = 0, estDays = 0; const parts = [];
+    const byD = Array.from({ length: 7 }, () => 0);
+    for (const ymd of daysIn(PROJ.month)) { const d = dow(ymd); const avg = base[d] ? base[d].cost / base[d].days : 0; est += avg; byD[d] += avg; estDays++; }
+    for (const d of [2, 3, 4, 5, 6, 0, 1]) parts.push(WD[d] + ' ' + Math.round(byD[d]).toLocaleString('ja-JP'));
+    const act = monthSummary[PROJ.month];
+    titles.push(push([`${PROJ.month} 예상 인건비 약 ${Math.round(est).toLocaleString('ja-JP')}엔 (10월 요일별 평균 일당 × 11월 요일 수 · ${parts.join(' / ')}) | 현재 접수분만 적용 시 ${act.fix.toLocaleString('ja-JP')}엔 | 공휴일 ${Object.entries(HOLI).map(([k, v]) => k.slice(5) + ' ' + v).join(', ')}`]));
+    monthSummary.proj = est;
   }
   noteIdx.push(push(['※ 코스 시간은 예약관리의 코스명에서 추출(없으면 2시간) · 급여 1,200엔/h, 15분 단위 올림 · ①현행 = 아이미짱만 금토일월(화수목·주말 오전은 사장님) · 10월은 아직 접수 중인 예약이라 월말 실제치는 더 늘어남']));
 
@@ -110,5 +122,6 @@ function current(ymd, bk) {
   await sheets.spreadsheets.batchUpdate({ spreadsheetId: SHEET_ID, requestBody: { requests: R } });
 
   console.log(`[인건비 시뮬 완료]`);
+  console.log(`${PROJ.month} 예상: 약 ${Math.round(monthSummary.proj).toLocaleString('ja-JP')}엔`);
   for (const ym of MONTHS) { const t = monthSummary[ym]; console.log(`${ym}: 예약 ${t.bookings}건 영업 ${t.openDays}일 | ①현행 ${t.cur.toLocaleString('ja-JP')} | ②고정 ${t.fix.toLocaleString('ja-JP')} (마미 ${t.mami.toLocaleString('ja-JP')} / 아이미 ${t.aimi.toLocaleString('ja-JP')}) | ③보장제외 ${t.noGuar.toLocaleString('ja-JP')} (보장 ${t.guar.toLocaleString('ja-JP')}·${t.standbyDays}일) | ④수요일도 영업 ${t.wedOpen.toLocaleString('ja-JP')} (${t.wedDays}일)`); }
 })().catch(e => { console.error('ERROR:', e.response?.data?.error?.message || e.message); process.exit(1); });
