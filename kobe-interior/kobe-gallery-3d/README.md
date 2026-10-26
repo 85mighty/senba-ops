@@ -37,6 +37,11 @@ npm run dev                               # 터미널에 뜨는 http://localhost
 정적 서버로 보려면 `npm run build` 후 `cd dist && python3 -m http.server 8000` → `http://localhost:8000/`.
 (Vite 가 출력하는 포트를 그대로 쓰면 된다. 8000 을 강제하지 않는다.)
 
+## 폰·아이패드에서 보기 (호스팅)
+- **claude.ai 아티팩트(비공개, 로그인 필요)**: https://claude.ai/artifact/GzKU6De3CW6SuNwK2Tmt8M — 모델을 base64 텍스트로 묶은 빌드(`VITE_MODEL_B64=1`). GLB 내보내기 버튼은 이 환경에선 동작하지 않는다.
+- **GitHub Pages(공개 URL)**: 저장소 Settings → Pages → Source "Deploy from a branch" → Branch `claude/blissful-gauss-qzpvom`, 폴더 `/ (root)` → Save.
+  몇 분 뒤 `https://85mighty.github.io/senba-ops/kobe-interior/kobe-gallery-3d/app/` 에서 열린다 (app/ 이 ../assets/models 를 상대경로로 읽으므로 브랜치 루트 배포여야 한다).
+
 ## 뷰어 사용법
 | 버튼/옵션 | 동작 |
 |---|---|

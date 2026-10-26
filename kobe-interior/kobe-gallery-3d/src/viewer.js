@@ -5,12 +5,20 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 // 개발 서버(npm run dev)는 assets/ 를 루트로 서빙 → 'models/..', 빌드본(app/)은 ../assets/models/.. 를 참조
-const BASE = import.meta.env.DEV ? '' : '../assets/';
+const BASE = import.meta.env.DEV ? '' : (import.meta.env.VITE_MODEL_BASE ?? '../assets/');  // 배포처에 따라 VITE_MODEL_BASE 로 변경 가능
+// VITE_MODEL_B64=1 이면 GLB 를 base64 텍스트(.glb.txt)로 받아 디코드 (GLB 를 직접 서빙하지 않는 호스팅용)
+const B64 = import.meta.env.VITE_MODEL_B64 === '1';
+const EXT = B64 ? '.glb.txt' : '.glb';
 export const MODELS = {
-  original: BASE + 'models/scan_original.glb',
-  cleaned: BASE + 'models/scan_cleaned.glb',
-  reconstructed: BASE + 'models/reconstructed_room.glb',
+  original: BASE + 'models/scan_original' + EXT,
+  cleaned: BASE + 'models/scan_cleaned' + EXT,
+  reconstructed: BASE + 'models/reconstructed_room' + EXT,
 };
+function b64ToBuffer(text) {
+  const bin = atob(text.replace(/\s+/g, '')); const u8 = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  return u8.buffer;
+}
 
 export class Viewer {
   constructor(canvas, meta, { onError, onProgress } = {}) {
@@ -55,9 +63,17 @@ export class Viewer {
     await Promise.all(names.map(async (name) => {
       const url = MODELS[name];
       try {
-        const head = await fetch(url, { method: 'HEAD' });
-        if (!head.ok) throw new Error(`HTTP ${head.status} — 파일이 없거나 경로가 다릅니다: ${url}\n(assets/models/ 에 ${url.split('/').pop()} 가 있는지, 파이프라인을 실행했는지 확인)`);
-        const gltf = await new Promise((res, rej) => loader.load(url, res, undefined, (e) => rej(new Error(`GLB 파싱 실패 ${url}: ${e?.message || e}`))));
+        let gltf;
+        if (B64) {
+          const r = await fetch(url);
+          if (!r.ok) throw new Error(`HTTP ${r.status} — 모델 파일을 받지 못했습니다: ${url}`);
+          const buf = b64ToBuffer(await r.text());
+          gltf = await new Promise((res, rej) => loader.parse(buf, '', res, (e) => rej(new Error(`GLB 파싱 실패 ${url}: ${e?.message || e}`))));
+        } else {
+          const head = await fetch(url, { method: 'HEAD' });
+          if (!head.ok && head.status !== 405 && head.status !== 501) throw new Error(`HTTP ${head.status} — 파일이 없거나 경로가 다릅니다: ${url}\n(assets/models/ 에 ${url.split('/').pop()} 가 있는지, 파이프라인을 실행했는지 확인)`);
+          gltf = await new Promise((res, rej) => loader.load(url, res, undefined, (e) => rej(new Error(`GLB 파싱 실패 ${url}: ${e?.message || e}`))));
+        }
         const root = gltf.scene; root.name = name;
         root.traverse((o) => { if (o.isMesh) { o.frustumCulled = true; o.userData.model = name; this.prepMaterial(o); } });
         this.groups[name].add(root); this.loaded[name] = root;
