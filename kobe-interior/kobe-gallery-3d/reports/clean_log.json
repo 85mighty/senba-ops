@@ -1,0 +1,10172 @@
+{
+ "params": {
+  "input": null,
+  "min_faces": 200,
+  "min_area": 0.02,
+  "detach": 0.08,
+  "keep": "",
+  "drop": ""
+ },
+ "faces_before": 161336,
+ "faces_after": 160599,
+ "components_total": 726,
+ "components_dropped": 104,
+ "components": [
+  {
+   "id": 0,
+   "faces": 150744,
+   "decision": "keep",
+   "reason": "주 구조(최대 컴포넌트)"
+  },
+  {
+   "id": 1,
+   "faces": 316,
+   "area_m2": 0.0903,
+   "bbox_diag_m": 0.737,
+   "dist_to_main_m": 0.185,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "크기 충분"
+  },
+  {
+   "id": 2,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.021,
+   "dist_to_main_m": 0.011,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 3,
+   "faces": 3179,
+   "area_m2": 2.4286,
+   "bbox_diag_m": 2.769,
+   "dist_to_main_m": 1.099,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": true
+   },
+   "decision": "keep",
+   "reason": "크기 충분"
+  },
+  {
+   "id": 4,
+   "faces": 1,
+   "area_m2": 0.0012,
+   "bbox_diag_m": 0.098,
+   "dist_to_main_m": 1.075,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 1.08m, 바닥/천장/외벽 미접촉) · 1면 0.001m²"
+  },
+  {
+   "id": 5,
+   "faces": 2,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.053,
+   "dist_to_main_m": 1.033,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 1.03m, 바닥/천장/외벽 미접촉) · 2면 0.000m²"
+  },
+  {
+   "id": 6,
+   "faces": 2,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.016,
+   "dist_to_main_m": 0.0,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 7,
+   "faces": 2,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.025,
+   "dist_to_main_m": 0.0,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 8,
+   "faces": 1174,
+   "area_m2": 0.3552,
+   "bbox_diag_m": 1.327,
+   "dist_to_main_m": 0.118,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "크기 충분"
+  },
+  {
+   "id": 9,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.078,
+   "dist_to_main_m": 0.048,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 10,
+   "faces": 3,
+   "area_m2": 0.0008,
+   "bbox_diag_m": 0.052,
+   "dist_to_main_m": 0.025,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 11,
+   "faces": 2,
+   "area_m2": 0.0005,
+   "bbox_diag_m": 0.047,
+   "dist_to_main_m": 0.026,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 12,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.032,
+   "dist_to_main_m": 0.122,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.12m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 13,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.038,
+   "dist_to_main_m": 0.134,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.13m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 14,
+   "faces": 16,
+   "area_m2": 0.0021,
+   "bbox_diag_m": 0.069,
+   "dist_to_main_m": 0.181,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.18m, 바닥/천장/외벽 미접촉) · 16면 0.002m²"
+  },
+  {
+   "id": 15,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.041,
+   "dist_to_main_m": 0.161,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.16m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 16,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.026,
+   "dist_to_main_m": 0.016,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 17,
+   "faces": 56,
+   "area_m2": 0.0105,
+   "bbox_diag_m": 0.231,
+   "dist_to_main_m": 0.12,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.12m, 바닥/천장/외벽 미접촉) · 56면 0.010m²"
+  },
+  {
+   "id": 18,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.035,
+   "dist_to_main_m": 0.101,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.10m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 19,
+   "faces": 2,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.057,
+   "dist_to_main_m": 0.025,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 20,
+   "faces": 2,
+   "area_m2": 0.0008,
+   "bbox_diag_m": 0.067,
+   "dist_to_main_m": 0.025,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 21,
+   "faces": 1,
+   "area_m2": 0.0005,
+   "bbox_diag_m": 0.055,
+   "dist_to_main_m": 0.0,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 22,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.045,
+   "dist_to_main_m": 0.035,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 23,
+   "faces": 2,
+   "area_m2": 0.0022,
+   "bbox_diag_m": 0.111,
+   "dist_to_main_m": 0.047,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 24,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.038,
+   "dist_to_main_m": 0.02,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 25,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.037,
+   "dist_to_main_m": 0.024,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 26,
+   "faces": 4,
+   "area_m2": 0.0015,
+   "bbox_diag_m": 0.082,
+   "dist_to_main_m": 0.051,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 27,
+   "faces": 30,
+   "area_m2": 0.0093,
+   "bbox_diag_m": 0.201,
+   "dist_to_main_m": 0.041,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 28,
+   "faces": 6,
+   "area_m2": 0.0013,
+   "bbox_diag_m": 0.067,
+   "dist_to_main_m": 0.031,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 29,
+   "faces": 2,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.06,
+   "dist_to_main_m": 0.036,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 30,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.051,
+   "dist_to_main_m": 0.035,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 31,
+   "faces": 14,
+   "area_m2": 0.0029,
+   "bbox_diag_m": 0.121,
+   "dist_to_main_m": 0.037,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 32,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.037,
+   "dist_to_main_m": 0.026,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 33,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.031,
+   "dist_to_main_m": 0.015,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 34,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.036,
+   "dist_to_main_m": 0.031,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 35,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.004,
+   "dist_to_main_m": 0.027,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 36,
+   "faces": 31,
+   "area_m2": 0.0078,
+   "bbox_diag_m": 0.186,
+   "dist_to_main_m": 0.06,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 37,
+   "faces": 53,
+   "area_m2": 0.0167,
+   "bbox_diag_m": 0.291,
+   "dist_to_main_m": 0.066,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 38,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.03,
+   "dist_to_main_m": 0.021,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 39,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.033,
+   "dist_to_main_m": 0.011,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 40,
+   "faces": 3,
+   "area_m2": 0.001,
+   "bbox_diag_m": 0.058,
+   "dist_to_main_m": 0.134,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.13m, 바닥/천장/외벽 미접촉) · 3면 0.001m²"
+  },
+  {
+   "id": 41,
+   "faces": 4,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.057,
+   "dist_to_main_m": 0.131,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.13m, 바닥/천장/외벽 미접촉) · 4면 0.001m²"
+  },
+  {
+   "id": 42,
+   "faces": 1,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.055,
+   "dist_to_main_m": 0.108,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.11m, 바닥/천장/외벽 미접촉) · 1면 0.001m²"
+  },
+  {
+   "id": 43,
+   "faces": 2,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.058,
+   "dist_to_main_m": 0.14,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.14m, 바닥/천장/외벽 미접촉) · 2면 0.001m²"
+  },
+  {
+   "id": 44,
+   "faces": 14,
+   "area_m2": 0.0017,
+   "bbox_diag_m": 0.097,
+   "dist_to_main_m": 0.1,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.10m, 바닥/천장/외벽 미접촉) · 14면 0.002m²"
+  },
+  {
+   "id": 45,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.038,
+   "dist_to_main_m": 0.025,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 46,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.034,
+   "dist_to_main_m": 0.0,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 47,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.033,
+   "dist_to_main_m": 0.02,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 48,
+   "faces": 3,
+   "area_m2": 0.0016,
+   "bbox_diag_m": 0.076,
+   "dist_to_main_m": 0.089,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.09m, 바닥/천장/외벽 미접촉) · 3면 0.002m²"
+  },
+  {
+   "id": 49,
+   "faces": 23,
+   "area_m2": 0.0067,
+   "bbox_diag_m": 0.147,
+   "dist_to_main_m": 0.134,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.13m, 바닥/천장/외벽 미접촉) · 23면 0.007m²"
+  },
+  {
+   "id": 50,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.036,
+   "dist_to_main_m": 0.017,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 51,
+   "faces": 562,
+   "area_m2": 0.1736,
+   "bbox_diag_m": 0.912,
+   "dist_to_main_m": 0.154,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "크기 충분"
+  },
+  {
+   "id": 52,
+   "faces": 13,
+   "area_m2": 0.0023,
+   "bbox_diag_m": 0.093,
+   "dist_to_main_m": 0.075,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 53,
+   "faces": 4,
+   "area_m2": 0.002,
+   "bbox_diag_m": 0.123,
+   "dist_to_main_m": 0.102,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 54,
+   "faces": 280,
+   "area_m2": 0.0634,
+   "bbox_diag_m": 0.553,
+   "dist_to_main_m": 0.121,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "크기 충분"
+  },
+  {
+   "id": 55,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.021,
+   "dist_to_main_m": 0.107,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 56,
+   "faces": 29,
+   "area_m2": 0.0087,
+   "bbox_diag_m": 0.193,
+   "dist_to_main_m": 0.104,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 57,
+   "faces": 15,
+   "area_m2": 0.0052,
+   "bbox_diag_m": 0.168,
+   "dist_to_main_m": 0.107,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 58,
+   "faces": 3,
+   "area_m2": 0.0011,
+   "bbox_diag_m": 0.059,
+   "dist_to_main_m": 0.049,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 59,
+   "faces": 1,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.053,
+   "dist_to_main_m": 0.041,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 60,
+   "faces": 1,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.054,
+   "dist_to_main_m": 0.059,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 61,
+   "faces": 3,
+   "area_m2": 0.0012,
+   "bbox_diag_m": 0.079,
+   "dist_to_main_m": 0.054,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 62,
+   "faces": 2,
+   "area_m2": 0.0018,
+   "bbox_diag_m": 0.099,
+   "dist_to_main_m": 0.05,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 63,
+   "faces": 2,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.056,
+   "dist_to_main_m": 0.026,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 64,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.036,
+   "dist_to_main_m": 0.025,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 65,
+   "faces": 7,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.07,
+   "dist_to_main_m": 0.059,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 66,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.02,
+   "dist_to_main_m": 0.002,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 67,
+   "faces": 5,
+   "area_m2": 0.0022,
+   "bbox_diag_m": 0.09,
+   "dist_to_main_m": 0.133,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.13m, 바닥/천장/외벽 미접촉) · 5면 0.002m²"
+  },
+  {
+   "id": 68,
+   "faces": 1070,
+   "area_m2": 1.0719,
+   "bbox_diag_m": 2.077,
+   "dist_to_main_m": 0.137,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "떠 있지만 큼(1070면 1.07m²) — 가구/설비 가능, 검토 필요"
+  },
+  {
+   "id": 69,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.028,
+   "dist_to_main_m": 0.121,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.12m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 70,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.048,
+   "dist_to_main_m": 0.118,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.12m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 71,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.036,
+   "dist_to_main_m": 0.018,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 72,
+   "faces": 5,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.044,
+   "dist_to_main_m": 0.169,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.17m, 바닥/천장/외벽 미접촉) · 5면 0.000m²"
+  },
+  {
+   "id": 73,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.052,
+   "dist_to_main_m": 0.077,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 74,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.057,
+   "dist_to_main_m": 0.026,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 75,
+   "faces": 9,
+   "area_m2": 0.0021,
+   "bbox_diag_m": 0.092,
+   "dist_to_main_m": 0.128,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 76,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.041,
+   "dist_to_main_m": 0.027,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 77,
+   "faces": 1,
+   "area_m2": 0.0005,
+   "bbox_diag_m": 0.045,
+   "dist_to_main_m": 0.069,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 78,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.032,
+   "dist_to_main_m": 0.013,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 79,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.032,
+   "dist_to_main_m": 0.008,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 80,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.033,
+   "dist_to_main_m": 0.008,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 81,
+   "faces": 1,
+   "area_m2": 0.0005,
+   "bbox_diag_m": 0.049,
+   "dist_to_main_m": 0.025,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 82,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.036,
+   "dist_to_main_m": 0.024,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 83,
+   "faces": 2,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.056,
+   "dist_to_main_m": 0.022,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 84,
+   "faces": 12,
+   "area_m2": 0.0018,
+   "bbox_diag_m": 0.105,
+   "dist_to_main_m": 0.048,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 85,
+   "faces": 1,
+   "area_m2": 0.0005,
+   "bbox_diag_m": 0.043,
+   "dist_to_main_m": 0.029,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 86,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.034,
+   "dist_to_main_m": 0.021,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 87,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.032,
+   "dist_to_main_m": 0.058,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 88,
+   "faces": 5,
+   "area_m2": 0.0011,
+   "bbox_diag_m": 0.081,
+   "dist_to_main_m": 0.089,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.09m, 바닥/천장/외벽 미접촉) · 5면 0.001m²"
+  },
+  {
+   "id": 89,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.03,
+   "dist_to_main_m": 0.09,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.09m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 90,
+   "faces": 2,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.03,
+   "dist_to_main_m": 0.07,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 91,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.041,
+   "dist_to_main_m": 0.061,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 92,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.004,
+   "dist_to_main_m": 0.063,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 93,
+   "faces": 4,
+   "area_m2": 0.0015,
+   "bbox_diag_m": 0.081,
+   "dist_to_main_m": 0.064,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 94,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.036,
+   "dist_to_main_m": 0.0,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 95,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.03,
+   "dist_to_main_m": 0.13,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.13m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 96,
+   "faces": 27,
+   "area_m2": 0.003,
+   "bbox_diag_m": 0.136,
+   "dist_to_main_m": 0.156,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.16m, 바닥/천장/외벽 미접촉) · 27면 0.003m²"
+  },
+  {
+   "id": 97,
+   "faces": 3,
+   "area_m2": 0.0017,
+   "bbox_diag_m": 0.073,
+   "dist_to_main_m": 0.033,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 98,
+   "faces": 39,
+   "area_m2": 0.0634,
+   "bbox_diag_m": 0.582,
+   "dist_to_main_m": 0.077,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 99,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.052,
+   "dist_to_main_m": 0.008,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 100,
+   "faces": 2,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.028,
+   "dist_to_main_m": 0.084,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 101,
+   "faces": 2,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.031,
+   "dist_to_main_m": 0.089,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 102,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.03,
+   "dist_to_main_m": 0.079,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 103,
+   "faces": 73,
+   "area_m2": 0.0142,
+   "bbox_diag_m": 0.285,
+   "dist_to_main_m": 0.093,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 104,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.011,
+   "dist_to_main_m": 1.07,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 1.07m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 105,
+   "faces": 2,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.039,
+   "dist_to_main_m": 0.025,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 106,
+   "faces": 2,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.041,
+   "dist_to_main_m": 0.016,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 107,
+   "faces": 6,
+   "area_m2": 0.0017,
+   "bbox_diag_m": 0.094,
+   "dist_to_main_m": 0.078,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 108,
+   "faces": 1,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.051,
+   "dist_to_main_m": 0.052,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 109,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.037,
+   "dist_to_main_m": 0.035,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 110,
+   "faces": 3,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.033,
+   "dist_to_main_m": 0.028,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 111,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.027,
+   "dist_to_main_m": 0.0,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 112,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.035,
+   "dist_to_main_m": 0.0,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 113,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.031,
+   "dist_to_main_m": 0.016,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 114,
+   "faces": 2,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.023,
+   "dist_to_main_m": 0.051,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 115,
+   "faces": 8,
+   "area_m2": 0.0023,
+   "bbox_diag_m": 0.114,
+   "dist_to_main_m": 0.053,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 116,
+   "faces": 19,
+   "area_m2": 0.0061,
+   "bbox_diag_m": 0.163,
+   "dist_to_main_m": 0.149,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.15m, 바닥/천장/외벽 미접촉) · 19면 0.006m²"
+  },
+  {
+   "id": 117,
+   "faces": 2,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.035,
+   "dist_to_main_m": 0.027,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 118,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.034,
+   "dist_to_main_m": 0.017,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 119,
+   "faces": 2,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.056,
+   "dist_to_main_m": 0.025,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 120,
+   "faces": 3,
+   "area_m2": 0.0013,
+   "bbox_diag_m": 0.062,
+   "dist_to_main_m": 0.025,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 121,
+   "faces": 2,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.048,
+   "dist_to_main_m": 0.003,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 122,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.046,
+   "dist_to_main_m": 0.026,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 123,
+   "faces": 4,
+   "area_m2": 0.0015,
+   "bbox_diag_m": 0.086,
+   "dist_to_main_m": 0.058,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 124,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.038,
+   "dist_to_main_m": 1.043,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 1.04m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 125,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.031,
+   "dist_to_main_m": 1.061,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 1.06m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 126,
+   "faces": 13,
+   "area_m2": 0.003,
+   "bbox_diag_m": 0.122,
+   "dist_to_main_m": 0.13,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 127,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.021,
+   "dist_to_main_m": 0.009,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 128,
+   "faces": 7,
+   "area_m2": 0.0011,
+   "bbox_diag_m": 0.07,
+   "dist_to_main_m": 1.158,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 1.16m, 바닥/천장/외벽 미접촉) · 7면 0.001m²"
+  },
+  {
+   "id": 129,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.019,
+   "dist_to_main_m": 0.0,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 130,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.025,
+   "dist_to_main_m": 0.0,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 131,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.027,
+   "dist_to_main_m": 0.0,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 132,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.0,
+   "dist_to_main_m": 0.0,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 133,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.0,
+   "dist_to_main_m": 0.0,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 134,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.03,
+   "dist_to_main_m": 0.014,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 135,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.03,
+   "dist_to_main_m": 0.015,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 136,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.033,
+   "dist_to_main_m": 0.016,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 137,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.082,
+   "dist_to_main_m": 0.023,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 138,
+   "faces": 7,
+   "area_m2": 0.0011,
+   "bbox_diag_m": 0.089,
+   "dist_to_main_m": 0.057,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 139,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.032,
+   "dist_to_main_m": 0.133,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 140,
+   "faces": 14,
+   "area_m2": 0.0026,
+   "bbox_diag_m": 0.098,
+   "dist_to_main_m": 0.025,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 141,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.034,
+   "dist_to_main_m": 0.041,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 142,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.038,
+   "dist_to_main_m": 0.024,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 143,
+   "faces": 66,
+   "area_m2": 0.0113,
+   "bbox_diag_m": 0.276,
+   "dist_to_main_m": 0.107,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.11m, 바닥/천장/외벽 미접촉) · 66면 0.011m²"
+  },
+  {
+   "id": 144,
+   "faces": 2,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.046,
+   "dist_to_main_m": 0.051,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 145,
+   "faces": 2,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.033,
+   "dist_to_main_m": 0.032,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 146,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.032,
+   "dist_to_main_m": 0.002,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 147,
+   "faces": 1,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.057,
+   "dist_to_main_m": 0.021,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 148,
+   "faces": 2,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.018,
+   "dist_to_main_m": 0.022,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 149,
+   "faces": 1,
+   "area_m2": 0.0005,
+   "bbox_diag_m": 0.044,
+   "dist_to_main_m": 0.078,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 150,
+   "faces": 1,
+   "area_m2": 0.0005,
+   "bbox_diag_m": 0.043,
+   "dist_to_main_m": 0.027,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 151,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.029,
+   "dist_to_main_m": 0.021,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 152,
+   "faces": 4,
+   "area_m2": 0.0047,
+   "bbox_diag_m": 0.2,
+   "dist_to_main_m": 0.059,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 153,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.039,
+   "dist_to_main_m": 0.024,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 154,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.033,
+   "dist_to_main_m": 0.017,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 155,
+   "faces": 2,
+   "area_m2": 0.0008,
+   "bbox_diag_m": 0.06,
+   "dist_to_main_m": 0.03,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 156,
+   "faces": 2,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.04,
+   "dist_to_main_m": 0.021,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 157,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.037,
+   "dist_to_main_m": 0.022,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 158,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.03,
+   "dist_to_main_m": 0.014,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 159,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.031,
+   "dist_to_main_m": 0.02,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 160,
+   "faces": 446,
+   "area_m2": 0.1345,
+   "bbox_diag_m": 0.914,
+   "dist_to_main_m": 0.116,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "크기 충분"
+  },
+  {
+   "id": 161,
+   "faces": 2,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.001,
+   "dist_to_main_m": 0.184,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 162,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.009,
+   "dist_to_main_m": 0.187,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.19m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 163,
+   "faces": 2,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.05,
+   "dist_to_main_m": 0.126,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.13m, 바닥/천장/외벽 미접촉) · 2면 0.000m²"
+  },
+  {
+   "id": 164,
+   "faces": 13,
+   "area_m2": 0.0029,
+   "bbox_diag_m": 0.098,
+   "dist_to_main_m": 0.128,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.13m, 바닥/천장/외벽 미접촉) · 13면 0.003m²"
+  },
+  {
+   "id": 165,
+   "faces": 1,
+   "area_m2": 0.0005,
+   "bbox_diag_m": 0.05,
+   "dist_to_main_m": 0.027,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 166,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.002,
+   "dist_to_main_m": 0.001,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 167,
+   "faces": 20,
+   "area_m2": 0.0073,
+   "bbox_diag_m": 0.203,
+   "dist_to_main_m": 0.058,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 168,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.024,
+   "dist_to_main_m": 0.105,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 169,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.014,
+   "dist_to_main_m": 0.098,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 170,
+   "faces": 2,
+   "area_m2": 0.0008,
+   "bbox_diag_m": 0.061,
+   "dist_to_main_m": 0.049,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 171,
+   "faces": 2,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.058,
+   "dist_to_main_m": 0.03,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 172,
+   "faces": 1,
+   "area_m2": 0.0005,
+   "bbox_diag_m": 0.045,
+   "dist_to_main_m": 0.016,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 173,
+   "faces": 7,
+   "area_m2": 0.0027,
+   "bbox_diag_m": 0.116,
+   "dist_to_main_m": 0.094,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 174,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.038,
+   "dist_to_main_m": 0.095,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 175,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.041,
+   "dist_to_main_m": 0.037,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 176,
+   "faces": 2,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.036,
+   "dist_to_main_m": 0.014,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 177,
+   "faces": 3,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.045,
+   "dist_to_main_m": 0.001,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 178,
+   "faces": 1,
+   "area_m2": 0.0005,
+   "bbox_diag_m": 0.052,
+   "dist_to_main_m": 0.0,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 179,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.026,
+   "dist_to_main_m": 0.0,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 180,
+   "faces": 14,
+   "area_m2": 0.005,
+   "bbox_diag_m": 0.161,
+   "dist_to_main_m": 0.052,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 181,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.029,
+   "dist_to_main_m": 0.013,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 182,
+   "faces": 4,
+   "area_m2": 0.001,
+   "bbox_diag_m": 0.073,
+   "dist_to_main_m": 0.026,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 183,
+   "faces": 4,
+   "area_m2": 0.0016,
+   "bbox_diag_m": 0.086,
+   "dist_to_main_m": 0.082,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 184,
+   "faces": 5,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.058,
+   "dist_to_main_m": 0.102,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 185,
+   "faces": 4,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.026,
+   "dist_to_main_m": 0.002,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 186,
+   "faces": 5,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.06,
+   "dist_to_main_m": 0.054,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 187,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.029,
+   "dist_to_main_m": 0.057,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": true
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 188,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.039,
+   "dist_to_main_m": 0.0,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 189,
+   "faces": 2,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.015,
+   "dist_to_main_m": 0.0,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 190,
+   "faces": 120,
+   "area_m2": 0.0351,
+   "bbox_diag_m": 0.412,
+   "dist_to_main_m": 0.089,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 191,
+   "faces": 9,
+   "area_m2": 0.005,
+   "bbox_diag_m": 0.139,
+   "dist_to_main_m": 0.068,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 192,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.038,
+   "dist_to_main_m": 0.009,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 193,
+   "faces": 1,
+   "area_m2": 0.0005,
+   "bbox_diag_m": 0.045,
+   "dist_to_main_m": 0.025,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 194,
+   "faces": 6,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.079,
+   "dist_to_main_m": 0.043,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 195,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.037,
+   "dist_to_main_m": 0.01,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 196,
+   "faces": 2,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.039,
+   "dist_to_main_m": 0.054,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 197,
+   "faces": 1,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.053,
+   "dist_to_main_m": 0.012,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 198,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.032,
+   "dist_to_main_m": 0.014,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 199,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.034,
+   "dist_to_main_m": 0.008,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 200,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.029,
+   "dist_to_main_m": 0.012,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 201,
+   "faces": 21,
+   "area_m2": 0.0164,
+   "bbox_diag_m": 0.398,
+   "dist_to_main_m": 0.088,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.09m, 바닥/천장/외벽 미접촉) · 21면 0.016m²"
+  },
+  {
+   "id": 202,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.029,
+   "dist_to_main_m": 0.013,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 203,
+   "faces": 3,
+   "area_m2": 0.0015,
+   "bbox_diag_m": 0.077,
+   "dist_to_main_m": 0.06,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 204,
+   "faces": 3,
+   "area_m2": 0.0008,
+   "bbox_diag_m": 0.056,
+   "dist_to_main_m": 0.045,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 205,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.039,
+   "dist_to_main_m": 0.069,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 206,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.042,
+   "dist_to_main_m": 0.076,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 207,
+   "faces": 2,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.038,
+   "dist_to_main_m": 0.01,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 208,
+   "faces": 6,
+   "area_m2": 0.0057,
+   "bbox_diag_m": 0.132,
+   "dist_to_main_m": 0.044,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 209,
+   "faces": 1,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.053,
+   "dist_to_main_m": 0.031,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 210,
+   "faces": 1,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.052,
+   "dist_to_main_m": 0.055,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 211,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.029,
+   "dist_to_main_m": 0.011,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 212,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.033,
+   "dist_to_main_m": 0.01,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 213,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.018,
+   "dist_to_main_m": 0.025,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 214,
+   "faces": 8,
+   "area_m2": 0.0025,
+   "bbox_diag_m": 0.079,
+   "dist_to_main_m": 0.094,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.09m, 바닥/천장/외벽 미접촉) · 8면 0.003m²"
+  },
+  {
+   "id": 215,
+   "faces": 45,
+   "area_m2": 0.0119,
+   "bbox_diag_m": 0.19,
+   "dist_to_main_m": 0.075,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 216,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.032,
+   "dist_to_main_m": 0.066,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 217,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.034,
+   "dist_to_main_m": 0.005,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 218,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.012,
+   "dist_to_main_m": 0.009,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 219,
+   "faces": 2,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.036,
+   "dist_to_main_m": 0.18,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 220,
+   "faces": 3,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.039,
+   "dist_to_main_m": 0.047,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 221,
+   "faces": 74,
+   "area_m2": 0.0142,
+   "bbox_diag_m": 0.277,
+   "dist_to_main_m": 0.122,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 222,
+   "faces": 21,
+   "area_m2": 0.0107,
+   "bbox_diag_m": 0.253,
+   "dist_to_main_m": 0.062,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 223,
+   "faces": 1,
+   "area_m2": 0.0011,
+   "bbox_diag_m": 0.088,
+   "dist_to_main_m": 0.05,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 224,
+   "faces": 2,
+   "area_m2": 0.0008,
+   "bbox_diag_m": 0.065,
+   "dist_to_main_m": 0.023,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 225,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.032,
+   "dist_to_main_m": 0.0,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 226,
+   "faces": 168,
+   "area_m2": 0.0617,
+   "bbox_diag_m": 0.505,
+   "dist_to_main_m": 0.119,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.12m, 바닥/천장/외벽 미접촉) · 168면 0.062m²"
+  },
+  {
+   "id": 227,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.036,
+   "dist_to_main_m": 0.08,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.08m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 228,
+   "faces": 110,
+   "area_m2": 0.0304,
+   "bbox_diag_m": 0.558,
+   "dist_to_main_m": 0.08,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 229,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.028,
+   "dist_to_main_m": 0.128,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.13m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 230,
+   "faces": 34,
+   "area_m2": 0.0149,
+   "bbox_diag_m": 0.422,
+   "dist_to_main_m": 0.059,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 231,
+   "faces": 4,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.071,
+   "dist_to_main_m": 0.071,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 232,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.045,
+   "dist_to_main_m": 0.043,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 233,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.004,
+   "dist_to_main_m": 0.0,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 234,
+   "faces": 2,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.027,
+   "dist_to_main_m": 0.005,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 235,
+   "faces": 1,
+   "area_m2": 0.0005,
+   "bbox_diag_m": 0.05,
+   "dist_to_main_m": 0.138,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 236,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.038,
+   "dist_to_main_m": 0.026,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 237,
+   "faces": 24,
+   "area_m2": 0.0056,
+   "bbox_diag_m": 0.128,
+   "dist_to_main_m": 0.047,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 238,
+   "faces": 42,
+   "area_m2": 0.0115,
+   "bbox_diag_m": 0.183,
+   "dist_to_main_m": 0.083,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.08m, 바닥/천장/외벽 미접촉) · 42면 0.012m²"
+  },
+  {
+   "id": 239,
+   "faces": 2,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.073,
+   "dist_to_main_m": 0.06,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 240,
+   "faces": 12,
+   "area_m2": 0.0088,
+   "bbox_diag_m": 0.226,
+   "dist_to_main_m": 0.072,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 241,
+   "faces": 5,
+   "area_m2": 0.0015,
+   "bbox_diag_m": 0.086,
+   "dist_to_main_m": 0.083,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.08m, 바닥/천장/외벽 미접촉) · 5면 0.001m²"
+  },
+  {
+   "id": 242,
+   "faces": 3,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.029,
+   "dist_to_main_m": 0.013,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 243,
+   "faces": 5,
+   "area_m2": 0.0015,
+   "bbox_diag_m": 0.073,
+   "dist_to_main_m": 0.085,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.08m, 바닥/천장/외벽 미접촉) · 5면 0.001m²"
+  },
+  {
+   "id": 244,
+   "faces": 6,
+   "area_m2": 0.0022,
+   "bbox_diag_m": 0.105,
+   "dist_to_main_m": 0.117,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.12m, 바닥/천장/외벽 미접촉) · 6면 0.002m²"
+  },
+  {
+   "id": 245,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.036,
+   "dist_to_main_m": 0.083,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.08m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 246,
+   "faces": 35,
+   "area_m2": 0.0097,
+   "bbox_diag_m": 0.166,
+   "dist_to_main_m": 0.142,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 247,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.036,
+   "dist_to_main_m": 0.082,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 248,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.04,
+   "dist_to_main_m": 0.017,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 249,
+   "faces": 74,
+   "area_m2": 0.0278,
+   "bbox_diag_m": 0.364,
+   "dist_to_main_m": 0.06,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 250,
+   "faces": 8,
+   "area_m2": 0.0046,
+   "bbox_diag_m": 0.179,
+   "dist_to_main_m": 0.076,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 251,
+   "faces": 4,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.057,
+   "dist_to_main_m": 0.082,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.08m, 바닥/천장/외벽 미접촉) · 4면 0.001m²"
+  },
+  {
+   "id": 252,
+   "faces": 2,
+   "area_m2": 0.0009,
+   "bbox_diag_m": 0.067,
+   "dist_to_main_m": 0.039,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 253,
+   "faces": 17,
+   "area_m2": 0.0029,
+   "bbox_diag_m": 0.106,
+   "dist_to_main_m": 0.051,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 254,
+   "faces": 9,
+   "area_m2": 0.0031,
+   "bbox_diag_m": 0.118,
+   "dist_to_main_m": 0.053,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 255,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.029,
+   "dist_to_main_m": 0.062,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 256,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.034,
+   "dist_to_main_m": 0.085,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.08m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 257,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.027,
+   "dist_to_main_m": 0.074,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 258,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.036,
+   "dist_to_main_m": 0.025,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 259,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.037,
+   "dist_to_main_m": 0.064,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 260,
+   "faces": 81,
+   "area_m2": 0.0161,
+   "bbox_diag_m": 0.279,
+   "dist_to_main_m": 0.158,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 261,
+   "faces": 12,
+   "area_m2": 0.0076,
+   "bbox_diag_m": 0.257,
+   "dist_to_main_m": 0.038,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 262,
+   "faces": 2,
+   "area_m2": 0.0008,
+   "bbox_diag_m": 0.064,
+   "dist_to_main_m": 0.044,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 263,
+   "faces": 26,
+   "area_m2": 0.0035,
+   "bbox_diag_m": 0.217,
+   "dist_to_main_m": 0.156,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 264,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.03,
+   "dist_to_main_m": 0.015,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 265,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.033,
+   "dist_to_main_m": 0.024,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 266,
+   "faces": 15,
+   "area_m2": 0.0016,
+   "bbox_diag_m": 0.088,
+   "dist_to_main_m": 0.054,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 267,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.043,
+   "dist_to_main_m": 0.023,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 268,
+   "faces": 83,
+   "area_m2": 0.0204,
+   "bbox_diag_m": 0.4,
+   "dist_to_main_m": 0.079,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 269,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.043,
+   "dist_to_main_m": 0.025,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 270,
+   "faces": 45,
+   "area_m2": 0.0051,
+   "bbox_diag_m": 0.288,
+   "dist_to_main_m": 0.076,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 271,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.043,
+   "dist_to_main_m": 0.027,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 272,
+   "faces": 35,
+   "area_m2": 0.0098,
+   "bbox_diag_m": 0.303,
+   "dist_to_main_m": 0.109,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.11m, 바닥/천장/외벽 미접촉) · 35면 0.010m²"
+  },
+  {
+   "id": 273,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.027,
+   "dist_to_main_m": 0.073,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 274,
+   "faces": 51,
+   "area_m2": 0.0072,
+   "bbox_diag_m": 0.234,
+   "dist_to_main_m": 0.097,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 275,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.031,
+   "dist_to_main_m": 0.016,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 276,
+   "faces": 17,
+   "area_m2": 0.0045,
+   "bbox_diag_m": 0.124,
+   "dist_to_main_m": 0.056,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 277,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.035,
+   "dist_to_main_m": 0.02,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 278,
+   "faces": 11,
+   "area_m2": 0.0033,
+   "bbox_diag_m": 0.122,
+   "dist_to_main_m": 0.097,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.10m, 바닥/천장/외벽 미접촉) · 11면 0.003m²"
+  },
+  {
+   "id": 279,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.038,
+   "dist_to_main_m": 0.025,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 280,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.036,
+   "dist_to_main_m": 0.021,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 281,
+   "faces": 2,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.05,
+   "dist_to_main_m": 0.029,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 282,
+   "faces": 8,
+   "area_m2": 0.0029,
+   "bbox_diag_m": 0.116,
+   "dist_to_main_m": 0.043,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 283,
+   "faces": 6,
+   "area_m2": 0.0056,
+   "bbox_diag_m": 0.285,
+   "dist_to_main_m": 0.153,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.15m, 바닥/천장/외벽 미접촉) · 6면 0.006m²"
+  },
+  {
+   "id": 284,
+   "faces": 8,
+   "area_m2": 0.0028,
+   "bbox_diag_m": 0.133,
+   "dist_to_main_m": 0.042,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 285,
+   "faces": 2,
+   "area_m2": 0.0009,
+   "bbox_diag_m": 0.058,
+   "dist_to_main_m": 0.032,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 286,
+   "faces": 1,
+   "area_m2": 0.0008,
+   "bbox_diag_m": 0.069,
+   "dist_to_main_m": 0.024,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 287,
+   "faces": 1,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.07,
+   "dist_to_main_m": 0.103,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.10m, 바닥/천장/외벽 미접촉) · 1면 0.001m²"
+  },
+  {
+   "id": 288,
+   "faces": 4,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.039,
+   "dist_to_main_m": 0.113,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.11m, 바닥/천장/외벽 미접촉) · 4면 0.000m²"
+  },
+  {
+   "id": 289,
+   "faces": 3,
+   "area_m2": 0.0016,
+   "bbox_diag_m": 0.077,
+   "dist_to_main_m": 0.037,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 290,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.025,
+   "dist_to_main_m": 0.037,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 291,
+   "faces": 76,
+   "area_m2": 0.0159,
+   "bbox_diag_m": 0.323,
+   "dist_to_main_m": 0.095,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 292,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.029,
+   "dist_to_main_m": 0.063,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 293,
+   "faces": 3,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.034,
+   "dist_to_main_m": 0.09,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 294,
+   "faces": 37,
+   "area_m2": 0.0056,
+   "bbox_diag_m": 0.159,
+   "dist_to_main_m": 0.055,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 295,
+   "faces": 35,
+   "area_m2": 0.016,
+   "bbox_diag_m": 0.332,
+   "dist_to_main_m": 0.066,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 296,
+   "faces": 7,
+   "area_m2": 0.004,
+   "bbox_diag_m": 0.119,
+   "dist_to_main_m": 0.075,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 297,
+   "faces": 55,
+   "area_m2": 0.0088,
+   "bbox_diag_m": 0.265,
+   "dist_to_main_m": 0.127,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 298,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.043,
+   "dist_to_main_m": 0.114,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 299,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.029,
+   "dist_to_main_m": 0.147,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 300,
+   "faces": 2,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.04,
+   "dist_to_main_m": 0.037,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 301,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.039,
+   "dist_to_main_m": 0.026,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 302,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.061,
+   "dist_to_main_m": 0.015,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 303,
+   "faces": 2,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.059,
+   "dist_to_main_m": 0.021,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 304,
+   "faces": 4,
+   "area_m2": 0.001,
+   "bbox_diag_m": 0.079,
+   "dist_to_main_m": 0.119,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.12m, 바닥/천장/외벽 미접촉) · 4면 0.001m²"
+  },
+  {
+   "id": 305,
+   "faces": 4,
+   "area_m2": 0.0014,
+   "bbox_diag_m": 0.081,
+   "dist_to_main_m": 0.073,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 306,
+   "faces": 6,
+   "area_m2": 0.0019,
+   "bbox_diag_m": 0.129,
+   "dist_to_main_m": 0.092,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.09m, 바닥/천장/외벽 미접촉) · 6면 0.002m²"
+  },
+  {
+   "id": 307,
+   "faces": 1,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.053,
+   "dist_to_main_m": 0.072,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 308,
+   "faces": 3,
+   "area_m2": 0.0011,
+   "bbox_diag_m": 0.062,
+   "dist_to_main_m": 0.104,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.10m, 바닥/천장/외벽 미접촉) · 3면 0.001m²"
+  },
+  {
+   "id": 309,
+   "faces": 4,
+   "area_m2": 0.0013,
+   "bbox_diag_m": 0.08,
+   "dist_to_main_m": 0.027,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 310,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.028,
+   "dist_to_main_m": 0.022,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 311,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.033,
+   "dist_to_main_m": 0.025,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 312,
+   "faces": 5,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.04,
+   "dist_to_main_m": 0.004,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 313,
+   "faces": 18,
+   "area_m2": 0.0037,
+   "bbox_diag_m": 0.112,
+   "dist_to_main_m": 0.1,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 314,
+   "faces": 3,
+   "area_m2": 0.0009,
+   "bbox_diag_m": 0.06,
+   "dist_to_main_m": 0.037,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 315,
+   "faces": 18,
+   "area_m2": 0.0044,
+   "bbox_diag_m": 0.142,
+   "dist_to_main_m": 0.071,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 316,
+   "faces": 2,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.043,
+   "dist_to_main_m": 0.027,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 317,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.03,
+   "dist_to_main_m": 0.132,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.13m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 318,
+   "faces": 4,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.045,
+   "dist_to_main_m": 0.127,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.13m, 바닥/천장/외벽 미접촉) · 4면 0.000m²"
+  },
+  {
+   "id": 319,
+   "faces": 2,
+   "area_m2": 0.001,
+   "bbox_diag_m": 0.061,
+   "dist_to_main_m": 0.036,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 320,
+   "faces": 8,
+   "area_m2": 0.0021,
+   "bbox_diag_m": 0.073,
+   "dist_to_main_m": 0.14,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.14m, 바닥/천장/외벽 미접촉) · 8면 0.002m²"
+  },
+  {
+   "id": 321,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.028,
+   "dist_to_main_m": 0.01,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 322,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.045,
+   "dist_to_main_m": 0.114,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.11m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 323,
+   "faces": 2,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.053,
+   "dist_to_main_m": 0.015,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 324,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.048,
+   "dist_to_main_m": 0.024,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 325,
+   "faces": 13,
+   "area_m2": 0.0051,
+   "bbox_diag_m": 0.147,
+   "dist_to_main_m": 0.046,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 326,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.04,
+   "dist_to_main_m": 0.028,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 327,
+   "faces": 4,
+   "area_m2": 0.0014,
+   "bbox_diag_m": 0.065,
+   "dist_to_main_m": 0.008,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 328,
+   "faces": 7,
+   "area_m2": 0.0027,
+   "bbox_diag_m": 0.101,
+   "dist_to_main_m": 0.059,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 329,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.026,
+   "dist_to_main_m": 0.093,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 330,
+   "faces": 3,
+   "area_m2": 0.0021,
+   "bbox_diag_m": 0.126,
+   "dist_to_main_m": 0.064,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 331,
+   "faces": 7,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.042,
+   "dist_to_main_m": 0.068,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 332,
+   "faces": 7,
+   "area_m2": 0.0059,
+   "bbox_diag_m": 0.205,
+   "dist_to_main_m": 0.036,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 333,
+   "faces": 2,
+   "area_m2": 0.0019,
+   "bbox_diag_m": 0.089,
+   "dist_to_main_m": 0.062,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 334,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.044,
+   "dist_to_main_m": 0.089,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.09m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 335,
+   "faces": 1,
+   "area_m2": 0.0016,
+   "bbox_diag_m": 0.092,
+   "dist_to_main_m": 0.039,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 336,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.033,
+   "dist_to_main_m": 0.041,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 337,
+   "faces": 6,
+   "area_m2": 0.0025,
+   "bbox_diag_m": 0.11,
+   "dist_to_main_m": 0.019,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 338,
+   "faces": 33,
+   "area_m2": 0.0069,
+   "bbox_diag_m": 0.222,
+   "dist_to_main_m": 0.103,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 339,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.039,
+   "dist_to_main_m": 0.09,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 340,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.031,
+   "dist_to_main_m": 0.072,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 341,
+   "faces": 7,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.051,
+   "dist_to_main_m": 0.152,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.15m, 바닥/천장/외벽 미접촉) · 7면 0.000m²"
+  },
+  {
+   "id": 342,
+   "faces": 3,
+   "area_m2": 0.001,
+   "bbox_diag_m": 0.058,
+   "dist_to_main_m": 0.067,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 343,
+   "faces": 1,
+   "area_m2": 0.0017,
+   "bbox_diag_m": 0.107,
+   "dist_to_main_m": 0.068,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 344,
+   "faces": 1,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.065,
+   "dist_to_main_m": 0.008,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 345,
+   "faces": 2,
+   "area_m2": 0.0014,
+   "bbox_diag_m": 0.093,
+   "dist_to_main_m": 0.041,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 346,
+   "faces": 1,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.082,
+   "dist_to_main_m": 0.077,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 347,
+   "faces": 13,
+   "area_m2": 0.0051,
+   "bbox_diag_m": 0.156,
+   "dist_to_main_m": 0.057,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 348,
+   "faces": 3,
+   "area_m2": 0.0017,
+   "bbox_diag_m": 0.097,
+   "dist_to_main_m": 0.063,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 349,
+   "faces": 8,
+   "area_m2": 0.0051,
+   "bbox_diag_m": 0.181,
+   "dist_to_main_m": 0.107,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 350,
+   "faces": 3,
+   "area_m2": 0.0015,
+   "bbox_diag_m": 0.102,
+   "dist_to_main_m": 0.02,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 351,
+   "faces": 15,
+   "area_m2": 0.0005,
+   "bbox_diag_m": 0.097,
+   "dist_to_main_m": 0.075,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 352,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.035,
+   "dist_to_main_m": 0.02,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 353,
+   "faces": 15,
+   "area_m2": 0.0063,
+   "bbox_diag_m": 0.247,
+   "dist_to_main_m": 0.056,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 354,
+   "faces": 1,
+   "area_m2": 0.0005,
+   "bbox_diag_m": 0.045,
+   "dist_to_main_m": 0.014,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 355,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.033,
+   "dist_to_main_m": 0.011,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 356,
+   "faces": 12,
+   "area_m2": 0.0034,
+   "bbox_diag_m": 0.132,
+   "dist_to_main_m": 0.122,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.12m, 바닥/천장/외벽 미접촉) · 12면 0.003m²"
+  },
+  {
+   "id": 357,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.035,
+   "dist_to_main_m": 0.07,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 358,
+   "faces": 43,
+   "area_m2": 0.009,
+   "bbox_diag_m": 0.22,
+   "dist_to_main_m": 0.096,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 359,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.053,
+   "dist_to_main_m": 0.026,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 360,
+   "faces": 2,
+   "area_m2": 0.0026,
+   "bbox_diag_m": 0.097,
+   "dist_to_main_m": 0.029,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 361,
+   "faces": 2,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.026,
+   "dist_to_main_m": 0.124,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.12m, 바닥/천장/외벽 미접촉) · 2면 0.000m²"
+  },
+  {
+   "id": 362,
+   "faces": 2,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.011,
+   "dist_to_main_m": 0.026,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 363,
+   "faces": 8,
+   "area_m2": 0.0022,
+   "bbox_diag_m": 0.093,
+   "dist_to_main_m": 0.068,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 364,
+   "faces": 10,
+   "area_m2": 0.0045,
+   "bbox_diag_m": 0.143,
+   "dist_to_main_m": 0.061,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 365,
+   "faces": 2,
+   "area_m2": 0.0013,
+   "bbox_diag_m": 0.059,
+   "dist_to_main_m": 0.026,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 366,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.04,
+   "dist_to_main_m": 0.094,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 367,
+   "faces": 4,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.047,
+   "dist_to_main_m": 0.041,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 368,
+   "faces": 12,
+   "area_m2": 0.0027,
+   "bbox_diag_m": 0.127,
+   "dist_to_main_m": 0.079,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 369,
+   "faces": 14,
+   "area_m2": 0.0035,
+   "bbox_diag_m": 0.104,
+   "dist_to_main_m": 0.092,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.09m, 바닥/천장/외벽 미접촉) · 14면 0.003m²"
+  },
+  {
+   "id": 370,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.038,
+   "dist_to_main_m": 0.067,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 371,
+   "faces": 12,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.11,
+   "dist_to_main_m": 0.125,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 372,
+   "faces": 2,
+   "area_m2": 0.0013,
+   "bbox_diag_m": 0.114,
+   "dist_to_main_m": 0.02,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 373,
+   "faces": 8,
+   "area_m2": 0.0027,
+   "bbox_diag_m": 0.115,
+   "dist_to_main_m": 0.064,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 374,
+   "faces": 1,
+   "area_m2": 0.0014,
+   "bbox_diag_m": 0.091,
+   "dist_to_main_m": 0.042,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 375,
+   "faces": 2,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.036,
+   "dist_to_main_m": 0.143,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.14m, 바닥/천장/외벽 미접촉) · 2면 0.000m²"
+  },
+  {
+   "id": 376,
+   "faces": 3,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.058,
+   "dist_to_main_m": 0.034,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 377,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.027,
+   "dist_to_main_m": 0.0,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 378,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.032,
+   "dist_to_main_m": 0.015,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 379,
+   "faces": 6,
+   "area_m2": 0.002,
+   "bbox_diag_m": 0.108,
+   "dist_to_main_m": 0.039,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 380,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.042,
+   "dist_to_main_m": 0.028,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 381,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.032,
+   "dist_to_main_m": 0.041,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 382,
+   "faces": 4,
+   "area_m2": 0.0014,
+   "bbox_diag_m": 0.081,
+   "dist_to_main_m": 0.051,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 383,
+   "faces": 7,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.057,
+   "dist_to_main_m": 0.182,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.18m, 바닥/천장/외벽 미접촉) · 7면 0.000m²"
+  },
+  {
+   "id": 384,
+   "faces": 5,
+   "area_m2": 0.0027,
+   "bbox_diag_m": 0.12,
+   "dist_to_main_m": 0.077,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 385,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.013,
+   "dist_to_main_m": 0.005,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 386,
+   "faces": 2,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.052,
+   "dist_to_main_m": 0.07,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 387,
+   "faces": 4,
+   "area_m2": 0.0016,
+   "bbox_diag_m": 0.074,
+   "dist_to_main_m": 0.073,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 388,
+   "faces": 4,
+   "area_m2": 0.0023,
+   "bbox_diag_m": 0.104,
+   "dist_to_main_m": 0.09,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 389,
+   "faces": 6,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.063,
+   "dist_to_main_m": 0.123,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 390,
+   "faces": 2,
+   "area_m2": 0.0008,
+   "bbox_diag_m": 0.055,
+   "dist_to_main_m": 0.063,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 391,
+   "faces": 3,
+   "area_m2": 0.0017,
+   "bbox_diag_m": 0.095,
+   "dist_to_main_m": 0.049,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 392,
+   "faces": 16,
+   "area_m2": 0.0033,
+   "bbox_diag_m": 0.096,
+   "dist_to_main_m": 0.138,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 393,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.035,
+   "dist_to_main_m": 0.023,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 394,
+   "faces": 32,
+   "area_m2": 0.0074,
+   "bbox_diag_m": 0.144,
+   "dist_to_main_m": 0.109,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 395,
+   "faces": 2,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.073,
+   "dist_to_main_m": 0.031,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 396,
+   "faces": 4,
+   "area_m2": 0.0017,
+   "bbox_diag_m": 0.124,
+   "dist_to_main_m": 0.063,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 397,
+   "faces": 3,
+   "area_m2": 0.0034,
+   "bbox_diag_m": 0.095,
+   "dist_to_main_m": 0.098,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.10m, 바닥/천장/외벽 미접촉) · 3면 0.003m²"
+  },
+  {
+   "id": 398,
+   "faces": 1,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.055,
+   "dist_to_main_m": 0.018,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 399,
+   "faces": 3,
+   "area_m2": 0.0013,
+   "bbox_diag_m": 0.083,
+   "dist_to_main_m": 0.06,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 400,
+   "faces": 3,
+   "area_m2": 0.0015,
+   "bbox_diag_m": 0.1,
+   "dist_to_main_m": 0.025,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 401,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.032,
+   "dist_to_main_m": 0.058,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 402,
+   "faces": 2,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.047,
+   "dist_to_main_m": 0.054,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 403,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.033,
+   "dist_to_main_m": 0.046,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 404,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.041,
+   "dist_to_main_m": 0.028,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 405,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.057,
+   "dist_to_main_m": 0.02,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 406,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.033,
+   "dist_to_main_m": 0.0,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 407,
+   "faces": 1,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.06,
+   "dist_to_main_m": 0.061,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 408,
+   "faces": 6,
+   "area_m2": 0.002,
+   "bbox_diag_m": 0.132,
+   "dist_to_main_m": 0.055,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 409,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.036,
+   "dist_to_main_m": 0.06,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 410,
+   "faces": 4,
+   "area_m2": 0.0019,
+   "bbox_diag_m": 0.086,
+   "dist_to_main_m": 0.048,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 411,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.033,
+   "dist_to_main_m": 0.133,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.13m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 412,
+   "faces": 2,
+   "area_m2": 0.001,
+   "bbox_diag_m": 0.073,
+   "dist_to_main_m": 0.073,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 413,
+   "faces": 6,
+   "area_m2": 0.0018,
+   "bbox_diag_m": 0.082,
+   "dist_to_main_m": 0.079,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 414,
+   "faces": 4,
+   "area_m2": 0.0015,
+   "bbox_diag_m": 0.095,
+   "dist_to_main_m": 0.053,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 415,
+   "faces": 3,
+   "area_m2": 0.0011,
+   "bbox_diag_m": 0.068,
+   "dist_to_main_m": 0.036,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 416,
+   "faces": 18,
+   "area_m2": 0.0014,
+   "bbox_diag_m": 0.097,
+   "dist_to_main_m": 0.143,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 417,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.009,
+   "dist_to_main_m": 0.143,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 418,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.056,
+   "dist_to_main_m": 0.043,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 419,
+   "faces": 6,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.05,
+   "dist_to_main_m": 0.038,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 420,
+   "faces": 2,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.062,
+   "dist_to_main_m": 0.028,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 421,
+   "faces": 6,
+   "area_m2": 0.0024,
+   "bbox_diag_m": 0.099,
+   "dist_to_main_m": 0.051,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 422,
+   "faces": 2,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.058,
+   "dist_to_main_m": 0.09,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 423,
+   "faces": 3,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.054,
+   "dist_to_main_m": 0.017,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 424,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.015,
+   "dist_to_main_m": 0.147,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.15m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 425,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.092,
+   "dist_to_main_m": 0.102,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 426,
+   "faces": 2,
+   "area_m2": 0.0013,
+   "bbox_diag_m": 0.084,
+   "dist_to_main_m": 0.082,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 427,
+   "faces": 2,
+   "area_m2": 0.001,
+   "bbox_diag_m": 0.056,
+   "dist_to_main_m": 0.069,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 428,
+   "faces": 3,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.032,
+   "dist_to_main_m": 0.14,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.14m, 바닥/천장/외벽 미접촉) · 3면 0.000m²"
+  },
+  {
+   "id": 429,
+   "faces": 2,
+   "area_m2": 0.0005,
+   "bbox_diag_m": 0.056,
+   "dist_to_main_m": 0.107,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.11m, 바닥/천장/외벽 미접촉) · 2면 0.001m²"
+  },
+  {
+   "id": 430,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.039,
+   "dist_to_main_m": 0.172,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.17m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 431,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.038,
+   "dist_to_main_m": 0.032,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 432,
+   "faces": 2,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.043,
+   "dist_to_main_m": 0.207,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.21m, 바닥/천장/외벽 미접촉) · 2면 0.001m²"
+  },
+  {
+   "id": 433,
+   "faces": 4,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.046,
+   "dist_to_main_m": 0.01,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 434,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.036,
+   "dist_to_main_m": 0.012,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 435,
+   "faces": 2,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.025,
+   "dist_to_main_m": 0.124,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.12m, 바닥/천장/외벽 미접촉) · 2면 0.000m²"
+  },
+  {
+   "id": 436,
+   "faces": 2,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.06,
+   "dist_to_main_m": 0.039,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 437,
+   "faces": 10,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.07,
+   "dist_to_main_m": 0.103,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 438,
+   "faces": 1,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.053,
+   "dist_to_main_m": 0.016,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 439,
+   "faces": 2,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.037,
+   "dist_to_main_m": 0.115,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 440,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.047,
+   "dist_to_main_m": 0.025,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 441,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.029,
+   "dist_to_main_m": 0.12,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 442,
+   "faces": 4,
+   "area_m2": 0.002,
+   "bbox_diag_m": 0.08,
+   "dist_to_main_m": 0.107,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 443,
+   "faces": 8,
+   "area_m2": 0.0013,
+   "bbox_diag_m": 0.08,
+   "dist_to_main_m": 0.057,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 444,
+   "faces": 2,
+   "area_m2": 0.0009,
+   "bbox_diag_m": 0.048,
+   "dist_to_main_m": 0.062,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 445,
+   "faces": 1,
+   "area_m2": 0.0005,
+   "bbox_diag_m": 0.082,
+   "dist_to_main_m": 0.039,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 446,
+   "faces": 1,
+   "area_m2": 0.0005,
+   "bbox_diag_m": 0.05,
+   "dist_to_main_m": 0.064,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 447,
+   "faces": 2,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.025,
+   "dist_to_main_m": 0.037,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 448,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.037,
+   "dist_to_main_m": 0.05,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 449,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.034,
+   "dist_to_main_m": 0.0,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 450,
+   "faces": 1,
+   "area_m2": 0.0011,
+   "bbox_diag_m": 0.087,
+   "dist_to_main_m": 0.057,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 451,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.036,
+   "dist_to_main_m": 0.041,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 452,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.031,
+   "dist_to_main_m": 0.063,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 453,
+   "faces": 3,
+   "area_m2": 0.0012,
+   "bbox_diag_m": 0.083,
+   "dist_to_main_m": 0.07,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 454,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.06,
+   "dist_to_main_m": 0.107,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.11m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 455,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.056,
+   "dist_to_main_m": 0.028,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 456,
+   "faces": 2,
+   "area_m2": 0.0005,
+   "bbox_diag_m": 0.055,
+   "dist_to_main_m": 0.025,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 457,
+   "faces": 3,
+   "area_m2": 0.0014,
+   "bbox_diag_m": 0.083,
+   "dist_to_main_m": 0.029,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 458,
+   "faces": 2,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.058,
+   "dist_to_main_m": 0.027,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 459,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.051,
+   "dist_to_main_m": 0.07,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": true
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 460,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.042,
+   "dist_to_main_m": 0.097,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 461,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.031,
+   "dist_to_main_m": 0.019,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 462,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.028,
+   "dist_to_main_m": 0.082,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.08m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 463,
+   "faces": 7,
+   "area_m2": 0.0024,
+   "bbox_diag_m": 0.116,
+   "dist_to_main_m": 0.079,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 464,
+   "faces": 2,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.06,
+   "dist_to_main_m": 0.031,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 465,
+   "faces": 2,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.053,
+   "dist_to_main_m": 0.04,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 466,
+   "faces": 2,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.055,
+   "dist_to_main_m": 0.056,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 467,
+   "faces": 2,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.051,
+   "dist_to_main_m": 0.006,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 468,
+   "faces": 3,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.024,
+   "dist_to_main_m": 0.13,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.13m, 바닥/천장/외벽 미접촉) · 3면 0.000m²"
+  },
+  {
+   "id": 469,
+   "faces": 8,
+   "area_m2": 0.0011,
+   "bbox_diag_m": 0.11,
+   "dist_to_main_m": 0.12,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 470,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.037,
+   "dist_to_main_m": 0.074,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 471,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.019,
+   "dist_to_main_m": 0.083,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.08m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 472,
+   "faces": 2,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.046,
+   "dist_to_main_m": 0.068,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 473,
+   "faces": 4,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.036,
+   "dist_to_main_m": 0.211,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.21m, 바닥/천장/외벽 미접촉) · 4면 0.000m²"
+  },
+  {
+   "id": 474,
+   "faces": 2,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.026,
+   "dist_to_main_m": 0.01,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 475,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.018,
+   "dist_to_main_m": 0.184,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.18m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 476,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.031,
+   "dist_to_main_m": 0.12,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.12m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 477,
+   "faces": 1,
+   "area_m2": 0.0005,
+   "bbox_diag_m": 0.06,
+   "dist_to_main_m": 0.051,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 478,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.028,
+   "dist_to_main_m": 0.014,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 479,
+   "faces": 1,
+   "area_m2": 0.0008,
+   "bbox_diag_m": 0.068,
+   "dist_to_main_m": 0.027,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 480,
+   "faces": 2,
+   "area_m2": 0.001,
+   "bbox_diag_m": 0.053,
+   "dist_to_main_m": 0.057,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 481,
+   "faces": 2,
+   "area_m2": 0.001,
+   "bbox_diag_m": 0.074,
+   "dist_to_main_m": 0.098,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 482,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.012,
+   "dist_to_main_m": 0.116,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.12m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 483,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.027,
+   "dist_to_main_m": 0.02,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 484,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.037,
+   "dist_to_main_m": 0.023,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 485,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.034,
+   "dist_to_main_m": 0.08,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 486,
+   "faces": 2,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.057,
+   "dist_to_main_m": 0.026,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 487,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.026,
+   "dist_to_main_m": 0.023,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 488,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.046,
+   "dist_to_main_m": 1.045,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 1.04m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 489,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.021,
+   "dist_to_main_m": 0.046,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 490,
+   "faces": 10,
+   "area_m2": 0.001,
+   "bbox_diag_m": 0.069,
+   "dist_to_main_m": 0.134,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 491,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.043,
+   "dist_to_main_m": 0.035,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 492,
+   "faces": 2,
+   "area_m2": 0.0016,
+   "bbox_diag_m": 0.087,
+   "dist_to_main_m": 0.04,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 493,
+   "faces": 3,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.039,
+   "dist_to_main_m": 0.016,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 494,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.04,
+   "dist_to_main_m": 0.019,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 495,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.023,
+   "dist_to_main_m": 0.023,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 496,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.006,
+   "dist_to_main_m": 0.005,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 497,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.04,
+   "dist_to_main_m": 0.027,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 498,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.032,
+   "dist_to_main_m": 0.08,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 499,
+   "faces": 3,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.037,
+   "dist_to_main_m": 0.119,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 500,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.037,
+   "dist_to_main_m": 0.024,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 501,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.041,
+   "dist_to_main_m": 0.064,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 502,
+   "faces": 4,
+   "area_m2": 0.0019,
+   "bbox_diag_m": 0.112,
+   "dist_to_main_m": 0.099,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 503,
+   "faces": 3,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.058,
+   "dist_to_main_m": 0.03,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 504,
+   "faces": 4,
+   "area_m2": 0.0012,
+   "bbox_diag_m": 0.064,
+   "dist_to_main_m": 0.033,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 505,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.027,
+   "dist_to_main_m": 0.034,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 506,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.083,
+   "dist_to_main_m": 0.01,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 507,
+   "faces": 2,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.057,
+   "dist_to_main_m": 0.059,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 508,
+   "faces": 2,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.051,
+   "dist_to_main_m": 0.024,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 509,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.037,
+   "dist_to_main_m": 0.021,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 510,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.028,
+   "dist_to_main_m": 0.132,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.13m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 511,
+   "faces": 2,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.062,
+   "dist_to_main_m": 0.03,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 512,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.037,
+   "dist_to_main_m": 0.023,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 513,
+   "faces": 1,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.073,
+   "dist_to_main_m": 0.114,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 514,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.031,
+   "dist_to_main_m": 0.011,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 515,
+   "faces": 5,
+   "area_m2": 0.0011,
+   "bbox_diag_m": 0.054,
+   "dist_to_main_m": 0.078,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 516,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.038,
+   "dist_to_main_m": 0.035,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 517,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.062,
+   "dist_to_main_m": 0.038,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 518,
+   "faces": 2,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.049,
+   "dist_to_main_m": 0.025,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 519,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.038,
+   "dist_to_main_m": 0.166,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.17m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 520,
+   "faces": 2,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.03,
+   "dist_to_main_m": 0.036,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 521,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.041,
+   "dist_to_main_m": 0.028,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 522,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.037,
+   "dist_to_main_m": 0.023,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 523,
+   "faces": 2,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.052,
+   "dist_to_main_m": 0.16,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.16m, 바닥/천장/외벽 미접촉) · 2면 0.001m²"
+  },
+  {
+   "id": 524,
+   "faces": 3,
+   "area_m2": 0.0013,
+   "bbox_diag_m": 0.091,
+   "dist_to_main_m": 0.066,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 525,
+   "faces": 2,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.051,
+   "dist_to_main_m": 0.046,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 526,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.033,
+   "dist_to_main_m": 0.014,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 527,
+   "faces": 5,
+   "area_m2": 0.0009,
+   "bbox_diag_m": 0.067,
+   "dist_to_main_m": 0.102,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 528,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.036,
+   "dist_to_main_m": 0.028,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 529,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.035,
+   "dist_to_main_m": 0.03,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 530,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.026,
+   "dist_to_main_m": 0.185,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.18m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 531,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.037,
+   "dist_to_main_m": 0.033,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 532,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.031,
+   "dist_to_main_m": 0.025,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 533,
+   "faces": 2,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.057,
+   "dist_to_main_m": 0.025,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 534,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.036,
+   "dist_to_main_m": 0.025,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 535,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.037,
+   "dist_to_main_m": 0.05,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 536,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.043,
+   "dist_to_main_m": 0.048,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 537,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.034,
+   "dist_to_main_m": 0.013,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 538,
+   "faces": 1,
+   "area_m2": 0.0005,
+   "bbox_diag_m": 0.052,
+   "dist_to_main_m": 0.015,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 539,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.038,
+   "dist_to_main_m": 0.073,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 540,
+   "faces": 1,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.056,
+   "dist_to_main_m": 0.099,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.10m, 바닥/천장/외벽 미접촉) · 1면 0.001m²"
+  },
+  {
+   "id": 541,
+   "faces": 2,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.041,
+   "dist_to_main_m": 0.065,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 542,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.033,
+   "dist_to_main_m": 0.016,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": true
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 543,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.031,
+   "dist_to_main_m": 0.081,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 544,
+   "faces": 1,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.082,
+   "dist_to_main_m": 0.06,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 545,
+   "faces": 2,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.04,
+   "dist_to_main_m": 0.114,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 546,
+   "faces": 2,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.035,
+   "dist_to_main_m": 0.124,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 547,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.043,
+   "dist_to_main_m": 0.065,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 548,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.028,
+   "dist_to_main_m": 0.0,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 549,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.049,
+   "dist_to_main_m": 0.075,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 550,
+   "faces": 6,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.07,
+   "dist_to_main_m": 0.123,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 551,
+   "faces": 2,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.067,
+   "dist_to_main_m": 0.057,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 552,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.041,
+   "dist_to_main_m": 0.084,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 553,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.037,
+   "dist_to_main_m": 0.036,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 554,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.023,
+   "dist_to_main_m": 0.013,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 555,
+   "faces": 5,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.027,
+   "dist_to_main_m": 0.078,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 556,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.05,
+   "dist_to_main_m": 0.057,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 557,
+   "faces": 1,
+   "area_m2": 0.0005,
+   "bbox_diag_m": 0.043,
+   "dist_to_main_m": 0.035,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 558,
+   "faces": 11,
+   "area_m2": 0.002,
+   "bbox_diag_m": 0.113,
+   "dist_to_main_m": 0.073,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 559,
+   "faces": 1,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.056,
+   "dist_to_main_m": 0.102,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.10m, 바닥/천장/외벽 미접촉) · 1면 0.001m²"
+  },
+  {
+   "id": 560,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.031,
+   "dist_to_main_m": 0.059,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 561,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.037,
+   "dist_to_main_m": 0.054,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 562,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.029,
+   "dist_to_main_m": 0.008,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 563,
+   "faces": 3,
+   "area_m2": 0.0015,
+   "bbox_diag_m": 0.081,
+   "dist_to_main_m": 0.127,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.13m, 바닥/천장/외벽 미접촉) · 3면 0.002m²"
+  },
+  {
+   "id": 564,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.032,
+   "dist_to_main_m": 0.016,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 565,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.034,
+   "dist_to_main_m": 0.029,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 566,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.044,
+   "dist_to_main_m": 0.019,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 567,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.032,
+   "dist_to_main_m": 0.063,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 568,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.037,
+   "dist_to_main_m": 0.022,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 569,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.028,
+   "dist_to_main_m": 0.005,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 570,
+   "faces": 3,
+   "area_m2": 0.0014,
+   "bbox_diag_m": 0.078,
+   "dist_to_main_m": 0.049,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 571,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.041,
+   "dist_to_main_m": 0.092,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 572,
+   "faces": 2,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.039,
+   "dist_to_main_m": 0.029,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 573,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.039,
+   "dist_to_main_m": 0.026,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 574,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.028,
+   "dist_to_main_m": 0.006,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 575,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.033,
+   "dist_to_main_m": 0.069,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 576,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.032,
+   "dist_to_main_m": 0.019,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 577,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.034,
+   "dist_to_main_m": 0.124,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 578,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.039,
+   "dist_to_main_m": 0.026,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 579,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.037,
+   "dist_to_main_m": 0.036,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 580,
+   "faces": 1,
+   "area_m2": 0.0005,
+   "bbox_diag_m": 0.05,
+   "dist_to_main_m": 0.059,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 581,
+   "faces": 1,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.068,
+   "dist_to_main_m": 0.025,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 582,
+   "faces": 1,
+   "area_m2": 0.0005,
+   "bbox_diag_m": 0.053,
+   "dist_to_main_m": 0.035,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 583,
+   "faces": 2,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.057,
+   "dist_to_main_m": 0.014,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 584,
+   "faces": 2,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.046,
+   "dist_to_main_m": 0.031,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 585,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.036,
+   "dist_to_main_m": 0.086,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 586,
+   "faces": 2,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.041,
+   "dist_to_main_m": 0.105,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 587,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.027,
+   "dist_to_main_m": 0.032,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 588,
+   "faces": 3,
+   "area_m2": 0.0005,
+   "bbox_diag_m": 0.043,
+   "dist_to_main_m": 0.025,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 589,
+   "faces": 1,
+   "area_m2": 0.0005,
+   "bbox_diag_m": 0.046,
+   "dist_to_main_m": 0.028,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 590,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.04,
+   "dist_to_main_m": 0.0,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 591,
+   "faces": 4,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.047,
+   "dist_to_main_m": 0.025,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 592,
+   "faces": 2,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.026,
+   "dist_to_main_m": 0.059,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 593,
+   "faces": 1,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.054,
+   "dist_to_main_m": 0.025,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 594,
+   "faces": 2,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.034,
+   "dist_to_main_m": 0.073,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 595,
+   "faces": 1,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.058,
+   "dist_to_main_m": 0.086,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 596,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.041,
+   "dist_to_main_m": 0.074,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 597,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.024,
+   "dist_to_main_m": 0.006,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 598,
+   "faces": 2,
+   "area_m2": 0.0012,
+   "bbox_diag_m": 0.056,
+   "dist_to_main_m": 0.037,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 599,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.035,
+   "dist_to_main_m": 0.026,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 600,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.047,
+   "dist_to_main_m": 0.091,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 601,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.056,
+   "dist_to_main_m": 0.019,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 602,
+   "faces": 1,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.059,
+   "dist_to_main_m": 0.049,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 603,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.037,
+   "dist_to_main_m": 0.025,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 604,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.032,
+   "dist_to_main_m": 0.044,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 605,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.037,
+   "dist_to_main_m": 0.06,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 606,
+   "faces": 2,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.059,
+   "dist_to_main_m": 0.065,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 607,
+   "faces": 1,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.064,
+   "dist_to_main_m": 0.051,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 608,
+   "faces": 3,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.041,
+   "dist_to_main_m": 0.119,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 609,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.041,
+   "dist_to_main_m": 0.054,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 610,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.038,
+   "dist_to_main_m": 0.053,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 611,
+   "faces": 1,
+   "area_m2": 0.0005,
+   "bbox_diag_m": 0.045,
+   "dist_to_main_m": 0.028,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 612,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.026,
+   "dist_to_main_m": 0.109,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.11m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 613,
+   "faces": 2,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.029,
+   "dist_to_main_m": 0.098,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 614,
+   "faces": 6,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.026,
+   "dist_to_main_m": 0.096,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 615,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.031,
+   "dist_to_main_m": 0.026,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 616,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.04,
+   "dist_to_main_m": 0.045,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 617,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.032,
+   "dist_to_main_m": 0.117,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.12m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 618,
+   "faces": 1,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.06,
+   "dist_to_main_m": 0.03,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 619,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.042,
+   "dist_to_main_m": 0.089,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 620,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.042,
+   "dist_to_main_m": 0.089,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 621,
+   "faces": 2,
+   "area_m2": 0.0005,
+   "bbox_diag_m": 0.045,
+   "dist_to_main_m": 0.089,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 622,
+   "faces": 2,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.059,
+   "dist_to_main_m": 0.082,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 623,
+   "faces": 3,
+   "area_m2": 0.0011,
+   "bbox_diag_m": 0.067,
+   "dist_to_main_m": 0.1,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 624,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.006,
+   "dist_to_main_m": 0.037,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 625,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.019,
+   "dist_to_main_m": 0.256,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.26m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 626,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.037,
+   "dist_to_main_m": 0.048,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 627,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.038,
+   "dist_to_main_m": 0.03,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 628,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.03,
+   "dist_to_main_m": 0.026,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 629,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.038,
+   "dist_to_main_m": 0.024,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 630,
+   "faces": 2,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.058,
+   "dist_to_main_m": 0.046,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 631,
+   "faces": 1,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.056,
+   "dist_to_main_m": 0.107,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 632,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.038,
+   "dist_to_main_m": 0.006,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 633,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.03,
+   "dist_to_main_m": 0.099,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 634,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.038,
+   "dist_to_main_m": 0.049,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 635,
+   "faces": 2,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.037,
+   "dist_to_main_m": 0.092,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 636,
+   "faces": 15,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.104,
+   "dist_to_main_m": 0.1,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 637,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.039,
+   "dist_to_main_m": 0.0,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 638,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.035,
+   "dist_to_main_m": 0.061,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 639,
+   "faces": 2,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.036,
+   "dist_to_main_m": 0.067,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 640,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.037,
+   "dist_to_main_m": 0.093,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 641,
+   "faces": 2,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.057,
+   "dist_to_main_m": 0.11,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 642,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.042,
+   "dist_to_main_m": 0.057,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 643,
+   "faces": 1,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.067,
+   "dist_to_main_m": 0.03,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 644,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.034,
+   "dist_to_main_m": 0.022,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 645,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.042,
+   "dist_to_main_m": 0.07,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 646,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.034,
+   "dist_to_main_m": 0.063,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 647,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.036,
+   "dist_to_main_m": 0.106,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 648,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.046,
+   "dist_to_main_m": 0.025,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 649,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.039,
+   "dist_to_main_m": 0.023,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 650,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.039,
+   "dist_to_main_m": 0.025,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 651,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.039,
+   "dist_to_main_m": 0.134,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.13m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 652,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.052,
+   "dist_to_main_m": 0.027,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 653,
+   "faces": 1,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.054,
+   "dist_to_main_m": 0.105,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.11m, 바닥/천장/외벽 미접촉) · 1면 0.001m²"
+  },
+  {
+   "id": 654,
+   "faces": 1,
+   "area_m2": 0.0008,
+   "bbox_diag_m": 0.061,
+   "dist_to_main_m": 0.07,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 655,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.045,
+   "dist_to_main_m": 0.025,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 656,
+   "faces": 1,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.07,
+   "dist_to_main_m": 0.061,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 657,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.024,
+   "dist_to_main_m": 0.057,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 658,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.032,
+   "dist_to_main_m": 0.036,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 659,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.033,
+   "dist_to_main_m": 0.01,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 660,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.029,
+   "dist_to_main_m": 0.127,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.13m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 661,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.03,
+   "dist_to_main_m": 0.106,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 662,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.021,
+   "dist_to_main_m": 0.027,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 663,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.038,
+   "dist_to_main_m": 1.14,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 1.14m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 664,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.028,
+   "dist_to_main_m": 0.011,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 665,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.03,
+   "dist_to_main_m": 0.027,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 666,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.031,
+   "dist_to_main_m": 0.086,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 667,
+   "faces": 1,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.061,
+   "dist_to_main_m": 0.076,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 668,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.031,
+   "dist_to_main_m": 0.023,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 669,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.029,
+   "dist_to_main_m": 0.015,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 670,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.037,
+   "dist_to_main_m": 0.087,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 671,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.043,
+   "dist_to_main_m": 1.169,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 1.17m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 672,
+   "faces": 1,
+   "area_m2": 0.0006,
+   "bbox_diag_m": 0.057,
+   "dist_to_main_m": 0.07,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 673,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.027,
+   "dist_to_main_m": 0.003,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 674,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.046,
+   "dist_to_main_m": 0.02,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 675,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.011,
+   "dist_to_main_m": 0.104,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 676,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.031,
+   "dist_to_main_m": 0.017,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 677,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.03,
+   "dist_to_main_m": 0.046,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 678,
+   "faces": 1,
+   "area_m2": 0.0005,
+   "bbox_diag_m": 0.044,
+   "dist_to_main_m": 0.09,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.09m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 679,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.012,
+   "dist_to_main_m": 1.149,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 1.15m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 680,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.02,
+   "dist_to_main_m": 0.044,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 681,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.043,
+   "dist_to_main_m": 0.113,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 682,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.047,
+   "dist_to_main_m": 0.042,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 683,
+   "faces": 2,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.035,
+   "dist_to_main_m": 0.105,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.10m, 바닥/천장/외벽 미접촉) · 2면 0.000m²"
+  },
+  {
+   "id": 684,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.015,
+   "dist_to_main_m": 0.109,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 685,
+   "faces": 2,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.034,
+   "dist_to_main_m": 0.047,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 686,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.032,
+   "dist_to_main_m": 0.011,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 687,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.023,
+   "dist_to_main_m": 0.146,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 688,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.019,
+   "dist_to_main_m": 0.145,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 689,
+   "faces": 3,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.029,
+   "dist_to_main_m": 0.119,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 690,
+   "faces": 2,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.032,
+   "dist_to_main_m": 0.026,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 691,
+   "faces": 2,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.031,
+   "dist_to_main_m": 0.165,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 692,
+   "faces": 5,
+   "area_m2": 0.0007,
+   "bbox_diag_m": 0.076,
+   "dist_to_main_m": 0.112,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 693,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.037,
+   "dist_to_main_m": 0.091,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 694,
+   "faces": 1,
+   "area_m2": 0.0005,
+   "bbox_diag_m": 0.056,
+   "dist_to_main_m": 0.056,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 695,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.037,
+   "dist_to_main_m": 0.046,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 696,
+   "faces": 1,
+   "area_m2": 0.0004,
+   "bbox_diag_m": 0.038,
+   "dist_to_main_m": 0.069,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 697,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.026,
+   "dist_to_main_m": 0.125,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.12m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 698,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.013,
+   "dist_to_main_m": 0.023,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 699,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.019,
+   "dist_to_main_m": 0.001,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 700,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.005,
+   "dist_to_main_m": 0.148,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.15m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 701,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.014,
+   "dist_to_main_m": 0.173,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.17m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 702,
+   "faces": 2,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.005,
+   "dist_to_main_m": 0.193,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.19m, 바닥/천장/외벽 미접촉) · 2면 0.000m²"
+  },
+  {
+   "id": 703,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.032,
+   "dist_to_main_m": 0.052,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 704,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.021,
+   "dist_to_main_m": 0.065,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 705,
+   "faces": 2,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.022,
+   "dist_to_main_m": 0.11,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 706,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.014,
+   "dist_to_main_m": 1.061,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 1.06m, 바닥/천장/외벽 미접촉) · 1면 0.000m²"
+  },
+  {
+   "id": 707,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.018,
+   "dist_to_main_m": 0.046,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 708,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.029,
+   "dist_to_main_m": 0.084,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 709,
+   "faces": 2,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.011,
+   "dist_to_main_m": 0.173,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "drop",
+   "reason": "떠 있음(주 구조와 0.17m, 바닥/천장/외벽 미접촉) · 2면 0.000m²"
+  },
+  {
+   "id": 710,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.027,
+   "dist_to_main_m": 0.094,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 711,
+   "faces": 1,
+   "area_m2": 0.0003,
+   "bbox_diag_m": 0.037,
+   "dist_to_main_m": 0.025,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 712,
+   "faces": 1,
+   "area_m2": 0.0002,
+   "bbox_diag_m": 0.026,
+   "dist_to_main_m": 0.09,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 713,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.021,
+   "dist_to_main_m": 0.062,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 714,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.019,
+   "dist_to_main_m": 0.001,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 715,
+   "faces": 4,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.017,
+   "dist_to_main_m": 0.116,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 716,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.009,
+   "dist_to_main_m": 0.111,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 717,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.011,
+   "dist_to_main_m": 0.009,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 718,
+   "faces": 2,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.027,
+   "dist_to_main_m": 0.057,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 719,
+   "faces": 1,
+   "area_m2": 0.0001,
+   "bbox_diag_m": 0.019,
+   "dist_to_main_m": 0.097,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 720,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.012,
+   "dist_to_main_m": 0.006,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 721,
+   "faces": 3,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.012,
+   "dist_to_main_m": 0.132,
+   "touches": {
+    "floor": true,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 722,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.011,
+   "dist_to_main_m": 0.006,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 723,
+   "faces": 2,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.006,
+   "dist_to_main_m": 0.004,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 724,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.0,
+   "dist_to_main_m": 0.0,
+   "touches": {
+    "floor": false,
+    "ceiling": false,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  },
+  {
+   "id": 725,
+   "faces": 1,
+   "area_m2": 0.0,
+   "bbox_diag_m": 0.008,
+   "dist_to_main_m": 0.071,
+   "touches": {
+    "floor": false,
+    "ceiling": true,
+    "outer": false
+   },
+   "decision": "keep",
+   "reason": "작지만 구조에 접함/붙어 있음"
+  }
+ ]
+}

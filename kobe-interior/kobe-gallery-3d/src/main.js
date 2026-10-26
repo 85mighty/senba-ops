@@ -1,0 +1,106 @@
+// UI 배선 — 모드/북마크/토글/편집/내보내기. 테스트 하네스를 위해 window.__viewer* 를 노출한다.
+import * as THREE from 'three';
+import { TransformControls } from 'three/addons/controls/TransformControls.js';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+import { Viewer } from './viewer.js';
+import { InteriorA, LAYERS } from './interior.js';
+import meta from './geometry_metadata.json';
+
+const $ = (s) => document.querySelector(s);
+const errors = []; window.__viewerErrors = errors; window.__viewerReady = false;
+function showError(msg) { errors.push(msg); const d = document.createElement('div'); d.className = 'e'; d.innerHTML = `<b>로딩 오류</b>\n${escapeHtml(msg)}`; $('#errors').appendChild(d); console.error(msg); }
+function escapeHtml(s) { return String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._h); toast._h = setTimeout(() => t.classList.remove('show'), 1800); }
+window.addEventListener('error', (e) => showError(`JS: ${e.message}`));
+window.addEventListener('unhandledrejection', (e) => showError(`Promise: ${e.reason?.message || e.reason}`));
+
+if (!meta.elements) showError('geometry_metadata.json 에 elements 가 없습니다. scripts/inspect_scan.py → clean_scan.py → reconstruct_room.py 를 먼저 실행하세요.');
+
+const viewer = new Viewer($('#c'), meta, { onError: showError, onProgress: (p) => { $('#loading .bar i').style.width = `${Math.round(p * 100)}%`; } });
+window.__viewer = viewer;
+const interior = new InteriorA(viewer); window.__interior = interior;
+
+// ---- 모드
+const modeBtns = [...document.querySelectorAll('#modes button')];
+function setMode(m) { viewer.setMode(m); modeBtns.forEach((b) => b.classList.toggle('active', b.dataset.mode === m)); $('#interiorPanel').style.opacity = m === 'interior' ? 1 : 0.45; }
+modeBtns.forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
+window.__setMode = setMode;
+
+// ---- 북마크
+for (const b of viewer.bookmarks) { const btn = document.createElement('button'); btn.textContent = b.name; btn.addEventListener('click', () => viewer.goBookmark(b)); $('#bookmarks').appendChild(btn); }
+$('#panelToggle').addEventListener('click', () => $('#panel').classList.toggle('hidden'));
+
+// ---- 보기
+const sectionY = $('#sectionY');
+const applySection = () => { viewer.setCeilingHidden($('#hideCeiling').checked, +sectionY.value); $('#sectionYv').textContent = `${(+sectionY.value).toFixed(2)} m`; };
+$('#hideCeiling').addEventListener('change', applySection); sectionY.addEventListener('input', applySection);
+sectionY.max = ((meta.ceiling_height_m || 3) + 0.3).toFixed(2); sectionY.value = ((meta.ceiling_height_m || 3) - 0.4).toFixed(2); $('#sectionYv').textContent = `${(+sectionY.value).toFixed(2)} m`;
+$('#showDims').addEventListener('change', (e) => viewer.setDims(e.target.checked));
+$('#ghostScan').addEventListener('change', (e) => viewer.setGhost(e.target.checked));
+$('#highlightColumn').addEventListener('change', (e) => viewer.updateHighlight(e.target.checked));
+
+// ---- 인테리어 레이어
+for (const cb of document.querySelectorAll('[data-layer]')) cb.addEventListener('change', () => interior.setLayer(cb.dataset.layer, cb.checked));
+const bind = (id, key, fmt, rebuild) => { const el = $(id); const out = $(id + 'v'); const f = () => { interior.opts[key] = +el.value; if (out) out.textContent = fmt(+el.value); rebuild(); }; el.addEventListener('input', f); };
+bind('#mirrorH', 'mirrorH', (v) => `${v.toFixed(2)} m`, () => interior.rebuild('mirror_4_sides'));
+bind('#mirrorInset', 'mirrorInset', (v) => `${v.toFixed(2)} m`, () => interior.rebuild('mirror_4_sides'));
+bind('#lightI', 'lightI', (v) => v.toFixed(1), () => interior.applyLight());
+bind('#lightK', 'lightK', (v) => `${v} K`, () => interior.applyLight());
+$('#mirrorMode').addEventListener('change', (e) => { interior.opts.mirrorMode = e.target.value; interior.rebuild('mirror_4_sides'); toast(e.target.value === 'reflector' ? '실시간 반사: 면당 1회 추가 렌더 (4면=4회). 모바일에선 환경맵 권장' : '환경맵 반사: 가볍지만 주변이 정확히 비치진 않음'); });
+
+// ---- 기둥 선택 → 거울 대상 변경
+function setCentral(id, status) {
+  interior.opts.central = id; meta.central_wide_column = id; viewer.updateHighlight(); interior.rebuild('mirror_4_sides'); interior.rebuild('molding');
+  $('#centralId').textContent = id || '-'; $('#centralStatus').textContent = status || '';
+  try { localStorage.setItem('kobe3d.central', id); } catch {}
+}
+try { const saved = localStorage.getItem('kobe3d.central'); if (saved && meta.elements?.some((e) => e.id === saved)) setCentral(saved, '(이 브라우저에 저장된 선택)'); else setCentral(meta.central_wide_column, `(${meta.central_wide_column_status || 'inferred'})`); } catch { setCentral(meta.central_wide_column, ''); }
+const canvas = $('#c'); let downAt = null;
+canvas.addEventListener('pointerdown', (e) => { downAt = [e.clientX, e.clientY]; });
+canvas.addEventListener('pointerup', (e) => {
+  if (!downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 6) return; downAt = null;
+  if ($('#pickColumn').checked) {
+    const hit = viewer.pick(e, (o) => o.userData.model === 'reconstructed' && /^(wide_column|thin_column|partition)_\d+$/.test(o.name));
+    if (hit) { setCentral(hit.object.name, '(사용자 선택 — 메타데이터 반영: reconstruct_room.py --central-column ' + hit.object.name + ')'); toast(`거울 대상: ${hit.object.name}`); }
+    else toast('기둥을 클릭하세요 (③/④ 모드의 복원 모델 기둥만 선택 가능)');
+  } else if ($('#editFurniture').checked && viewer.mode === 'interior') {
+    const hit = viewer.pick(e, (o) => { let p = o; while (p) { if (p.name === 'table') return true; p = p.parent; } return false; });
+    if (hit) { let p = hit.object; while (p && p.name !== 'table') p = p.parent; tc.attach(p); } else tc.detach();
+  }
+});
+// ---- 가구 이동 (TransformControls)
+const tc = new TransformControls(viewer.camera, canvas); tc.setSize(0.8); tc.showY = false; viewer.scene.add(tc.getHelper ? tc.getHelper() : tc);
+tc.addEventListener('dragging-changed', (e) => { viewer.controls.enabled = !e.value; });
+tc.addEventListener('objectChange', () => { const o = tc.object; if (o) { o.position.y = 0; } });
+window.addEventListener('keydown', (e) => { if (e.key === 'g') tc.setMode('translate'); if (e.key === 'r') { tc.setMode('rotate'); tc.showX = tc.showZ = false; tc.showY = true; } if (e.key === 'g') { tc.showX = tc.showZ = true; tc.showY = false; } if (e.key === 'Escape') tc.detach(); });
+$('#editFurniture').addEventListener('change', (e) => { if (!e.target.checked) tc.detach(); else { $('[data-layer=furniture]').checked = true; interior.setLayer('furniture', true); } });
+$('#copyLayout').addEventListener('click', async () => { const j = JSON.stringify({ tables: interior.furnitureLayout(), central_wide_column: interior.opts.central }, null, 1); try { await navigator.clipboard.writeText(j); toast('가구 배치 JSON 복사됨'); } catch { prompt('복사:', j); } });
+
+// ---- 내보내기 (복원 모델 + 인테리어 A안 → interior_A.glb)
+$('#exportGlb').addEventListener('click', () => {
+  const g = new THREE.Group(); const recon = viewer.loaded.reconstructed; if (recon) g.add(recon.clone(true));
+  const int = interior.root.clone(true); int.traverse((o) => { if (o.isSpotLight || o.name === 'mirror' && o.isReflector) o.removeFromParent?.(); }); g.add(int);
+  new GLTFExporter().parse(g, (buf) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([buf], { type: 'model/gltf-binary' })); a.download = 'interior_A.glb'; a.click(); toast('interior_A.glb 다운로드'); },
+    (err) => showError('GLB 내보내기 실패: ' + err?.message), { binary: true, onlyVisible: true });
+});
+
+// ---- 치수 텍스트
+(function dims() {
+  const b = meta.bounds_world_m; if (!b) return; const w = b.max[0] - b.min[0], d = b.max[2] - b.min[2];
+  const els = meta.elements || [];
+  $('#dimsText').innerHTML = `가로 ${w.toFixed(2)} m × 세로 ${d.toFixed(2)} m × 천장고 ${(meta.ceiling_height_m || 0).toFixed(2)} m <span class="hint">(${meta.ceiling_height_status || '?'})</span><br>` +
+    `외벽 ${els.filter((e) => e.type === 'wall').length} · 넓은 기둥 ${els.filter((e) => e.type === 'wide_column').length} · 얇은 기둥 ${els.filter((e) => e.type === 'thin_column').length} · 창/문 후보 ${els.filter((e) => e.type === 'wall').reduce((n, e) => n + e.openings.length, 0)} · 설비 후보 ${els.filter((e) => e.type === 'fixture_candidate').length}<br>` +
+    `체어레일 ${meta.chair_rail_height_m} m (${meta.chair_rail_status || '?'}) · 걸레받이 ${meta.baseboard_height_m} m (${meta.baseboard_status || '?'})<br>` +
+    `원본: ${meta.source_file || '?'} · 단위 ${meta.unit_guess || '?'} · 정렬 회전 ${(meta.wall_yaw_deg ?? 0).toFixed(1)}°`;
+})();
+
+// ---- 시작
+setMode('original');
+// 시작 시점: 방 안 눈높이(메인 북마크) — 바깥에서 닫힌 상자만 보이는 것을 방지
+{ const m = viewer.bookmarks[0]; viewer.camera.position.set(...m.pos); viewer.controls.target.set(...m.tgt); viewer.controls.update(); }
+viewer.loadAll().then((loaded) => {
+  $('#loading').classList.add('hidden');
+  const ok = Object.keys(loaded); if (!ok.length) showError('불러온 모델이 없습니다. 위 오류를 확인하세요.');
+  else if (!loaded.reconstructed) showError('reconstructed_room.glb 가 없어 ③④ 모드가 비어 있습니다.');
+  window.__viewerReady = true; window.__loadedModels = ok;
+});

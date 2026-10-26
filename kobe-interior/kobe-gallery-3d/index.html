@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Kobe Gallery Studio 3D</title>
+  <link rel="stylesheet" href="./src/style.css" />
+</head>
+<body>
+  <canvas id="c"></canvas>
+
+  <header id="topbar">
+    <div class="brand">Kobe Gallery Studio · 3D</div>
+    <nav id="modes">
+      <button data-mode="original">① 원본 스캔</button>
+      <button data-mode="cleaned">② 노이즈 정리</button>
+      <button data-mode="reconstructed">③ 공간 보정</button>
+      <button data-mode="interior">④ 인테리어 A안</button>
+    </nav>
+    <button id="panelToggle" class="ghost" title="패널">☰</button>
+  </header>
+
+  <aside id="panel">
+    <section>
+      <h3>카메라 북마크</h3>
+      <div id="bookmarks" class="row wrap"></div>
+    </section>
+
+    <section>
+      <h3>보기</h3>
+      <label><input type="checkbox" id="hideCeiling" /> 천장 숨기기 / 단면</label>
+      <label class="slider">단면 높이 <input type="range" id="sectionY" min="0.3" max="3.5" step="0.05" value="2.6" /><span id="sectionYv">2.60 m</span></label>
+      <label><input type="checkbox" id="showDims" /> 치수 표시</label>
+      <label><input type="checkbox" id="ghostScan" /> ③④에서 정리 스캔 겹쳐 보기</label>
+      <label><input type="checkbox" id="highlightColumn" checked /> 중앙 넓은 기둥 강조</label>
+    </section>
+
+    <section id="interiorPanel">
+      <h3>인테리어 A안 — 레이어</h3>
+      <label><input type="checkbox" data-layer="molding" checked /> 하부 화이트 사각 몰딩 (검은 띠 유지)</label>
+      <label><input type="checkbox" data-layer="mirror_4_sides" checked /> 중앙 넓은 기둥 4면 거울</label>
+      <label><input type="checkbox" data-layer="gallery_art" checked /> 골드 액자 작품 디스플레이</label>
+      <label><input type="checkbox" data-layer="track_lights" checked /> 웜 화이트 트랙 조명</label>
+      <label><input type="checkbox" data-layer="furniture" /> 체험 테이블·스툴 (편집 가능)</label>
+      <label><input type="checkbox" data-layer="panel_white_optional" /> 하단만 화이트 패널 마감 (옵션)</label>
+      <label><input type="checkbox" data-layer="wine_accent_optional" /> 와인/테라코타 포인트 벽 (옵션)</label>
+
+      <h3>거울</h3>
+      <label class="slider">거울 높이 <input type="range" id="mirrorH" min="1.2" max="3.0" step="0.05" value="2.2" /><span id="mirrorHv">2.20 m</span></label>
+      <label class="slider">좌우 여백 <input type="range" id="mirrorInset" min="0" max="0.3" step="0.01" value="0.05" /><span id="mirrorInsetv">0.05 m</span></label>
+      <label>반사 방식
+        <select id="mirrorMode">
+          <option value="env">환경맵 (가벼움·모바일 OK)</option>
+          <option value="reflector">실시간 반사 (정확·무거움)</option>
+        </select>
+      </label>
+      <label class="slider">조명 밝기 <input type="range" id="lightI" min="0" max="3" step="0.1" value="1.5" /><span id="lightIv">1.5</span></label>
+      <label class="slider">색온도 <input type="range" id="lightK" min="2400" max="4000" step="100" value="3000" /><span id="lightKv">3000 K</span></label>
+
+      <h3>기둥 / 가구 편집</h3>
+      <label><input type="checkbox" id="pickColumn" /> 기둥 클릭 → 거울 대상 변경</label>
+      <div class="hint">현재: <code id="centralId">-</code> <span id="centralStatus"></span></div>
+      <label><input type="checkbox" id="editFurniture" /> 가구 클릭 → 이동 (G 이동 / R 회전)</label>
+      <div class="row">
+        <button id="exportGlb">interior_A.glb 내보내기</button>
+        <button id="copyLayout" class="ghost">가구 배치 JSON 복사</button>
+      </div>
+    </section>
+
+    <section>
+      <h3>치수 (참고치 · 실측 필수)</h3>
+      <div id="dimsText" class="hint"></div>
+    </section>
+  </aside>
+
+  <div id="loading"><div class="bar"><i></i></div><span>모델 불러오는 중…</span></div>
+  <div id="errors"></div>
+  <div id="toast"></div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

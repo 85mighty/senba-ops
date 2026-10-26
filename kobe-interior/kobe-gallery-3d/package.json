@@ -1,0 +1,22 @@
+{
+  "name": "kobe-gallery-3d",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "고베 점포 Scaniverse 스캔 → 정리/복원/인테리어 A안 비교 뷰어",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview --host",
+    "inspect": "python3 scripts/inspect_scan.py",
+    "clean": "python3 scripts/clean_scan.py",
+    "reconstruct": "python3 scripts/reconstruct_room.py",
+    "test:browser": "node scripts/browser_test.mjs"
+  },
+  "dependencies": {
+    "three": "0.170.0"
+  },
+  "devDependencies": {
+    "vite": "5.4.11"
+  }
+}

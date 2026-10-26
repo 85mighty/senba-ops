@@ -14,6 +14,7 @@
 | `dashboard/` | biz-dashboard(:3014) → 자산현황 '경영 대시보드' 탭 시간별 동기화 | `/opt/biz-dashboard/` |
 | `nginx/` | 블로그 nginx 설정 | `/etc/nginx/sites-available/` |
 | `kr-jp-arbitrage/` | KR→JP 아비트라지 리서치 도구 (:3016, pm2 kr-jp-arbitrage, 매일 09:00 JST 수집→매칭→마진→Sheets/Telegram) — 이 저장소가 원본, 배포 절차는 폴더 README | `/root/kr-jp-arbitrage/` |
+| `kobe-interior/` | 고베 산노미야점 인테리어 상담·설계·견적 기록 + `kobe-gallery-3d/` LiDAR 스캔 복원·인테리어 A안 3D 뷰어 — 이 저장소가 원본 | — |
 
 ## 시크릿 위치 (커밋 금지, 서버에만)
 - `/opt/senba-square/.env` — Square 토큰·로케이션·웹훅 서명키·블록용 ID
