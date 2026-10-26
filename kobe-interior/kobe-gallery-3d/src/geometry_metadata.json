@@ -1,0 +1,260 @@
+{
+  "version": 1,
+  "status_legend": {
+    "measured": "스캔 평면 적합으로 얻은 값",
+    "observed": "사진으로 확인했으나 치수는 추정",
+    "inferred": "스캔·사진 모두 불명확 — 현장 실측 필요"
+  },
+  "source_file": "/tmp/claude-0/-home-user-senba-ops/e8fb6029-b285-5392-b5f8-ef0845d4682f/scratchpad/synthetic/Scaniverse 2026-10-26 113837(1).zip",
+  "generated": "2026-10-26T05:08:27",
+  "alignment_transform": [
+    [
+      0.9940563382223196,
+      0.0,
+      -0.10886687485196445,
+      -1.348090640392793
+    ],
+    [
+      0.0,
+      1.0,
+      0.0,
+      -1.20114341
+    ],
+    [
+      0.10886687485196445,
+      0.0,
+      0.9940563382223196,
+      -7.383255278863357
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "unit_guess": "m",
+  "scale_to_m": 1.0,
+  "up_axis_original": "y",
+  "wall_yaw_deg": -6.249999999999993,
+  "bounds_world_m": {
+    "min": [
+      -4.427262899059424,
+      -0.01695556999999992,
+      -5.065998270474034
+    ],
+    "max": [
+      4.427262899059424,
+      3.11338268,
+      5.065998270474033
+    ]
+  },
+  "ceiling_height_m": 3.100000000000003,
+  "ceiling_height_status": "measured",
+  "counts": {
+    "vertices": 27452,
+    "faces": 48924,
+    "components": 236
+  },
+  "chair_rail_height_m": 0.95,
+  "chair_rail_status": "inferred",
+  "baseboard_height_m": 0.1,
+  "baseboard_status": "inferred",
+  "wall_thickness_m": 0.12,
+  "room_bounds": {
+    "x": [
+      -4.427262783050537,
+      4.427262783050537
+    ],
+    "z": [
+      -5.065998077392578,
+      5.065998077392578
+    ]
+  },
+  "elements": [
+    {
+      "id": "wall_x_0",
+      "type": "wall",
+      "status": "measured",
+      "axis": "x",
+      "offset": -4.3456527074178055,
+      "from": -4.078218688964844,
+      "to": 4.87189107577006,
+      "y_from": 0.0274073570035398,
+      "y_to": 3.0741337140401206,
+      "inward": 1.0,
+      "support_area_m2": 30.84,
+      "openings": []
+    },
+    {
+      "id": "wall_x_1",
+      "type": "wall",
+      "status": "measured",
+      "axis": "x",
+      "offset": 4.354347292582164,
+      "from": -4.102440848350525,
+      "to": 4.746119955380759,
+      "y_from": 0.026148450560867786,
+      "y_to": 3.0696825981140137,
+      "inward": -1.0,
+      "support_area_m2": 31.36,
+      "openings": []
+    },
+    {
+      "id": "wall_z_2",
+      "type": "wall",
+      "status": "measured",
+      "axis": "z",
+      "offset": -5.035667196909587,
+      "from": -1.990413080851237,
+      "to": 4.251683254241944,
+      "y_from": 0.06074556657889237,
+      "y_to": 3.060946464538574,
+      "inward": 1.0,
+      "support_area_m2": 21.84,
+      "openings": [
+        {
+          "from": -1.740413080851237,
+          "to": 2.009586919148763,
+          "status": "inferred",
+          "note": "0.9~2.0m 높이 스캔 공백 — 창(유리) 또는 문 가능. 사진으로 확인"
+        }
+      ]
+    },
+    {
+      "id": "wall_z_3",
+      "type": "wall",
+      "status": "measured",
+      "axis": "z",
+      "offset": 5.014332803090377,
+      "from": -4.220406500498454,
+      "to": 3.4218685706456538,
+      "y_from": 0.057415466445187725,
+      "y_to": 3.0589447816212973,
+      "inward": -1.0,
+      "support_area_m2": 25.43,
+      "openings": [
+        {
+          "from": 2.779593499501546,
+          "to": 3.529593499501546,
+          "status": "inferred",
+          "note": "0.9~2.0m 높이 스캔 공백 — 창(유리) 또는 문 가능. 사진으로 확인"
+        }
+      ]
+    },
+    {
+      "id": "thin_column_1",
+      "type": "thin_column",
+      "status": "measured",
+      "footprint": {
+        "x": [
+          -2.537023785909017,
+          -2.230678472518921
+        ],
+        "z": [
+          -2.6223829968770347,
+          -2.315272092819214
+        ]
+      },
+      "y": [
+        0.0633174047882979,
+        3.0377031167348227
+      ],
+      "support_points": 863
+    },
+    {
+      "id": "thin_column_2",
+      "type": "thin_column",
+      "status": "measured",
+      "footprint": {
+        "x": [
+          -2.4719906091690063,
+          -2.164438009262085
+        ],
+        "z": [
+          2.3770682779947916,
+          2.6838751443227133
+        ]
+      },
+      "y": [
+        0.058840403178085886,
+        3.037426471710205
+      ],
+      "support_points": 864
+    },
+    {
+      "id": "wide_column_3",
+      "type": "wide_column",
+      "status": "measured",
+      "footprint": {
+        "x": [
+          -0.8537115025520325,
+          0.7520790561040243
+        ],
+        "z": [
+          -0.2089067835609118,
+          0.20948454360167185
+        ]
+      },
+      "y": [
+        0.05922798238073786,
+        3.038602272669474
+      ],
+      "support_points": 1200
+    },
+    {
+      "id": "thin_column_4",
+      "type": "thin_column",
+      "status": "measured",
+      "footprint": {
+        "x": [
+          2.1627195978164675,
+          2.469583290417989
+        ],
+        "z": [
+          -2.6839346265792847,
+          -2.377633999188741
+        ]
+      },
+      "y": [
+        0.06043727626092732,
+        3.0377251307169595
+      ],
+      "support_points": 864
+    },
+    {
+      "id": "fixture_candidate_5",
+      "type": "fixture_candidate",
+      "status": "observed",
+      "footprint": {
+        "x": [
+          2.793264307975769,
+          4.134212376276652
+        ],
+        "z": [
+          3.445883876482646,
+          4.061918652852376
+        ]
+      },
+      "y": [
+        0.03085373993963003,
+        0.8658711711565653
+      ],
+      "support_points": 232
+    }
+  ],
+  "central_wide_column": "wide_column_3",
+  "central_wide_column_status": "inferred — 뷰어에서 클릭해 확인/변경 필요",
+  "clean": {
+    "faces_after": 44112,
+    "components_dropped": 61,
+    "params": {
+      "input": "/tmp/claude-0/-home-user-senba-ops/e8fb6029-b285-5392-b5f8-ef0845d4682f/scratchpad/synthetic/Scaniverse 2026-10-26 113837(1).zip",
+      "min_faces": 200,
+      "min_area": 0.02,
+      "detach": 0.08,
+      "keep": "",
+      "drop": ""
+    }
+  }
+}

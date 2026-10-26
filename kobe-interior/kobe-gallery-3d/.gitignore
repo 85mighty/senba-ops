@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.DS_Store
+# 원본 ZIP 풀어놓은 폴더 (ZIP 자체는 보관)
+assets/original/*/
+# 큰 모델은 Git LFS 또는 별도 보관 권장 — 필요하면 아래 주석 해제
+# assets/models/*.glb
+__pycache__/
