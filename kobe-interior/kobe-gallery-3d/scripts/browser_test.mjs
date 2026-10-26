@@ -1,6 +1,6 @@
 // 브라우저 검증 — vite preview 로 dist/ 를 띄우고 Chromium(Playwright)으로 4개 모드 + 토글을 실제 렌더링한다.
 // 콘솔 오류·404·JS 예외를 모아 보고하고 screenshots/ 에 모드별 캡처를 남긴다. 실패 시 exit 1.
-// 사용: npm run build && npm run test:browser
+// 사용: npm run build && npm run test:browser  (app/ 을 python3 http.server 로 띄워 검증)
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { mkdirSync } from 'node:fs';
@@ -9,12 +9,13 @@ const require = createRequire(import.meta.url);
 let chromium; try { ({ chromium } = require('playwright')); } catch { console.error('playwright 를 찾을 수 없습니다. (이 테스트는 선택 사항 — 수동으로 Chrome 에서 확인해도 됩니다)'); process.exit(2); }
 
 const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
-const PORT = 4190; mkdirSync(path.join(root, 'screenshots'), { recursive: true });
-const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], { cwd: root, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
+const PORT = 4192;  // 4190 은 Node fetch "bad port" 목록(ManageSieve)이라 피한다 mkdirSync(path.join(root, 'screenshots'), { recursive: true });
+// 사용자와 같은 방식(python3 -m http.server)으로 프로젝트 루트를 서빙하고 app/ 을 연다
+const server = spawn('python3', ['-m', 'http.server', String(PORT), '--bind', '127.0.0.1'], { cwd: root, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
 const stopServer = () => { try { process.kill(-server.pid, 'SIGTERM'); } catch { try { server.kill(); } catch {} } };
 process.on('exit', stopServer); process.on('SIGINT', () => { stopServer(); process.exit(130); });
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-await new Promise((res, rej) => { const t = setTimeout(() => rej(new Error('vite preview 시작 시간 초과')), 20000); server.stdout.on('data', (d) => { if (String(d).includes('http://')) { clearTimeout(t); res(); } }); server.stderr.on('data', (d) => process.stderr.write(d)); });
+await new Promise((res, rej) => { const t = setTimeout(() => rej(new Error('로컬 서버 시작 시간 초과')), 20000); const probe = async () => { try { const r = await fetch(`http://127.0.0.1:${PORT}/app/`); if (r.ok) { clearTimeout(t); res(); return; } } catch {} setTimeout(probe, 300); }; probe(); });
 
 const problems = [];
 const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
@@ -23,7 +24,7 @@ try {
   page.on('console', (m) => { if (m.type() === 'error') problems.push(`console.error: ${m.text()}`); });
   page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));
   page.on('response', (r) => { if (r.status() >= 400) problems.push(`HTTP ${r.status()} ${r.url()}`); });
-  await page.goto(`http://localhost:${PORT}/`, { waitUntil: 'load' });
+  await page.goto(`http://127.0.0.1:${PORT}/app/`, { waitUntil: 'load' });
   await page.waitForFunction(() => window.__viewerReady === true, null, { timeout: 60000 });
   const loaded = await page.evaluate(() => window.__loadedModels); const errs = await page.evaluate(() => window.__viewerErrors);
   console.log('불러온 모델:', loaded); if (errs.length) problems.push(...errs.map((e) => `viewer: ${e}`));

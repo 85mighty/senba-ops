@@ -4,10 +4,12 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
+// 개발 서버(npm run dev)는 assets/ 를 루트로 서빙 → 'models/..', 빌드본(app/)은 ../assets/models/.. 를 참조
+const BASE = import.meta.env.DEV ? '' : '../assets/';
 export const MODELS = {
-  original: 'models/scan_original.glb',
-  cleaned: 'models/scan_cleaned.glb',
-  reconstructed: 'models/reconstructed_room.glb',
+  original: BASE + 'models/scan_original.glb',
+  cleaned: BASE + 'models/scan_cleaned.glb',
+  reconstructed: BASE + 'models/reconstructed_room.glb',
 };
 
 export class Viewer {
