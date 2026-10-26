@@ -2,8 +2,8 @@
 // 데이터: 매출 시트 「예약관리」 탭 (취소 제외, 코스에서 시간 추출, 없으면 2시간) · 2026-09 (확정) / 2026-10 (접수분 기준)
 // 시나리오:
 //  ① 현행: 아이미짱만 금토일월 (12:45~13:45 출근, 17:00~18:15 퇴근) — 화수목·주말 오전은 사장님
-//  ② 새 규칙(고정): 화·목 아이미 13:45 고정(2h) · 수 휴무 · 금 마미 13:45 고정(2h) · 토일 마미 11:00 고정(13:00 보장)+아이미 · 월 아이미
-//  ③ ②에서 보장 제외: 화·목·금·토일 예약 없는 날 2시간 대기 출근 안 함 (보장 비용이 얼마인지)
+//  ② 새 규칙(확정): 아이미 토일월화목(예약시 12:45~13:30 출근, 없으면 13:30-16:30, 최대 18:15) · 마미 금 13:30 고정(16:30 보장) + 토일 10:15-12:45 고정 · 수 휴무
+//  ③ ②에서 보장 제외: 예약 없는 날(아이미 청소일·마미 대기일·주말 오전 예약 없는 날) 출근 안 함 (보장 비용이 얼마인지)
 //  ④ ②에서 수요일도 마미짱 13:45 고정으로 영업 (SHIFT_WED_OPEN=1)
 const path = require('path');
 const { google } = require(path.join('/opt/senba-sales-sync/node_modules/googleapis'));
@@ -12,7 +12,7 @@ const SHIFT = require(path.join(__dirname, '..', 'booking-view', 'shift-rules.js
 const LEDGER_ID = '1sUXyrXxYzl_n6n5T4dV_flQ6Ocli3c0B-Ggbwzw5YC4';
 const SHEET_ID = '1OiQnj_slGsZvQ8BBQBP6a6eK3_j4J35nCReSTT2HRgc';
 const TAB = '인건비 시뮬';
-const RULE_TAG = '규칙v4(아이미 토일월화목·마미 금+토일오전)';
+const RULE_TAG = '규칙v5 확정(아이미 토일월화목·마미 금+토일 10:15-12:45)';
 const MONTHS = ['2026-09', '2026-10'];
 const WAGE = 1200;
 const WD = '日月火水木金土';
@@ -62,7 +62,7 @@ function current(ymd, bk) {
       const p = SHIFT.plan(ymd, bk);
       const pw = SHIFT.plan(ymd, bk, { wedOpen: true });   // ④ 수요일 영업 시
       const m = p.mami ? p.mami.pay : 0, a = p.aimi ? p.aimi.pay : 0;
-      const standby = (p.mami && p.mami.standby ? p.mami.pay : 0) + (p.aimi && p.aimi.standby ? p.aimi.pay : 0);
+      const standby = (p.mami && p.mami.standby ? p.mami.pay : 0) + (p.aimi && (p.aimi.standby || p.aimi.cleanOnly) ? p.aimi.pay : 0);
       const wedExtra = (pw.mami ? pw.mami.pay : 0) + (pw.aimi ? pw.aimi.pay : 0) - (m + a);   // 수요일 영업 추가분
       const cur = current(ymd, bk);
       tot.cur += cur; tot.fix += m + a; tot.noGuar += m + a - standby; tot.wedOpen += m + a + wedExtra;
