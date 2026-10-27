@@ -114,7 +114,7 @@ viewer.loadAll().then((loaded) => {
 // ---- 편집기 UI
 function refreshBookmarks() { viewer.bookmarks = viewer.computeBookmarks(); const box = $('#bookmarks'); box.innerHTML = ''; for (const b of viewer.bookmarks) { const btn = document.createElement('button'); btn.textContent = b.name; btn.addEventListener('click', () => viewer.goBookmark(b)); box.appendChild(btn); } }
 function setupEditorUI() {
-  editor.onLandmarks = refreshBookmarks; editor.renderChips(); editor.renderInspector(); editor.renderTrimPanel();
+  editor.onLandmarks = refreshBookmarks; editor.renderChips(); editor.renderInspector();
   const curProp = () => { const sel = editor.selected; return sel?.kind === 'prop' ? store.design.props.find((x) => x.id === sel.id) : null; };
   $('#fabRotL').addEventListener('click', () => { const p = curProp(); if (p) editor.rotateProp(p, -15); });
   $('#fabRotR').addEventListener('click', () => { const p = curProp(); if (p) editor.rotateProp(p, 15); });

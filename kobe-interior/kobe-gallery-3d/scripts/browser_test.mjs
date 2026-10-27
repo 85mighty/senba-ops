@@ -78,8 +78,13 @@ try {
     e.setAutoHide(true); e.runAutoHide(); const auto = e._autoHidden.size; e.setAutoHide(false);
     if (!hiddenOk || !tileOk) throw new Error('숨기기 검증 실패 ' + JSON.stringify({ hiddenOk, tileOk, auto }));
     // 띠/하부 벽/몰딩 전역 옵션 + 전체 바닥 덮어쓰기 + 소품 삭제
-    s.global.rail = { color: '#a98457', style: 'molding' }; s.global.lower = { paint: '#a98457', style: 'wood_panel' }; s.global.moldingColor = '#efe6d6'; s.commit('trim');
-    const bandsN = e.bands.children.length; if (!bandsN) throw new Error('커스텀 띠 생성 실패');
+    // 벽별 띠·하부 벽: 한 벽만 원목 몰드 → 그 벽만 커스텀 띠, 다른 벽은 GLB 검정 띠 유지
+    const tw = walls[0], other2 = walls[1]; const te = s.trimEdit(tw.id); te.rail = { color: '#a98457', style: 'molding' }; te.lower = { paint: '#a98457', style: 'wood_panel' }; te.moldingColor = '#efe6d6'; s.commit('trim');
+    const bandSids = new Set(); e.bands.traverse((o) => { if (o.isMesh) bandSids.add(o.userData.surface); });
+    let otherGlbBand = false; window.__viewer.loaded.reconstructed.traverse((o) => { if (o.isMesh && o.name === other2.id + '_chairrail' && o.userData.keepVisible !== false) otherGlbBand = true; });
+    if (!bandSids.has(tw.id) || bandSids.size !== 1 || !otherGlbBand) throw new Error('벽별 띠 실패 ' + JSON.stringify({ sids: [...bandSids], otherGlbBand }));
+    s.applyTrimToAll(tw.id); s.commit('trim'); if (s.hasOwnTrim(tw.id) || s.trimOf(other2.id).rail.color !== '#a98457') throw new Error('모든 벽 적용 실패');
+    s.resetAllTrim(); s.commit('trim'); const te2 = s.trimEdit(tw.id); te2.rail = { color: '#a98457', style: 'molding' }; te2.lower = { paint: '#a98457', style: 'wood_panel' }; s.commit('trim');
     s.paintAll('floor', '#866752'); s.commit('paint'); if (s.getSurface('floor_t1').paint) throw new Error('전체 바닥 덮어쓰기 실패');
     const before2 = s.design.props.length; e.deleteProp(s.design.props[0].id); if (s.design.props.length !== before2 - 1) throw new Error('소품 삭제 실패');
     const json = s.exportJSON();

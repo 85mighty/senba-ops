@@ -45,6 +45,15 @@ export class DesignStore {
   resetWindows() { this.design.windows = this.defaultWindows(); this.design.windows_src = this.meta.generated; this.design.windowsEdited = false; this.commit('windows-reset'); }
   migrate(d) { const e = emptyDesign(); const g = DEFAULT_GLOBAL(); const dg = d.global || {}; if (d.surfaces) for (const k of Object.keys(d.surfaces)) if (k.startsWith('ceiling_t')) delete d.surfaces[k]; return { ...e, ...d, surfaces: d.surfaces || {}, columns: d.columns || {}, landmarks: d.landmarks || {}, props: d.props || [], global: { ...g, ...dg, rail: { ...g.rail, ...(dg.rail || {}) }, base: { ...g.base, ...(dg.base || {}) }, lower: { ...g.lower, ...(dg.lower || {}) } } }; }
   get global() { return this.design.global; }
+  // 띠·걸레받이·흰 몰딩·하부 벽: 벽/기둥별 설정(surfaces[id].trim)이 있으면 그것, 없으면 기본값(global)
+  trimOf(id) { const g = this.design.global; const t = this.design.surfaces[id]?.trim; if (!t) return g; return { rail: { ...g.rail, ...(t.rail || {}) }, base: { ...g.base, ...(t.base || {}) }, moldingColor: t.moldingColor ?? g.moldingColor, lower: { ...g.lower, ...(t.lower || {}) } }; }
+  hasOwnTrim(id) { return !!this.design.surfaces[id]?.trim; }
+  // 편집용: 현재 유효 값을 복사해 개별 설정으로 만든 뒤 돌려준다
+  trimEdit(id) { const sf = this.surface(id); if (!sf.trim) { const e = this.trimOf(id); sf.trim = JSON.parse(JSON.stringify({ rail: e.rail, base: e.base, moldingColor: e.moldingColor, lower: e.lower })); } return sf.trim; }
+  clearTrim(id) { if (this.design.surfaces[id]) delete this.design.surfaces[id].trim; }
+  // 이 벽 설정을 모든 벽·기둥에: 기본값으로 올리고 개별 설정을 모두 지운다
+  applyTrimToAll(id) { const e = JSON.parse(JSON.stringify(this.trimOf(id))); this.design.global = { ...this.design.global, ...e }; for (const k of Object.keys(this.design.surfaces)) delete this.design.surfaces[k].trim; }
+  resetAllTrim() { const d = DEFAULT_GLOBAL(); Object.assign(this.design.global, d); for (const k of Object.keys(this.design.surfaces)) delete this.design.surfaces[k].trim; }
   // 전체 바닥/천장 색: 타일별 설정을 지우고 전체에 적용
   paintAll(kind, hex) { for (const k of Object.keys(this.design.surfaces)) if (k.startsWith(kind + '_t')) this.design.surfaces[k].paint = null; this.surface(kind).paint = hex; }
   // 창 기본값: 메타데이터의 벽 개구부(window) → 편집 가능한 레코드
