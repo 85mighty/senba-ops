@@ -57,15 +57,16 @@ export class InteriorA {
   placeOnWall(obj, w, t, y, off) {
     if (w.axis === 'x') { obj.position.set(w.offset + w.inward * off, y, t); obj.rotation.y = w.inward > 0 ? Math.PI / 2 : -Math.PI / 2; }
     else { obj.position.set(t, y, w.offset + w.inward * off); obj.rotation.y = w.inward > 0 ? 0 : Math.PI; }
+    const sid = w.sid || w.id; if (sid) obj.traverse((o) => { o.userData.surface = sid; });   // 숨기기용 면 태그
   }
   // 기둥 4면 → 가상의 "벽" 객체 배열 (안쪽 법선 = 바깥 방향)
   columnFaces(col) {
-    const f = col.id ? this.fp(col) : col.footprint; const fx = f.x, fz = f.z;
+    const f = col.id ? this.fp(col) : col.footprint; const fx = f.x, fz = f.z; const sid = col.id || null;
     return [
-      { key: 'xn', axis: 'x', offset: fx[0], inward: -1, from: fz[0], to: fz[1], openings: [] },
-      { key: 'xp', axis: 'x', offset: fx[1], inward: 1, from: fz[0], to: fz[1], openings: [] },
-      { key: 'zn', axis: 'z', offset: fz[0], inward: -1, from: fx[0], to: fx[1], openings: [] },
-      { key: 'zp', axis: 'z', offset: fz[1], inward: 1, from: fx[0], to: fx[1], openings: [] },
+      { key: 'xn', sid, axis: 'x', offset: fx[0], inward: -1, from: fz[0], to: fz[1], openings: [] },
+      { key: 'xp', sid, axis: 'x', offset: fx[1], inward: 1, from: fz[0], to: fz[1], openings: [] },
+      { key: 'zn', sid, axis: 'z', offset: fz[0], inward: -1, from: fx[0], to: fx[1], openings: [] },
+      { key: 'zp', sid, axis: 'z', offset: fz[1], inward: 1, from: fx[0], to: fx[1], openings: [] },
     ];
   }
 

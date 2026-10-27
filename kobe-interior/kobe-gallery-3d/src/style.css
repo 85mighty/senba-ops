@@ -46,3 +46,4 @@ button.ghost { background:transparent; }
 .swatches input[type=color] { width:26px; height:26px; padding:0; border:none; background:none; }
 button.danger { border-color:#7a2e2e; color:#ff9d9d; }
 #designJson { width:100%; background:#15161a; color:var(--fg); border:1px solid #333; border-radius:6px; font-size:11px; }
+.chip.auto { opacity:.6; border-style:dashed; }

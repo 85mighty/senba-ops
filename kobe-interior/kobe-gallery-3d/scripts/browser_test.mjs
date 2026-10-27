@@ -69,6 +69,11 @@ try {
     const before = s.exportJSON().length; s.undo(); const afterUndo = s.exportJSON().length; s.redo(); const afterRedo = s.exportJSON().length;
     if (!(afterUndo !== before && afterRedo === before)) throw new Error('undo/redo 불일치');
     s.saveExplicit(); s.surface('ceiling').paint = '#333333'; s.commit('paint'); s.revertToSaved(); if (s.getSurface('ceiling').paint !== '#f2efe9') throw new Error('저장본 복원 실패');
+    // 숨기기/자동 숨김
+    e.setHidden(w.id, true); const hiddenOk = (() => { let anyVisible = false; window.__viewer.loaded.reconstructed.traverse((o) => { if (o.isMesh && o.name.startsWith(w.id) && o.visible) anyVisible = true; }); return !anyVisible; })();
+    e.setHidden('ceiling_t1', true); const tileOk = e.ceilTiles.visible && e.ceilTiles.children.some((t) => !t.visible); e.showAll();
+    e.setAutoHide(true); e.runAutoHide(); const auto = e._autoHidden.size; e.setAutoHide(false);
+    if (!hiddenOk || !tileOk) throw new Error('숨기기 검증 실패 ' + JSON.stringify({ hiddenOk, tileOk, auto }));
     const json = s.exportJSON();
     return { items: e.items.length, chips: document.querySelectorAll('#itemChips button').length, overlays: e.overlays.children.length, windows: e.windows.children.length, props: e.props.children.length, labels: e.labels.children.length, jsonLen: json.length, inspector: document.querySelector('#inspector').textContent.slice(0, 40) };
   });
