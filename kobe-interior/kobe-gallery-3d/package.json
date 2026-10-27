@@ -11,7 +11,8 @@
     "inspect": "python3 scripts/inspect_scan.py",
     "clean": "python3 scripts/clean_scan.py",
     "reconstruct": "python3 scripts/reconstruct_room.py",
-    "test:browser": "node scripts/browser_test.mjs"
+    "test:browser": "node scripts/browser_test.mjs",
+    "test:sync": "node scripts/sync_test.mjs"
   },
   "dependencies": {
     "three": "0.170.0"

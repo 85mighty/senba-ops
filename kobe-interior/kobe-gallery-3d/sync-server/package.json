@@ -1,0 +1,9 @@
+{
+  "name": "kobe3d-sync",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "고베 3D 뷰어 디자인(A·B·C안) 기기 간 동기화 저장 서버 — 외부 의존성 없음",
+  "engines": { "node": ">=18" },
+  "scripts": { "start": "node server.mjs", "test": "node test.mjs" }
+}

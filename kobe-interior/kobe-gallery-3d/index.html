@@ -17,6 +17,7 @@
       <button data-mode="reconstructed">③ 공간 보정</button>
       <button data-mode="interior">④ 인테리어</button>
       <span id="slotBar" class="slotbar"></span>
+      <span id="syncPill" class="syncpill" hidden></span>
     </nav>
     <button id="panelToggle" class="ghost" title="패널">☰</button>
   </header>
@@ -100,6 +101,12 @@
       <div class="hint">이 브라우저에 자동 저장됩니다. 다른 기기로 옮기려면 JSON 을 복사해 붙여 넣으세요.</div>
       <div class="row wrap"><button id="exportDesign">JSON 내보내기</button><button id="importDesign" class="ghost">JSON 불러오기</button><button id="resetDesign" class="ghost">디자인 초기화</button></div>
       <textarea id="designJson" rows="3" placeholder="디자인 JSON"></textarea>
+      <h3>기기 간 자동 동기화</h3>
+      <div class="hint">폰·아이패드·컴퓨터에서 같은 비밀번호로 연결하면 A안·B안·C안이 자동으로 맞춰집니다. 처음에는 디자인이 있는 기기부터 연결하세요.</div>
+      <input id="syncToken" type="password" autocomplete="off" placeholder="동기화 비밀번호" />
+      <details><summary class="hint">서버 주소</summary><input id="syncUrl" placeholder="https://…/kobe3d-api" /></details>
+      <div class="row wrap"><button id="syncConnect"><b>연결</b></button><button id="syncNow" class="ghost">지금 맞추기</button><button id="syncOff" class="ghost">끊기</button></div>
+      <div id="syncState" class="hint">꺼짐</div>
       <h3>다른 기기로 보내기</h3>
       <div class="row wrap"><button id="shareLink"><b>공유 링크 만들기</b></button></div>
       <div class="hint">지금 안이 담긴 링크를 복사합니다. 카톡·메시지로 보내 다른 기기에서 열면 A안·B안·C안 중 어디에 넣을지 고릅니다.</div>
