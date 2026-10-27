@@ -4,7 +4,7 @@ import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { Viewer } from './viewer.js';
 import { InteriorA, LAYERS } from './interior.js';
-import { DesignStore, PROP_TYPES } from './design.js';
+import { DesignStore, PROP_TYPES, SLOTS } from './design.js';
 import { Editor } from './editor.js';
 import meta from './geometry_metadata.json';
 
@@ -25,7 +25,7 @@ const interior = new InteriorA(viewer, store); window.__interior = interior;
 let editor = null; // 모델 로드 후 생성 (바닥 타일 판정에 복원 바닥 메쉬 필요)
 
 // ---- 모드
-const modeBtns = [...document.querySelectorAll('#modes button')];
+const modeBtns = [...document.querySelectorAll('#modes button[data-mode]')];
 function setMode(m) { viewer.setMode(m); editor?.applyHidden(); modeBtns.forEach((b) => b.classList.toggle('active', b.dataset.mode === m)); $('#interiorPanel').style.opacity = m === 'interior' ? 1 : 0.45; }
 modeBtns.forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
 window.__setMode = setMode;
@@ -139,12 +139,12 @@ function setupEditorUI() {
   $('#revertBtn').addEventListener('click', () => { if (store.revertToSaved()) { editor.renderChips(); refreshBookmarks(); toast('저장본으로 복원'); } });
   $('#resetWindows').addEventListener('click', () => { store.resetWindows(); editor.renderChips(); toast('창을 스캔 기본값으로 재설정'); });
   window.addEventListener('keydown', (e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'z' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') { e.preventDefault(); if (e.shiftKey) store.redo(); else store.undo(); editor.renderChips(); } if ((e.metaKey || e.ctrlKey) && e.key === 's') { e.preventDefault(); store.saveExplicit(); saveState(); toast('저장됨'); } });
-  for (const slot of ['A', 'B', 'C']) {
-    $(`#save${slot}`).addEventListener('click', () => { store.saveSlot(slot); toast(`디자인 ${slot} 저장됨`); updateSlots(); });
-    $(`#load${slot}`).addEventListener('click', () => { if (store.loadSlot(slot)) { toast(`디자인 ${slot} 불러옴`); editor.renderChips(); } else toast(`저장된 ${slot} 가 없습니다`); });
-  }
-  function updateSlots() { for (const slot of ['A', 'B', 'C']) $(`#load${slot}`).disabled = !store.hasSlot(slot); }
-  updateSlots();
+  // 디자인 안 A/B/C — 위쪽 바에서 전환
+  const renderSlotBar = () => { const bar = $('#slotBar'); bar.innerHTML = ''; for (const sl of SLOTS) { const b = document.createElement('button'); const has = store.hasSlot(sl); b.textContent = has ? `${sl}안` : `${sl}안 +`; b.className = (sl === store.active ? 'on' : '') + (has ? '' : ' empty'); b.title = has ? `${sl}안 열기` : `${sl}안 새로 만들기(지금 디자인 복사)`; b.addEventListener('click', () => switchTo(sl)); bar.appendChild(b); } };
+  const switchTo = (sl) => { if (viewer.mode !== 'interior' && viewer.mode !== 'reconstructed') setMode('interior'); const r = store.switchSlot(sl); if (r === 'same') return; editor.renderChips(); refreshBookmarks(); renderSlotBar(); saveState(); toast(r === 'new' ? `${sl}안을 새로 만들었습니다 (지금 디자인 복사)` : `${sl}안 열림`); };
+  window.__switchSlot = switchTo;
+  for (const sl of SLOTS) { const btn = $(`#copy${sl}`); btn.addEventListener('click', () => { if (sl === store.active) { toast(`지금 ${sl}안입니다`); return; } if (store.hasSlot(sl) && !btn.dataset.arm) { btn.dataset.arm = '1'; btn.textContent = `${sl}안 덮어쓰기? (다시 누름)`; setTimeout(() => { delete btn.dataset.arm; btn.textContent = `→ ${sl}안`; }, 4000); return; } delete btn.dataset.arm; btn.textContent = `→ ${sl}안`; store.copyTo(sl); renderSlotBar(); toast(`지금 디자인을 ${sl}안으로 복사`); }); }
+  renderSlotBar();
   $('#exportDesign').addEventListener('click', async () => { const j = store.exportJSON(); $('#designJson').value = j; try { await navigator.clipboard.writeText(j); toast('디자인 JSON 복사됨 (아래 칸에도 표시)'); } catch { toast('아래 칸의 JSON 을 복사하세요'); } });
   $('#importDesign').addEventListener('click', () => { try { store.importJSON($('#designJson').value); editor.renderChips(); refreshBookmarks(); toast('디자인 불러옴'); } catch (e) { toast('불러오기 실패: ' + e.message); } });
   $('#resetDesign').addEventListener('click', () => { if ($('#resetDesign').dataset.arm) { store.reset(); editor.renderChips(); refreshBookmarks(); toast('초기화됨'); delete $('#resetDesign').dataset.arm; $('#resetDesign').textContent = '디자인 초기화'; } else { $('#resetDesign').dataset.arm = '1'; $('#resetDesign').textContent = '정말 초기화? (다시 클릭)'; setTimeout(() => { delete $('#resetDesign').dataset.arm; $('#resetDesign').textContent = '디자인 초기화'; }, 4000); } });

@@ -15,7 +15,8 @@
       <button data-mode="original">① 원본 스캔</button>
       <button data-mode="cleaned">② 노이즈 정리</button>
       <button data-mode="reconstructed">③ 공간 보정</button>
-      <button data-mode="interior">④ 인테리어 A안</button>
+      <button data-mode="interior">④ 인테리어</button>
+      <span id="slotBar" class="slotbar"></span>
     </nav>
     <button id="panelToggle" class="ghost" title="패널">☰</button>
   </header>
@@ -93,12 +94,9 @@
       </div>
       <div id="saveState" class="hint">변경 사항은 자동 보관됩니다. '저장'을 누르면 그 시점이 저장본이 됩니다.</div>
       <div class="row wrap"><button id="resetWindows" class="ghost">창 기본값으로 재설정</button></div>
-      <h3>디자인 슬롯</h3>
-      <div class="row wrap">
-        <button id="saveA">A 저장</button><button id="loadA" class="ghost">A 열기</button>
-        <button id="saveB">B 저장</button><button id="loadB" class="ghost">B 열기</button>
-        <button id="saveC">C 저장</button><button id="loadC" class="ghost">C 열기</button>
-      </div>
+      <h3>디자인 안 (A안 · B안 · C안)</h3>
+      <div class="hint">위쪽 바의 A안·B안·C안 버튼으로 바꿔 봅니다. 안마다 따로 자동 저장되고, 비어 있는 안(+)을 누르면 지금 디자인을 복사해 새 안을 만듭니다.</div>
+      <div class="row wrap"><span class="hint">지금 안을 복사해 덮어쓰기:</span><button id="copyA" class="ghost">→ A안</button><button id="copyB" class="ghost">→ B안</button><button id="copyC" class="ghost">→ C안</button></div>
       <div class="hint">이 브라우저에 자동 저장됩니다. 다른 기기로 옮기려면 JSON 을 복사해 붙여 넣으세요.</div>
       <div class="row wrap"><button id="exportDesign">JSON 내보내기</button><button id="importDesign" class="ghost">JSON 불러오기</button><button id="resetDesign" class="ghost">디자인 초기화</button></div>
       <textarea id="designJson" rows="3" placeholder="디자인 JSON"></textarea>

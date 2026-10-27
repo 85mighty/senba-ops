@@ -51,3 +51,7 @@ button.danger { border-color:#7a2e2e; color:#ff9d9d; }
 #propFab[hidden] { display:none; }
 #propFab span { font-size:12px; color:var(--mute); margin-right:4px; }
 #propFab button { padding:8px 12px; font-size:14px; }
+.slotbar { display:flex; gap:4px; align-items:center; margin-left:2px; }
+.slotbar button { padding:6px 9px; font-size:13px; }
+.slotbar button.on { background:#3b4a42; border-color:var(--acc); color:var(--acc); font-weight:600; }
+.slotbar button.empty { opacity:.55; border-style:dashed; }
