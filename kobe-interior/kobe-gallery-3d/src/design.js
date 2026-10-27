@@ -11,7 +11,7 @@ export const PALETTE_FLOOR = [
   ['현재 우드(스캔)', null], ['현재 톤 · 밝게', '#866752'], ['현재 톤 · 어둡게', '#4f351d'], ['라이트 오크', '#c9a97a'], ['내추럴 오크', '#a98457'],
   ['월넛', '#5c3d26'], ['다크 월넛', '#3b2616'], ['그레이 우드', '#8a8178'], ['화이트 워시', '#d9cfc0'], ['블랙', '#222222'],
 ];
-export const PALETTE_CEIL = [['현재(스캔)', null], ['화이트', '#f2efe9'], ['웜 화이트', '#ebe3d4'], ['라이트 그레이', '#cfcdc8'], ['차콜', '#333333']];
+export const PALETTE_CEIL = [['화이트(기본)', null, '#f2efe9'], ['웜 화이트', '#ebe3d4'], ['라이트 그레이', '#cfcdc8'], ['딥 그린', '#3f5a52'], ['원목', '#a98457'], ['차콜', '#333333'], ['블랙', '#1c1c1c'], ['스캔 원본(현재 천장)', 'scan']];
 export const PALETTE_CURTAIN = [['밤색', '#5a3a22'], ['다크 브라운', '#3e2a1a'], ['베이지', '#c9b89a'], ['아이보리', '#ece4d4'], ['와인', '#6e2a2e'], ['차콜', '#3b3b3b'], ['네이비', '#2d3650']];
 export const FRAME_STYLES = [['골드', 'gold'], ['블랙', 'black'], ['화이트', 'white'], ['내추럴 우드', 'natural']];
 export const PROP_TYPES = [
@@ -43,7 +43,7 @@ export class DesignStore {
   hasExplicit() { try { return !!localStorage.getItem(STORAGE_KEY + '.saved'); } catch { return false; } }
   revertToSaved() { try { const raw = localStorage.getItem(STORAGE_KEY + '.saved'); if (!raw) return false; this.undoStack.push(this.snapshot()); this.design = this.migrate(JSON.parse(raw)); this.commit('revert', false); this.dirty = false; return true; } catch { return false; } }
   resetWindows() { this.design.windows = this.defaultWindows(); this.design.windows_src = this.meta.generated; this.design.windowsEdited = false; this.commit('windows-reset'); }
-  migrate(d) { const e = emptyDesign(); const g = DEFAULT_GLOBAL(); const dg = d.global || {}; return { ...e, ...d, surfaces: d.surfaces || {}, columns: d.columns || {}, landmarks: d.landmarks || {}, props: d.props || [], global: { ...g, ...dg, rail: { ...g.rail, ...(dg.rail || {}) }, base: { ...g.base, ...(dg.base || {}) }, lower: { ...g.lower, ...(dg.lower || {}) } } }; }
+  migrate(d) { const e = emptyDesign(); const g = DEFAULT_GLOBAL(); const dg = d.global || {}; if (d.surfaces) for (const k of Object.keys(d.surfaces)) if (k.startsWith('ceiling_t')) delete d.surfaces[k]; return { ...e, ...d, surfaces: d.surfaces || {}, columns: d.columns || {}, landmarks: d.landmarks || {}, props: d.props || [], global: { ...g, ...dg, rail: { ...g.rail, ...(dg.rail || {}) }, base: { ...g.base, ...(dg.base || {}) }, lower: { ...g.lower, ...(dg.lower || {}) } } }; }
   get global() { return this.design.global; }
   // 전체 바닥/천장 색: 타일별 설정을 지우고 전체에 적용
   paintAll(kind, hex) { for (const k of Object.keys(this.design.surfaces)) if (k.startsWith(kind + '_t')) this.design.surfaces[k].paint = null; this.surface(kind).paint = hex; }
