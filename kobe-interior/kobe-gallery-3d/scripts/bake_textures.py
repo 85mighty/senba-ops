@@ -97,7 +97,7 @@ def bake_horizontal(scan, y_plane, up, occ, origin, cell, name, tol=0.09, n_per_
     ok = (u >= 0) & (u < W) & (v >= 0) & (v < H)
     S = np.zeros((H, W, 3)); N = np.zeros((H, W))
     np.add.at(S, (v[ok], u[ok]), cols[ok].astype(float)); np.add.at(N, (v[ok], u[ok]), 1)
-    rgb = inpaint(S, N, iters=20)
+    rgb = inpaint(S, N, iters=80)   # 미스캔 바닥/천장도 주변 색으로 넓게 메움
     # 알파 = 바닥 점유 (격자 → 픽셀 업샘플)
     gi = np.clip((np.arange(W) * RES_F / cell).astype(int), 0, gx_n - 1); gj = np.clip((np.arange(H) * RES_F / cell).astype(int), 0, gz_n - 1)
     alpha = (occ[gi[None, :], gj[:, None]] > 0).astype(np.uint8) * 255

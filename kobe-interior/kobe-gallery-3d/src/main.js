@@ -122,6 +122,14 @@ function setupEditorUI() {
   $('#measureBtn').addEventListener('click', () => { if (!editor.enabled) { $('#editMode').checked = true; editor.setEnabled(true); } editor.startMeasure(); });
   $('#measureClear').addEventListener('click', () => editor.clearMeasures());
   $('#shotBtn').addEventListener('click', () => editor.screenshot());
+  const saveState = () => { $('#undoBtn').disabled = !store.canUndo(); $('#redoBtn').disabled = !store.canRedo(); $('#revertBtn').disabled = !store.hasExplicit(); $('#saveState').textContent = store.dirty ? '저장되지 않은 변경 있음 (자동 보관 중)' : (store.hasExplicit() ? '저장됨' : '변경 사항은 자동 보관됩니다. 저장을 누르면 그 시점이 저장본이 됩니다.'); $('#saveNow').classList.toggle('active', store.dirty); };
+  store.onChange(saveState); saveState();
+  $('#saveNow').addEventListener('click', () => { store.saveExplicit(); saveState(); toast('저장됨'); });
+  $('#undoBtn').addEventListener('click', () => { if (store.undo()) { editor.renderChips(); refreshBookmarks(); toast('되돌림'); } });
+  $('#redoBtn').addEventListener('click', () => { if (store.redo()) { editor.renderChips(); refreshBookmarks(); toast('다시 실행'); } });
+  $('#revertBtn').addEventListener('click', () => { if (store.revertToSaved()) { editor.renderChips(); refreshBookmarks(); toast('저장본으로 복원'); } });
+  $('#resetWindows').addEventListener('click', () => { store.resetWindows(); editor.renderChips(); toast('창을 스캔 기본값으로 재설정'); });
+  window.addEventListener('keydown', (e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'z' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') { e.preventDefault(); if (e.shiftKey) store.redo(); else store.undo(); editor.renderChips(); } if ((e.metaKey || e.ctrlKey) && e.key === 's') { e.preventDefault(); store.saveExplicit(); saveState(); toast('저장됨'); } });
   for (const slot of ['A', 'B', 'C']) {
     $(`#save${slot}`).addEventListener('click', () => { store.saveSlot(slot); toast(`디자인 ${slot} 저장됨`); updateSlots(); });
     $(`#load${slot}`).addEventListener('click', () => { if (store.loadSlot(slot)) { toast(`디자인 ${slot} 불러옴`); editor.renderChips(); } else toast(`저장된 ${slot} 가 없습니다`); });

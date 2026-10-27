@@ -23,10 +23,21 @@ export function emptyDesign() {
 
 export class DesignStore {
   constructor(meta) {
-    this.meta = meta; this.listeners = []; this.design = emptyDesign();
+    this.meta = meta; this.listeners = []; this.design = emptyDesign(); this.undoStack = []; this.redoStack = []; this.dirty = false;
     try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) this.design = this.migrate(JSON.parse(raw)); } catch {}
-    if (!this.design.windows) this.design.windows = this.defaultWindows();
+    // 창 기본값: 메타데이터가 갱신됐고 사용자가 창을 손대지 않았으면 새 기본값으로 교체
+    if (!this.design.windows || (this.design.windows_src !== meta.generated && !this.design.windowsEdited)) { this.design.windows = this.defaultWindows(); this.design.windows_src = meta.generated; }
+    this._last = this.snapshot();
   }
+  snapshot() { return JSON.stringify(this.design); }
+  undo() { if (!this.undoStack.length) return false; this.redoStack.push(this.snapshot()); this.design = this.migrate(JSON.parse(this.undoStack.pop())); this.commit('undo', false); return true; }
+  redo() { if (!this.redoStack.length) return false; this.undoStack.push(this.snapshot()); this.design = this.migrate(JSON.parse(this.redoStack.pop())); this.commit('redo', false); return true; }
+  canUndo() { return this.undoStack.length > 0; }
+  canRedo() { return this.redoStack.length > 0; }
+  saveExplicit() { try { localStorage.setItem(STORAGE_KEY + '.saved', this.snapshot()); } catch {} this.dirty = false; }
+  hasExplicit() { try { return !!localStorage.getItem(STORAGE_KEY + '.saved'); } catch { return false; } }
+  revertToSaved() { try { const raw = localStorage.getItem(STORAGE_KEY + '.saved'); if (!raw) return false; this.undoStack.push(this.snapshot()); this.design = this.migrate(JSON.parse(raw)); this.commit('revert', false); this.dirty = false; return true; } catch { return false; } }
+  resetWindows() { this.design.windows = this.defaultWindows(); this.design.windows_src = this.meta.generated; this.design.windowsEdited = false; this.commit('windows-reset'); }
   migrate(d) { const e = emptyDesign(); return { ...e, ...d, surfaces: d.surfaces || {}, columns: d.columns || {}, landmarks: d.landmarks || {}, props: d.props || [], global: d.global || {} }; }
   // 창 기본값: 메타데이터의 벽 개구부(window) → 편집 가능한 레코드
   defaultWindows() {
@@ -42,7 +53,14 @@ export class DesignStore {
     return out;
   }
   onChange(fn) { this.listeners.push(fn); }
-  commit(reason = '') { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(this.design)); } catch {} for (const fn of this.listeners) fn(reason); }
+  // 변경 적용. 호출 측이 design 을 바꾼 뒤 commit — undo 스택에는 직전 commit 시점 스냅샷을 쌓는다
+  commit(reason = '', track = true) {
+    if (track) { if (this._last !== undefined) { this.undoStack.push(this._last); if (this.undoStack.length > 60) this.undoStack.shift(); this.redoStack = []; } this.dirty = true; }
+    if (/window|curtain/.test(reason) && reason !== 'windows-reset') this.design.windowsEdited = true;
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(this.design)); } catch {}
+    this._last = this.snapshot();
+    for (const fn of this.listeners) fn(reason);
+  }
   // ---- 면
   surface(id) { return this.design.surfaces[id] || (this.design.surfaces[id] = { paint: null, texture: true, molding: null, art: null, artCount: null, frame: 'gold' }); }
   getSurface(id) { return this.design.surfaces[id] || { paint: null, texture: true, molding: null, art: null, artCount: null, frame: 'gold' }; }

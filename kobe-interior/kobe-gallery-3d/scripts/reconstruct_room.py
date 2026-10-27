@@ -109,6 +109,7 @@ def main():
     ap.add_argument("--chair-rail", type=float); ap.add_argument("--baseboard", type=float)
     ap.add_argument("--central-column"); ap.add_argument("--landmark", action="append", default=[], help="name=x,z")
     ap.add_argument("--no-bake", action="store_true", help="스캔 텍스처 베이크 생략 (회색 박스만)")
+    ap.add_argument("--no-window", action="append", default=None, help="이 벽에는 창이 없음(사진 확인) — 창 후보 제거·벽 메움. 반복 가능. 메타데이터에 기억됨")
     args = ap.parse_args()
 
     meta = C.load_meta()
@@ -166,6 +167,26 @@ def main():
         return float(floor_occ[gx[ok], gz[ok]].mean()) if ok.any() else 0.0
     for s in segs:
         s["floor_pos"], s["floor_neg"] = floor_side(s, +1), floor_side(s, -1)
+
+    # ---------------- 2b. 바닥 점유를 벽 경계까지 채움 (스캔이 비어 있는 바닥/천장 보완)
+    scanned_floor = floor_occ.copy()
+    barrier = np.zeros(gshape, bool)
+    for s_ in segs:
+        if s_["to"] - s_["from"] < 0.8: continue
+        ax = 0 if s_["axis"] == "x" else 2
+        t = np.arange(s_["from"] - 0.15, s_["to"] + 0.15, CELL / 2)
+        p = np.stack([np.full_like(t, s_["offset"]), np.zeros_like(t), t], 1) if ax == 0 else np.stack([t, np.zeros_like(t), np.full_like(t, s_["offset"])], 1)
+        gx_, gz_ = to_grid(p); ok = (gx_ >= 0) & (gz_ >= 0) & (gx_ < gshape[0]) & (gz_ < gshape[1]); barrier[gx_[ok], gz_[ok]] = True
+    barrier = ndimage.binary_dilation(barrier, iterations=1)
+    # 측지 팽창: 스캔된 바닥에서 벽(barrier)을 넘지 않고 최대 FILL_M 만큼만 번짐 → 벽 앞 미스캔 띠만 채우고 바깥으로는 안 나감
+    FILL_M = 1.0
+    fill = scanned_floor.copy()
+    for _ in range(int(FILL_M / CELL)):
+        fill = ndimage.binary_dilation(fill, structure=np.ones((3, 3))) & ~barrier | scanned_floor
+    floor_occ = floor_occ | fill
+    floor_occ = ndimage.binary_closing(floor_occ, structure=np.ones((3, 3)), iterations=1)
+    floor_area_filled = float(floor_occ.sum() * CELL * CELL)
+    print(f"[바닥 채움] 스캔 {floor_area:.1f} m² → 벽 경계까지 {floor_area_filled:.1f} m²")
 
     # ---------------- 3. 기둥 블롭 (벽 선분에서 0.15 m 이상 떨어진 수직면)
     mc = c[mid]
@@ -353,6 +374,16 @@ def main():
                     d = {"kind": "door", "from": float(gap_lo), "to": float(gap_hi), "y": [0.0, 2.0], "status": "inferred", "note": "벽 선분 사이 틈 — 문/통로 후보"}
                     w1["openings"].append(d); doors.append((w1, d))
 
+    # 창 없는 벽 (사용자 확인) — 메타데이터에 기억
+    no_win = set(args.no_window if args.no_window is not None else meta.get("no_window_walls", []))
+    for w in walls:
+        if w["id"] in no_win:
+            gaps = [(o["from"], o["to"]) for o in w["openings"] if o["kind"] == "window" and o.get("status") == "inferred"]
+            w["openings"] = [o for o in w["openings"] if o["kind"] != "window"]
+            w["bridge"] = []; w["solid_bridge"] = gaps        # 틈을 전체 높이 벽으로
+            w["no_window"] = True
+    meta["no_window_walls"] = sorted(no_win)
+
     # 중앙 넓은 기둥
     fcx = origin[0] + np.argwhere(floor_occ)[:, 0].mean() * CELL; fcz = origin[1] + np.argwhere(floor_occ)[:, 1].mean() * CELL
     cols = [b for b in blobs if b["type"] in ("wide_column", "thin_column")]
@@ -398,6 +429,10 @@ def main():
             ctr = [w["offset"] + w["inward"] * 0.02, oy, om] if w["axis"] == "x" else [om, oy, w["offset"] + w["inward"] * 0.02]
             parts.append(box(ext, ctr, [190, 215, 235, 140], f"{w['id']}_window_{i}"))
     for w in walls:
+        for (g0, g1) in w.get("solid_bridge", []):
+            gl, gm = g1 - g0, (g0 + g1) / 2; off_c = w["offset"] - w["inward"] * WALL_T / 2
+            ext = [WALL_T, ceil_h, gl] if w["axis"] == "x" else [gl, ceil_h, WALL_T]; ctr = [off_c, ceil_h / 2, gm] if w["axis"] == "x" else [gm, ceil_h / 2, off_c]
+            parts.append(box(ext, ctr, GRAY, f"{w['id']}_fill"))
         for (g0, g1) in w.get("bridge", []):
             gl, gm = g1 - g0, (g0 + g1) / 2; off_c = w["offset"] - w["inward"] * WALL_T / 2
             ext = [WALL_T, 0.95, gl] if w["axis"] == "x" else [gl, 0.95, WALL_T]

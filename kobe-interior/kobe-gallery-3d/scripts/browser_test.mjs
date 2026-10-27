@@ -66,6 +66,9 @@ try {
     const wallWithWin = Object.keys(s.design.windows)[0]; const win = s.windowsOf(wallWithWin)[0]; if (win) { win.curtain.on = true; win.curtain.color = '#5a3a22'; s.commit('curtain'); e.select({ kind: 'window', id: win.id, wall: wallWithWin }); }
     s.surface('floor_t1').paint = '#5c3d26'; s.surface('ceiling').paint = '#f2efe9'; s.commit('paint');
     const p = s.addProp({ type: 'easel_canvas', x: 0, z: -2, rot: 0.5, scale: 1, color: null }); s.addProp({ type: 'plant', x: 1, z: -3, rot: 0, scale: 1, color: null }); s.commit('prop'); e.select({ kind: 'prop', id: p.id });
+    const before = s.exportJSON().length; s.undo(); const afterUndo = s.exportJSON().length; s.redo(); const afterRedo = s.exportJSON().length;
+    if (!(afterUndo !== before && afterRedo === before)) throw new Error('undo/redo 불일치');
+    s.saveExplicit(); s.surface('ceiling').paint = '#333333'; s.commit('paint'); s.revertToSaved(); if (s.getSurface('ceiling').paint !== '#f2efe9') throw new Error('저장본 복원 실패');
     const json = s.exportJSON();
     return { items: e.items.length, chips: document.querySelectorAll('#itemChips button').length, overlays: e.overlays.children.length, windows: e.windows.children.length, props: e.props.children.length, labels: e.labels.children.length, jsonLen: json.length, inspector: document.querySelector('#inspector').textContent.slice(0, 40) };
   });
