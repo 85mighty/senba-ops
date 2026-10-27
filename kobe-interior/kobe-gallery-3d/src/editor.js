@@ -159,14 +159,16 @@ export class Editor {
     }
   }
   // ---------------- 문 열고 닫기: 화면에서 문짝을 누르면 경첩을 돌린다(가려진 문은 안 잡힘)
-  doorAt(ev) {
-    if (!this.fixtures?.visible) return null;
+  // 화면에서 실제로 보이는 맨 앞 물체 — 숨김·라벨·투명 선택판은 건너뛰고, 위에서 볼 때 잘려 안 보이는 천장 위쪽도 건너뛴다
+  frontHit(ev) {
     const r = this.v.renderer.domElement.getBoundingClientRect(); const p = new THREE.Vector2(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
     const rc = new THREE.Raycaster(); rc.setFromCamera(p, this.v.camera);
-    const shown = (o) => { for (let q = o; q; q = q.parent) if (!q.visible || q === this.picks) return false; return true; };
+    const shown = (o) => { for (let q = o; q; q = q.parent) if (!q.visible || q === this.picks || q === this.labels || q === this.hl) return false; return true; };
     const objs = []; this.v.scene.traverse((o) => { if (o.isMesh && shown(o)) objs.push(o); });
-    const hit = rc.intersectObjects(objs, false)[0]; return hit?.object.userData.doorPivot || null;
+    const cut = this.v.clipPlane?.constant ?? Infinity;
+    return rc.intersectObjects(objs, false).find((h) => h.point.y <= cut + 1e-3) || null;
   }
+  doorAt(ev) { if (!this.fixtures?.visible) return null; return this.frontHit(ev)?.object.userData.doorPivot || null; }
   toggleDoor(pivot) {
     const sw = pivot.userData.swing; sw.isOpen = !sw.isOpen; const from = pivot.rotation.y, to = sw.isOpen ? sw.open : sw.closed; let t = 0;
     this.v.onFrame.push((dt) => { t = Math.min(1, t + dt * 1.8); const k = t * t * (3 - 2 * t); pivot.rotation.y = from + (to - from) * k; return t < 1; });
@@ -305,9 +307,28 @@ export class Editor {
     const changed = next.size !== this._autoHidden.size || [...next].some((x) => !this._autoHidden.has(x));
     if (changed) { this._autoHidden = next; this.applyHidden(); }
   }
-  reattach(sel) {
-    const list = sel.kind === 'prop' ? this.props.children : this.marks.children; const g = list.find((c) => c.userData.pick?.id === sel.id);
-    if (g) { this.tc.attach(g); this.tc.setMode('translate'); }
+  reattach() {}   // 소품·핀은 화살표 기즈모 대신 손가락으로 바로 끌어 옮긴다(dragTargetAt·beginDrag)
+  // ---------------- 소품 끌어 옮기기: 화면 맨 앞에 보이는 것이 소품(편집 중이면 위치 핀도)일 때만 잡는다
+  dragTargetAt(ev) {
+    const hit = this.frontHit(ev); if (!hit) return null;
+    for (let o = hit.object; o; o = o.parent) { const k = o.userData.pick?.kind; if (k === 'prop' || k === 'landmark') return o; if (o === this.props || o === this.marks) break; }
+    return null;
+  }
+  beginDrag(g, ev) { const p = this.floorPoint(ev); this.drag = { g, off: p ? g.position.clone().sub(p) : new THREE.Vector3(), x: ev.clientX, y: ev.clientY, moved: false }; }
+  dragMove(ev) {
+    const d = this.drag; if (!d) return; if (!d.moved && Math.hypot(ev.clientX - d.x, ev.clientY - d.y) < 6) return;
+    if (!d.moved) { d.moved = true; disposeTree(this.hl); }
+    const p = this.floorPoint(ev); if (p) { d.g.position.x = p.x + d.off.x; d.g.position.z = p.z + d.off.z; }
+  }
+  // 손을 떼면: 움직였으면 위치 저장, 그냥 눌렀으면 선택. 편집 모드가 꺼져 있으면 켠다
+  endDrag() {
+    const d = this.drag; this.drag = null; if (!d) return false; const pk = d.g.userData.pick;
+    if (!this.enabled) { const cb = $('#editMode'); if (cb) cb.checked = true; this.setEnabled(true); }
+    if (d.moved) {
+      if (pk.kind === 'prop') { const p = this.s.design.props.find((x) => x.id === pk.id); if (p) { p.x = +d.g.position.x.toFixed(2); p.z = +d.g.position.z.toFixed(2); this.s.commit('prop-move'); } }
+      else { this.s.design.landmarks[pk.id] = { x: +d.g.position.x.toFixed(2), z: +d.g.position.z.toFixed(2), status: 'user' }; this.s.commit('landmark'); this.onLandmarks?.(); }
+    }
+    this.select({ kind: pk.kind, id: pk.id }); return true;
   }
   shade(hex, k) { const c = new THREE.Color(hex); c.multiplyScalar(k); return '#' + c.getHexString(); }
   paintMat(hex) { return new THREE.MeshStandardMaterial({ color: hex, roughness: 0.85, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1 }); }
@@ -380,7 +401,7 @@ export class Editor {
   setEnabled(on) { this.enabled = on; this.marks.visible = on; if (!on) { this.select(null); this.tc.detach(); this.placing = null; } $('#editorPanel').classList.toggle('on', on); }
   onClick(ev) {
     if (!this.enabled) return false;
-    if (this.placing) { const p = this.floorPoint(ev); if (p) { const prop = this.s.addProp({ type: this.placing, x: +p.x.toFixed(2), z: +p.z.toFixed(2), rot: 0, scale: 1, color: null }); this.placing = null; $('#placingHint').textContent = ''; this.s.commit('prop'); this.select({ kind: 'prop', id: prop.id }); } return true; }
+    if (this.placing) { const p = this.floorPoint(ev); if (p) { const prop = this.s.addProp({ type: this.placing, x: +p.x.toFixed(2), z: +p.z.toFixed(2), rot: 0, scale: 1, color: null }); this.placing = null; $('#placingHint').textContent = ''; this.s.commit('prop'); this.select({ kind: 'prop', id: prop.id }); this.toast('놓았습니다 — 손가락으로 끌어 옮기고, 아래 버튼으로 회전·복제·삭제'); } return true; }
     if (this.measuring) { const p = this.hitPoint(ev); if (p) { this.measuring.push(p); if (this.measuring.length === 2) { this.measures.add(measureLine(this.measuring[0], this.measuring[1], (t) => this.v.textSprite(t))); this.measuring = []; this.toast('두 점을 다시 찍으면 다른 거리를 잽니다'); } } return true; }
     const hit = this.pickAll(ev); this.select(hit ? hit.userData.pick : null); return true;
   }
@@ -400,7 +421,7 @@ export class Editor {
     if (sel?.kind === 'prop' || sel?.kind === 'landmark') this.reattach(sel);
     this.refreshHighlight(); this.renderInspector();
     document.querySelectorAll('#itemChips button').forEach((b) => b.classList.toggle('active', !!sel && b.dataset.id === (sel.seg || sel.id)));
-    const fab = $('#propFab'); if (fab) { fab.hidden = !(sel && (sel.kind === 'prop' || sel.kind === 'window')); if (sel?.kind === 'prop') { const p = this.s.design.props.find((x) => x.id === sel.id); $('#fabName').textContent = (PROP_TYPES.find((x) => x[1] === p?.type) || ['소품'])[0]; } if (sel?.kind === 'window') $('#fabName').textContent = '창'; }
+    const fab = $('#propFab'); if (fab) { fab.hidden = !(sel && (sel.kind === 'prop' || sel.kind === 'window')); const fh = $('#fabHint'); if (fh) fh.textContent = sel?.kind === 'window' ? '위치·폭·커튼은 ☰ 패널 아래에서' : '손가락으로 끌어서 옮기기'; if (sel?.kind === 'prop') { const p = this.s.design.props.find((x) => x.id === sel.id); $('#fabName').textContent = (PROP_TYPES.find((x) => x[1] === p?.type) || ['소품'])[0]; } if (sel?.kind === 'window') $('#fabName').textContent = '창'; }
   }
   onDragEnd() {
     const o = this.tc.object; if (!o) return; const pk = o.userData.pick;
@@ -553,7 +574,7 @@ export class Editor {
   duplicateProp(p) { const q = this.s.addProp({ ...p, id: undefined, x: p.x + 0.6 }); this.s.commit('prop'); this.select({ kind: 'prop', id: q.id }); }
   deleteProp(id) { this.s.removeProp(id); this.s.commit('prop'); this.select(null); this.toast('소품 삭제됨'); }
   // 소품 배치 시작
-  startPlacing(type) { this.placing = type; const name = (PROP_TYPES.find((x) => x[1] === type) || [type])[0]; $('#placingHint').textContent = `${name}: 바닥을 클릭해 놓으세요`; }
+  startPlacing(type) { this.placing = type; const name = (PROP_TYPES.find((x) => x[1] === type) || [type])[0]; $('#placingHint').textContent = `${name}: 바닥을 눌러 놓을 자리를 고르세요`; this.toast(`${name} — 바닥에서 놓을 자리를 누르세요`); }
   startMeasure() { this.measuring = []; this.toast('두 점을 클릭하면 거리를 잽니다'); }
   clearMeasures() { disposeTree(this.measures); this.measuring = null; }
   screenshot() { this.v.renderer.render(this.v.scene, this.v.camera); const a = document.createElement('a'); a.href = this.v.renderer.domElement.toDataURL('image/png'); a.download = `kobe-design-${Date.now()}.png`; a.click(); }
