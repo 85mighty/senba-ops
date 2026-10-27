@@ -47,6 +47,13 @@ npm run dev                               # 터미널에 뜨는 http://localhost
 - **GitHub Pages(공개 URL)**: 저장소 Settings → Pages → Source "Deploy from a branch" → Branch `claude/blissful-gauss-qzpvom`, 폴더 `/ (root)` → Save.
   몇 분 뒤 `https://85mighty.github.io/senba-ops/kobe-interior/kobe-gallery-3d/app/` 에서 열린다 (app/ 이 ../assets/models 를 상대경로로 읽으므로 브랜치 루트 배포여야 한다).
 
+## 아이패드·아이폰 (메모리)
+- 터치 기기는 스캔 텍스처를 4096으로 줄인 `scan_*_mobile.glb` 를 쓴다(그래픽 메모리 약 358 MB → 90 MB). 원본이 필요하면 주소 뒤에 `?hq=1`.
+  스캔을 다시 만들었으면 `python3 scripts/make_mobile_glb.py` 로 모바일판도 다시 만든다.
+- ①②의 스캔 모델은 그 화면을 열 때만 불러오고, 터치 기기에서는 다른 화면으로 가면 메모리에서 내린다. 시작 화면은 마지막에 쓰던 화면(기본 ④).
+- 편집할 때 다시 그리는 띠·칠·몰딩·액자·창·소품·라벨은 이전 자원을 해제한 뒤 새로 만든다(편집할수록 메모리가 쌓이지 않음).
+- 그래도 기기가 3D 화면을 끊으면 '화면을 다시 불러오는 중…' 안내 후 자동 새로고침(디자인은 저장·동기화되어 있음).
+
 ## 뷰어 사용법
 | 버튼/옵션 | 동작 |
 |---|---|

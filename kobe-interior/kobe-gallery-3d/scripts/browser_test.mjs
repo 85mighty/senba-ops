@@ -30,7 +30,7 @@ try {
   console.log('불러온 모델:', loaded); if (errs.length) problems.push(...errs.map((e) => `viewer: ${e}`));
   const modes = ['original', 'cleaned', 'reconstructed', 'interior'];
   for (const m of modes) {
-    await page.click(`button[data-mode=${m}]`, { force: true }); await wait(600);
+    await page.click(`button[data-mode=${m}]`, { force: true }); await wait(300); await page.waitForFunction(() => !window.__viewer.loadingCount, null, { timeout: 120000 }); await wait(300);
     const f0 = await page.evaluate(() => window.__viewer.frames); await wait(400); const f1 = await page.evaluate(() => window.__viewer.frames);
     if (f1 <= f0) problems.push(`렌더 루프 정지 (mode=${m})`);
     const cam = await page.evaluate(() => window.__viewer.camera.position.toArray().map((v) => +v.toFixed(3)));

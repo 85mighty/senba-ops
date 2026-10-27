@@ -9,11 +9,27 @@ const BASE = import.meta.env.DEV ? '' : (import.meta.env.VITE_MODEL_BASE ?? '../
 // VITE_MODEL_B64=1 이면 GLB 를 base64 텍스트(.glb.txt)로 받아 디코드 (GLB 를 직접 서빙하지 않는 호스팅용)
 const B64 = import.meta.env.VITE_MODEL_B64 === '1';
 const EXT = B64 ? '.glb.txt' : '.glb';
+// 터치 기기(아이폰·아이패드·안드로이드) — iPadOS Safari 는 UA 가 Mac 이라 터치 포인트로 구분
+export const IS_TOUCH = /iPhone|iPad|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
+// 터치 기기는 스캔 텍스처 4096 판(그래픽 메모리 약 1/4). ?hq=1 이면 원본 8192
+const SCAN = IS_TOUCH && !/[?&]hq=1/.test(location.search) && !B64 ? '_mobile' : '';
 export const MODELS = {
-  original: BASE + 'models/scan_original' + EXT,
-  cleaned: BASE + 'models/scan_cleaned' + EXT,
+  original: BASE + 'models/scan_original' + SCAN + EXT,
+  cleaned: BASE + 'models/scan_cleaned' + SCAN + EXT,
   reconstructed: BASE + 'models/reconstructed_room' + EXT,
 };
+// 그룹 안의 형상·재질·텍스처를 GPU 에서 내리고 비운다 (다시 그리기 전에 호출 — 안 하면 편집할수록 메모리가 쌓임)
+export function disposeTree(root, { keepRoot = true } = {}) {
+  const mats = new Set(), geos = new Set();
+  root.traverse((o) => {
+    if (o.geometry) geos.add(o.geometry);
+    if (o.material) for (const m of Array.isArray(o.material) ? o.material : [o.material]) mats.add(m);
+    if (o.isReflector && o.dispose) o.dispose();
+  });
+  for (const g of geos) g.dispose();
+  for (const m of mats) { for (const k of ['map', 'emissiveMap', 'normalMap', 'roughnessMap', 'metalnessMap', 'alphaMap', 'aoMap']) if (m[k]?.isTexture) m[k].dispose(); m.dispose(); }
+  if (keepRoot) root.clear();
+}
 function b64ToBuffer(text) {
   const bin = atob(text.replace(/\s+/g, '')); const u8 = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
@@ -23,9 +39,13 @@ function b64ToBuffer(text) {
 export class Viewer {
   constructor(canvas, meta, { onError, onProgress } = {}) {
     this.meta = meta; this.onError = onError || console.error; this.onProgress = onProgress || (() => {});
-    const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: !isMobile, powerPreference: 'high-performance' });
+    const isMobile = IS_TOUCH; this.isTouch = IS_TOUCH;
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: !isMobile, powerPreference: isMobile ? 'default' : 'high-performance' });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
+    // 그래픽 메모리 부족 등으로 3D 화면이 끊기면: 그리기를 멈추고 안내, 복구되지 않으면 새로고침(디자인은 저장되어 있음)
+    this.contextLost = false; this.onContextLost = () => {}; this.onContextRestored = () => {};
+    canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); this.contextLost = true; this.onContextLost(); }, false);
+    canvas.addEventListener('webglcontextrestored', () => { this.contextLost = false; this.onContextRestored(); }, false);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping; this.renderer.toneMappingExposure = 0.85;
     this.renderer.localClippingEnabled = true;
@@ -57,32 +77,46 @@ export class Viewer {
     this.clock = new THREE.Clock(); this.onFrame = []; this.animate();
   }
 
-  // ---------------- 로드
+  // ---------------- 로드 — ③④ 용 복원 모델만 먼저, ①② 스캔은 그 화면을 열 때 불러온다
   async loadAll() {
-    const loader = new GLTFLoader();
-    const names = Object.keys(MODELS); let done = 0;
-    await Promise.all(names.map(async (name) => {
-      const url = MODELS[name];
+    this.loader = new GLTFLoader(); this.loadingCount = 0; this.inflight = {};
+    await this.ensureModel('reconstructed', true);
+    for (const n of this.modelsFor(this.mode)) await this.ensureModel(n, true);
+    this.setMode(this.mode); this.updateHighlight();
+    return this.loaded;
+  }
+  modelsFor(mode) { const m = { original: ['original'], cleaned: ['cleaned'], reconstructed: ['reconstructed'], interior: ['reconstructed'] }[mode] || []; return this.ghost && (mode === 'reconstructed' || mode === 'interior') ? [...m, 'cleaned'] : m; }
+  ensureModel(name, quiet = false) {
+    if (this.loaded[name]) return Promise.resolve(this.loaded[name]);
+    if (this.inflight[name]) return this.inflight[name];
+    const url = MODELS[name]; this.loadingCount++; this.onLoading?.(true, name);
+    const p = (async () => {
       try {
         let gltf;
         if (B64) {
           const r = await fetch(url);
           if (!r.ok) throw new Error(`HTTP ${r.status} — 모델 파일을 받지 못했습니다: ${url}`);
           const buf = b64ToBuffer(await r.text());
-          gltf = await new Promise((res, rej) => loader.parse(buf, '', res, (e) => rej(new Error(`GLB 파싱 실패 ${url}: ${e?.message || e}`))));
+          gltf = await new Promise((res, rej) => this.loader.parse(buf, '', res, (e) => rej(new Error(`GLB 파싱 실패 ${url}: ${e?.message || e}`))));
         } else {
           const head = await fetch(url, { method: 'HEAD' });
-          if (!head.ok && head.status !== 405 && head.status !== 501) throw new Error(`HTTP ${head.status} — 파일이 없거나 경로가 다릅니다: ${url}\n(assets/models/ 에 ${url.split('/').pop()} 가 있는지, 파이프라인을 실행했는지 확인)`);
-          gltf = await new Promise((res, rej) => loader.load(url, res, undefined, (e) => rej(new Error(`GLB 파싱 실패 ${url}: ${e?.message || e}`))));
+          if (!head.ok && head.status !== 405 && head.status !== 501) throw new Error(`HTTP ${head.status} — 파일이 없거나 경로가 다릅니다: ${url}`);
+          gltf = await new Promise((res, rej) => this.loader.load(url, res, (ev) => { if (ev.total) this.onProgress(ev.loaded / ev.total); }, (e) => rej(new Error(`GLB 파싱 실패 ${url}: ${e?.message || e}`))));
         }
         const root = gltf.scene; root.name = name;
         root.traverse((o) => { if (o.isMesh) { o.frustumCulled = true; o.userData.model = name; this.prepMaterial(o); } });
         this.groups[name].add(root); this.loaded[name] = root;
-      } catch (e) { this.onError(`[${name}] ${e.message}`); }
-      finally { done++; this.onProgress(done / names.length); }
-    }));
-    this.setMode(this.mode); this.updateHighlight();
-    return this.loaded;
+        this.setMode(this.mode);
+        return root;
+      } catch (e) { this.onError(`[${name}] ${e.message}`); return null; }
+      finally { delete this.inflight[name]; this.loadingCount--; this.onLoading?.(this.loadingCount > 0, name); }
+    })();
+    this.inflight[name] = p; return p;
+  }
+  // 터치 기기: 지금 화면에 안 쓰는 ①② 스캔은 메모리에서 내린다
+  releaseUnused() {
+    if (!this.isTouch) return; const need = new Set(this.modelsFor(this.mode)); need.add('reconstructed');
+    for (const n of ['original', 'cleaned']) if (this.loaded[n] && !need.has(n)) { disposeTree(this.groups[n]); delete this.loaded[n]; }
   }
   prepMaterial(mesh) {
     const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
@@ -92,7 +126,8 @@ export class Viewer {
 
   // ---------------- 모드
   setMode(mode) {
-    this.mode = mode;
+    const changed = this.mode !== mode; this.mode = mode;
+    if (this.loader) { for (const n of this.modelsFor(mode)) if (!this.loaded[n]) this.ensureModel(n); if (changed) this.releaseUnused(); }
     const show = { original: ['original'], cleaned: ['cleaned'], reconstructed: ['reconstructed'], interior: ['reconstructed'] }[mode] || [];
     for (const k of Object.keys(this.groups)) this.groups[k].visible = show.includes(k);
     this.interior.visible = mode === 'interior';
@@ -173,7 +208,7 @@ export class Viewer {
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false })); sp.scale.set(1.6, 0.4, 1); return sp;
   }
   buildDims() {
-    this.dims.clear(); const box = this.roomBox(); const s = box.getSize(new THREE.Vector3()); const h = this.meta.ceiling_height_m || s.y;
+    disposeTree(this.dims); const box = this.roomBox(); const s = box.getSize(new THREE.Vector3()); const h = this.meta.ceiling_height_m || s.y;
     const mat = new THREE.LineBasicMaterial({ color: 0xffd27a });
     const line = (a, b) => this.dims.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...a), new THREE.Vector3(...b)]), mat));
     const y = 0.05; const m = box.min, M = box.max;
@@ -190,7 +225,7 @@ export class Viewer {
 
   // ---------------- 중앙 기둥 강조
   updateHighlight(on = this.highlightOn ?? true) {
-    this.highlightOn = on; this.highlight.clear(); if (!on) return;
+    this.highlightOn = on; disposeTree(this.highlight); if (!on) return;
     const col = (this.meta.elements || []).find((e) => e.id === this.meta.central_wide_column); if (!col) return;
     const fx = col.footprint.x, fz = col.footprint.z, h = this.meta.ceiling_height_m || 3;
     const g = new THREE.BoxGeometry(fx[1] - fx[0] + 0.06, h + 0.02, fz[1] - fz[0] + 0.06);
@@ -211,7 +246,7 @@ export class Viewer {
   resize() { const w = window.innerWidth, h = window.innerHeight; this.renderer.setSize(w, h, false); this.camera.aspect = w / h; this.camera.updateProjectionMatrix(); }
   animate() {
     requestAnimationFrame(() => this.animate()); const dt = Math.min(this.clock.getDelta(), 0.05);
-    this.onFrame = this.onFrame.filter((f) => f(dt)); this.controls.update(); this.renderer.render(this.scene, this.camera);
+    this.onFrame = this.onFrame.filter((f) => f(dt)); this.controls.update(); if (!this.contextLost) this.renderer.render(this.scene, this.camera);
     this.frames = (this.frames || 0) + 1;
   }
 }
