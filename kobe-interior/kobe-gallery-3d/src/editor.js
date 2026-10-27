@@ -162,8 +162,12 @@ export class Editor {
     let src = null; rec.traverse((o) => { if (o.isMesh && o.name === 'ceiling') src = o; }); if (!src) return;
     src.updateWorldMatrix(true, false);
     const geo = src.geometry.clone().applyMatrix4(src.matrixWorld);
+    // 복원 GLB 에는 법선이 없다(로더가 원본에만 flatShading 을 켜 준다) → 복제본은 직접 계산하지 않으면 조명이 NaN 이 되어 검게 나온다
+    if (!geo.attributes.normal) geo.computeVertexNormals();
     const paint = this.ceilPaint();
-    const mat = new THREE.MeshStandardMaterial({ color: paint === 'scan' ? '#f2efe9' : paint, roughness: 0.92, side: THREE.DoubleSide, clippingPlanes: [this.v.clipPlane] });
+    // 천장 아랫면은 위에서 오는 조명(반구광·직사광)을 받지 못해 검게 나온다 → 자기 색으로 은은하게 발광시켜 실제 천장 밝기에 가깝게
+    const col = paint === 'scan' ? '#f2efe9' : paint;
+    const mat = new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.45, roughness: 0.92, side: THREE.DoubleSide, clippingPlanes: [this.v.clipPlane] });
     const m = new THREE.Mesh(geo, mat); m.name = 'interior_ceiling'; m.position.y -= 0.006; m.userData.surface = 'ceiling';
     this.root.add(m); this.intCeil = m;
   }
