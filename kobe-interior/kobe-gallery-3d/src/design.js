@@ -48,6 +48,11 @@ export class DesignStore {
     this.undoStack = []; this.redoStack = []; this.dirty = false; this.commit('switch', false); return raw ? 'loaded' : 'new';
   }
   copyTo(name) { this.saveSlot(name); }
+  putSlot(name, obj) {
+    const d = this.migrate(JSON.parse(JSON.stringify(obj)));
+    if (name === this.active) { this.design = d; if (!this.design.windows) this.design.windows = this.defaultWindows(); this.refreshWindowsVersion(); this.commit('import'); return; }
+    try { localStorage.setItem(STORAGE_KEY + '.slot.' + name, JSON.stringify(d)); } catch {}
+  }
   // 창 기본값 버전(사진 확인 등)이 올라가면 창을 새 기본값으로 바꾸고, 같은 벽에 달았던 커튼 설정은 이어받는다
   refreshWindowsVersion() {
     const ver = this.meta.windows_version || 1; if ((this.design.windows_ver || 1) >= ver) return;

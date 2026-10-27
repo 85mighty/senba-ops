@@ -101,11 +101,14 @@ try {
     // 북쪽 창: 사진대로 큰 미닫이창 2세트
     const nw = Object.entries(s.design.windows).find(([k]) => k === e.walls().find((x) => x.axis === 'z' && Math.abs(x.offset + 4.8) < 0.15)?.id)?.[1] || [];
     if (nw.length !== 2 || !nw.every((x) => x.style === 'jp_sliding' && x.valance)) throw new Error('북쪽 창 2세트 아님 ' + JSON.stringify(nw.map((x) => [x.from, x.to, x.style])));
+    // 공유 링크 왕복은 아래에서 비동기로 확인
     const json = s.exportJSON();
     return { items: e.items.length, chips: document.querySelectorAll('#itemChips button').length, overlays: e.overlays.children.length, windows: e.windows.children.length, props: e.props.children.length, labels: e.labels.children.length, jsonLen: json.length, inspector: document.querySelector('#inspector').textContent.slice(0, 40) };
   });
   console.log('편집기:', JSON.stringify(ed));
   if (!ed.overlays || !ed.props || !ed.windows || ed.chips < 10) problems.push('편집기 기능 검증 실패: ' + JSON.stringify(ed));
+  const shareOk = await page.evaluate(async () => { const s = window.__store; const code = await window.__share.encodeDesign(s.design); const back = await window.__share.decodeDesign(code); return { len: code.length, same: JSON.stringify(back) === JSON.stringify(s.design), seededC: s.hasSlot('C') }; });
+  console.log('공유 링크:', JSON.stringify(shareOk)); if (!shareOk.same) problems.push('공유 링크 왕복 실패'); if (!shareOk.seededC) problems.push('보관 C안 자동 채움 실패');
   await page.click('button[data-mode=interior]', { force: true }); await wait(800);
   await page.evaluate(() => { const v = window.__viewer; v.camera.position.set(0.2, 1.5, 0.8); v.controls.target.set(-0.6, 1.0, -3.2); v.controls.update(); }); await wait(1200);
   await page.screenshot({ path: path.join(root, 'screenshots', 'editor_demo.png') });

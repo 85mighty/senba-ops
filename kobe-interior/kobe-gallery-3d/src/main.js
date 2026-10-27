@@ -6,6 +6,11 @@ import { Viewer } from './viewer.js';
 import { InteriorA, LAYERS } from './interior.js';
 import { DesignStore, PROP_TYPES, SLOTS } from './design.js';
 import { Editor } from './editor.js';
+import { encodeDesign, decodeDesign, shareCodeFromHash } from './share.js';
+import presetCPhone from './presets/c_phone_20261027.json';
+
+// 저장소에 보관된 디자인 — 어느 기기에서든 불러올 수 있다. seedSlot: 그 안이 비어 있으면 처음 열 때 자동으로 채움
+const PRESETS = [{ id: 'c_phone_20261027', name: 'C안 (폰에서 만든 것, 10/27)', seedSlot: 'C', design: presetCPhone }];
 import meta from './geometry_metadata.json';
 
 const $ = (s) => document.querySelector(s);
@@ -144,6 +149,30 @@ function setupEditorUI() {
   const switchTo = (sl) => { if (viewer.mode !== 'interior' && viewer.mode !== 'reconstructed') setMode('interior'); const r = store.switchSlot(sl); if (r === 'same') return; editor.renderChips(); refreshBookmarks(); renderSlotBar(); saveState(); toast(r === 'new' ? `${sl}안을 새로 만들었습니다 (지금 디자인 복사)` : `${sl}안 열림`); };
   window.__switchSlot = switchTo;
   for (const sl of SLOTS) { const btn = $(`#copy${sl}`); btn.addEventListener('click', () => { if (sl === store.active) { toast(`지금 ${sl}안입니다`); return; } if (store.hasSlot(sl) && !btn.dataset.arm) { btn.dataset.arm = '1'; btn.textContent = `${sl}안 덮어쓰기? (다시 누름)`; setTimeout(() => { delete btn.dataset.arm; btn.textContent = `→ ${sl}안`; }, 4000); return; } delete btn.dataset.arm; btn.textContent = `→ ${sl}안`; store.copyTo(sl); renderSlotBar(); toast(`지금 디자인을 ${sl}안으로 복사`); }); }
+  // 보관 디자인 자동 채우기 + 버튼
+  for (const p of PRESETS) { const flag = 'kobe3d.seed.' + p.id; let seeded = false; try { seeded = !!localStorage.getItem(flag); } catch {}
+    if (p.seedSlot && !seeded && !store.hasSlot(p.seedSlot)) { store.putSlot(p.seedSlot, p.design); try { localStorage.setItem(flag, '1'); } catch {} } }
+  for (const p of PRESETS) { const b = document.createElement('button'); b.className = 'ghost'; b.textContent = `${p.name} → 지금 안에 불러오기`;
+    b.addEventListener('click', () => { if (!b.dataset.arm) { b.dataset.arm = '1'; b.textContent = `지금 ${store.active}안을 덮어씁니다. 다시 누르세요`; setTimeout(() => { delete b.dataset.arm; b.textContent = `${p.name} → 지금 안에 불러오기`; }, 4000); return; }
+      delete b.dataset.arm; b.textContent = `${p.name} → 지금 안에 불러오기`; store.putSlot(store.active, p.design); editor.renderChips(); refreshBookmarks(); toast(`${p.name}을 ${store.active}안에 불러옴`); });
+    $('#presetList').appendChild(b); }
+  // 공유 링크
+  $('#shareLink').addEventListener('click', async () => {
+    try { const code = await encodeDesign(store.design); const url = `${location.origin}${location.pathname}#d=${code}`; $('#shareUrl').value = url;
+      try { await navigator.clipboard.writeText(url); toast(`${store.active}안 공유 링크 복사됨`); } catch { $('#shareUrl').select(); toast('아래 칸의 링크를 복사하세요'); } }
+    catch (e) { toast('링크 만들기 실패: ' + e.message); } });
+  $('#shareUrl').addEventListener('focus', (e) => e.target.select());
+  const incoming = shareCodeFromHash();
+  if (incoming) {
+    decodeDesign(incoming).then((d) => {
+      const banner = $('#shareBanner'); banner.hidden = false;
+      banner.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
+        const to = b.dataset.to; banner.hidden = true; history.replaceState(null, '', location.pathname + location.search);
+        if (!to) return; store.putSlot(to, d); switchTo(to); if (store.active === to) { editor.renderChips(); refreshBookmarks(); } renderSlotBar(); toast(`링크 디자인을 ${to}안에 넣었습니다`);
+      }));
+    }).catch((e) => toast('공유 링크를 읽지 못했습니다: ' + e.message));
+  }
+  window.__share = { encodeDesign, decodeDesign };
   renderSlotBar();
   $('#exportDesign').addEventListener('click', async () => { const j = store.exportJSON(); $('#designJson').value = j; try { await navigator.clipboard.writeText(j); toast('디자인 JSON 복사됨 (아래 칸에도 표시)'); } catch { toast('아래 칸의 JSON 을 복사하세요'); } });
   $('#importDesign').addEventListener('click', () => { try { store.importJSON($('#designJson').value); editor.renderChips(); refreshBookmarks(); toast('디자인 불러옴'); } catch (e) { toast('불러오기 실패: ' + e.message); } });
