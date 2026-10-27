@@ -32,7 +32,7 @@ let editor = null; // 모델 로드 후 생성 (바닥 타일 판정에 복원 �
 
 // ---- 모드
 const modeBtns = [...document.querySelectorAll('#modes button[data-mode]')];
-function setMode(m) { try { localStorage.setItem('kobe3d.mode', m); } catch {} viewer.setMode(m); editor?.applyHidden(); modeBtns.forEach((b) => b.classList.toggle('active', b.dataset.mode === m)); $('#interiorPanel').style.opacity = m === 'interior' ? 1 : 0.45; }
+function setMode(m) { try { localStorage.setItem('kobe3d.mode', m); } catch {} viewer.setMode(m); editor?.setModelVisible(m === 'reconstructed' || m === 'interior'); modeBtns.forEach((b) => b.classList.toggle('active', b.dataset.mode === m)); $('#interiorPanel').style.opacity = m === 'interior' ? 1 : 0.45; }
 modeBtns.forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
 window.__setMode = setMode;
 
@@ -119,6 +119,7 @@ viewer.loadAll().then((loaded) => {
   const ok = Object.keys(loaded); if (!ok.length) showError('불러온 모델이 없습니다. 위 오류를 확인하세요.');
   else if (!loaded.reconstructed) showError('reconstructed_room.glb 가 없어 ③④ 모드가 비어 있습니다.');
   editor = new Editor(viewer, interior, store, toast); window.__editor = editor; setupEditorUI();
+  editor.setModelVisible(viewer.mode === 'reconstructed' || viewer.mode === 'interior');
   window.__viewerReady = true; window.__loadedModels = ok;
 });
 
@@ -135,6 +136,7 @@ function setupEditorUI() {
   $('#editMode').addEventListener('change', (e) => { editor.setEnabled(e.target.checked); if (e.target.checked && viewer.mode !== 'interior' && viewer.mode !== 'reconstructed') setMode('interior'); });
   $('#showLabels').addEventListener('change', (e) => editor.setLabels(e.target.checked));
   $('#showTileLabels').addEventListener('change', (e) => editor.setTileLabels(e.target.checked));
+  $('#autoHide').checked = editor.autoHide; if (editor.autoHide) editor.runAutoHide();   // 기본 켬 — 끄거나 켠 상태를 기억
   $('#autoHide').addEventListener('change', (e) => editor.setAutoHide(e.target.checked));
   $('#showAll').addEventListener('click', () => { editor.showAll(); toast('모든 면 보이기'); });
   editor.renderHiddenChips();
@@ -142,9 +144,9 @@ function setupEditorUI() {
   $('#measureBtn').addEventListener('click', () => { if (!editor.enabled) { $('#editMode').checked = true; editor.setEnabled(true); } editor.startMeasure(); });
   $('#measureClear').addEventListener('click', () => editor.clearMeasures());
   $('#shotBtn').addEventListener('click', () => editor.screenshot());
-  const saveState = () => { $('#undoBtn').disabled = !store.canUndo(); $('#redoBtn').disabled = !store.canRedo(); $('#revertBtn').disabled = !store.hasExplicit(); $('#saveState').textContent = store.dirty ? '저장되지 않은 변경 있음 (자동 보관 중)' : (store.hasExplicit() ? '저장됨' : '변경 사항은 자동 보관됩니다. 저장을 누르면 그 시점이 저장본이 됩니다.'); $('#saveNow').classList.toggle('active', store.dirty); };
+  const saveState = () => { $('#undoBtn').disabled = !store.canUndo(); $('#redoBtn').disabled = !store.canRedo(); $('#revertBtn').disabled = !store.hasExplicit(); $('#saveState').textContent = '바꾸는 즉시 자동 저장 · 동기화됩니다(저장 버튼 불필요).' + (store.hasExplicit() ? (store.dirty ? ' 📌 저장본 이후 바뀐 내용 있음.' : ' 📌 지금 상태가 저장본입니다.') : ' 📌 저장본은 \'되돌아올 지점\'이 필요할 때만 만드세요.'); };
   store.onChange(saveState); saveState();
-  $('#saveNow').addEventListener('click', () => { store.saveExplicit(); saveState(); toast('저장됨'); });
+  $('#saveNow').addEventListener('click', () => { store.saveExplicit(); saveState(); toast('저장본을 만들었습니다 (디자인은 원래 자동 저장됨)'); });
   $('#undoBtn').addEventListener('click', () => { if (store.undo()) { editor.renderChips(); refreshBookmarks(); toast('되돌림'); } });
   $('#redoBtn').addEventListener('click', () => { if (store.redo()) { editor.renderChips(); refreshBookmarks(); toast('다시 실행'); } });
   $('#revertBtn').addEventListener('click', () => { if (store.revertToSaved()) { editor.renderChips(); refreshBookmarks(); toast('저장본으로 복원'); } });

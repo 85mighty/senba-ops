@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { disposeTree } from './viewer.js';
+import { isFixtureWall, isExteriorWall, exteriorSpans, doorOpenings, serviceOf } from './scope.js';
 
 const WHITE = 0xf4f1ea, GOLD = 0xc9a24a, BLACK = 0x1c1c1c, WINE = 0x7a2e2e;
 const FRAME_BAR = 0.045, FRAME_DEPTH = 0.018, FRAME_W_TARGET = 0.9, FRAME_GAP = 0.14, CORNER_MARGIN = 0.18, OPEN_MARGIN = 0.12;
@@ -21,11 +22,14 @@ export class InteriorA {
   get ceil() { return this.meta.ceiling_height_m || 3.0; }
   get chair() { return this.meta.chair_rail_height_m || 0.95; }
   get base() { return this.meta.baseboard_height_m || 0.10; }
-  walls() { return (this.meta.elements || []).filter((e) => e.type === 'wall'); }
+  // 꾸밀 수 있는 벽: 설비 면(싱크대 앞면)·입구 밖 벽 제외
+  walls() { return (this.meta.elements || []).filter((e) => e.type === 'wall' && !isFixtureWall(this.meta, e.id) && !isExteriorWall(this.meta, e)); }
   columns() { return (this.meta.elements || []).filter((e) => ['wide_column', 'thin_column'].includes(e.type)); }
   blockers() { return (this.meta.elements || []).filter((e) => e.footprint); }
   central() { return (this.meta.elements || []).find((e) => e.id === this.opts.central); }
   sf(id) { return this.store ? this.store.getSurface(id) : {}; }
+  // 주방·화장실 안쪽 벽은 직접 켜지 않으면(true) 몰딩·액자를 달지 않는다
+  on(id, key) { const v = this.sf(id)[key]; return v === true || (v !== false && !serviceOf(this.meta, id)); }
   fp(col) { return this.store ? this.store.footprint(col) : col.footprint; }
   // 거울 대상 기둥 목록 (편집기 설정 > 기본: 중앙 넓은 기둥)
   mirrorColumns() { return this.columns().filter((c) => { const cs = this.store ? this.store.getColumn(c.id) : {}; return cs.mirror ?? (c.id === this.opts.central); }); }
@@ -48,14 +52,17 @@ export class InteriorA {
     }
     return runs.filter(([a, b]) => b - a > 0.3);
   }
-  // 편집기에서 바꾼 창 목록을 벽 openings 로 반영한 복사본 (문 후보는 유지)
+  // 편집기에서 바꾼 창 목록을 벽 openings 로 반영한 복사본 (문 후보는 유지) + 화장실 문·입구 밖 구간
   withEditedWindows(w) {
-    if (!this.store) return w; const wins = this.store.windowsOf(w.id);
+    const extra = doorOpenings(this.meta, w.id).map((d) => ({ kind: 'door', from: d.from, to: d.to, y: [0, d.y1] }))
+      .concat(exteriorSpans(this.meta, w).map(([a, b]) => ({ kind: 'exterior', from: a, to: b, y: [0, this.ceil] })));
+    if (!this.store) return { ...w, openings: (w.openings || []).concat(extra) }; const wins = this.store.windowsOf(w.id);
     const doors = (w.openings || []).filter((o) => o.kind !== 'window');
-    return { ...w, openings: doors.concat(wins.map((x) => ({ kind: 'window', from: x.from, to: x.to, y: [x.y0, x.y1] }))) };
+    return { ...w, openings: doors.concat(extra, wins.map((x) => ({ kind: 'window', from: x.from, to: x.to, y: [x.y0, x.y1] }))) };
   }
   // 벽면 좌표계: 길이방향 t, 높이 y → 월드. 벽 안쪽에 off 만큼 띄움.
   placeOnWall(obj, w, t, y, off) {
+    if (w.two_sided) off += (this.meta.wall_thickness_m || 0.1) / 2;   // 양면 벽은 상자가 중심선 양쪽으로 두께를 가진다 → 겉면으로
     if (w.axis === 'x') { obj.position.set(w.offset + w.inward * off, y, t); obj.rotation.y = w.inward > 0 ? Math.PI / 2 : -Math.PI / 2; }
     else { obj.position.set(t, y, w.offset + w.inward * off); obj.rotation.y = w.inward > 0 ? 0 : Math.PI; }
     const sid = w.sid || w.id; if (sid) obj.traverse((o) => { o.userData.surface = sid; });   // 숨기기용 면 태그
@@ -82,7 +89,7 @@ export class InteriorA {
     const g = this.layers.molding; const mats = {}; const matFor = (sid) => { const c = (this.store && sid && this.store.trimOf(sid).moldingColor) || WHITE; return mats[c] || (mats[c] = new THREE.MeshStandardMaterial({ color: c, roughness: 0.55 })); };
     const yBottom = this.base + 0.08, yTop = this.chair - 0.06 - 0.08; const ht = yTop - yBottom; if (ht < 0.25) return;
     const mirrored = new Set(this.mirrorColumns().map((c) => c.id));
-    const targets = this.walls().filter((w) => this.sf(w.id).molding !== false).map((w) => this.withEditedWindows(w));
+    const targets = this.walls().filter((w) => this.on(w.id, 'molding')).map((w) => this.withEditedWindows(w));
     for (const c of this.columns()) if (!mirrored.has(c.id) && this.sf(c.id).molding !== false) targets.push(...this.columnFaces(c));
     let count = 0;
     for (const w of targets) for (const [a, b] of this.wallRuns(w, w.key ? 0.08 : CORNER_MARGIN)) {
@@ -130,7 +137,7 @@ export class InteriorA {
     const g = this.layers.gallery_art;
     const yC = this.chair + (this.ceil - this.chair) * 0.42; let i = 0;
     for (const w0 of this.walls()) {
-      const sfw = this.sf(w0.id); if (sfw.art === false) continue; const w = this.withEditedWindows(w0); const mat = this.frameMaterial(sfw.frame);
+      const sfw = this.sf(w0.id); if (!this.on(w0.id, 'art')) continue; const w = this.withEditedWindows(w0); const mat = this.frameMaterial(sfw.frame);
       const runs = this.wallRuns(w, 0.5); const total = runs.reduce((s, [a, b]) => s + (b - a), 0); let want = sfw.artCount ?? null;
       for (const [a, b] of runs) {
       const L = b - a; let n = want != null ? Math.round(want * (L / Math.max(total, 0.01))) : Math.floor(L / 1.3); if (want != null && n < 1 && want > 0 && L > 0.8) n = 1; if (n < 1) continue; const step = L / n;
@@ -189,7 +196,7 @@ export class InteriorA {
   build_panel_white_optional() {
     const g = this.layers.panel_white_optional; const mat = new THREE.MeshStandardMaterial({ color: WHITE, roughness: 0.6 });
     const y0 = this.base + 0.005, y1 = this.chair - 0.06 - 0.005; const h = y1 - y0;
-    for (const w of this.walls()) for (const [a, b] of this.wallRuns(w, 0.0)) { const p = new THREE.Mesh(new THREE.PlaneGeometry(b - a, h), mat); this.placeOnWall(p, w, (a + b) / 2, y0 + h / 2, 0.001); g.add(p); }
+    for (const w of this.walls()) for (const [a, b] of this.wallRuns(this.withEditedWindows(w), 0.0)) { const p = new THREE.Mesh(new THREE.PlaneGeometry(b - a, h), mat); this.placeOnWall(p, w, (a + b) / 2, y0 + h / 2, 0.001); g.add(p); }
   }
   // ---- 옵션: 와인/테라코타 포인트 벽 (개구부 없는 벽 하나, 검은 띠 위쪽만)
   build_wine_accent_optional() {

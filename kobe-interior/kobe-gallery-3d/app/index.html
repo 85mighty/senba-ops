@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>Kobe Gallery Studio 3D</title>
-  <script type="module" crossorigin src="./assets/index-CzN5jVgz.js"></script>
+  <script type="module" crossorigin src="./assets/index-CIyhGlx2.js"></script>
   <link rel="stylesheet" crossorigin href="./assets/index-CmWrzUd6.css">
 </head>
 <body>
@@ -77,7 +77,7 @@
       <label><input type="checkbox" id="showTileLabels" /> 천장·바닥 타일 번호 표시</label>
       <label><input type="checkbox" id="toggleWindows" checked /> 창·커튼 보이기</label>
       <label><input type="checkbox" id="toggleProps" checked /> 소품 보이기</label>
-      <label><input type="checkbox" id="autoHide" /> <b>시야 가리는 벽·천장 자동 숨김</b> (카메라 앞 벽, 천장 위에서 볼 때)</label>
+      <label><input type="checkbox" id="autoHide" checked /> <b>시야 가리는 벽·천장 자동 숨김</b> (카메라 앞 벽, 천장 위에서 볼 때)</label>
       <div class="row wrap"><span class="hint">숨긴 면:</span><button id="showAll" class="ghost">모두 보이기</button></div>
       <div id="hiddenChips" class="chips"></div>
       <div class="hint">번호로 선택 (선택 후 아래 '숨기기' 버튼):</div>
@@ -92,9 +92,9 @@
       </div>
       <h3>저장 · 되돌리기</h3>
       <div class="row wrap">
-        <button id="saveNow"><b>저장</b></button><button id="undoBtn" class="ghost">↶ 되돌리기</button><button id="redoBtn" class="ghost">↷ 다시 실행</button><button id="revertBtn" class="ghost">저장본으로 복원</button>
+        <button id="saveNow" title="지금 상태를 '저장본'으로 표시 — 나중에 '저장본으로 복원'으로 돌아올 수 있음">📌 저장본 만들기</button><button id="undoBtn" class="ghost">↶ 되돌리기</button><button id="redoBtn" class="ghost">↷ 다시 실행</button><button id="revertBtn" class="ghost">저장본으로 복원</button>
       </div>
-      <div id="saveState" class="hint">변경 사항은 자동 보관됩니다. '저장'을 누르면 그 시점이 저장본이 됩니다.</div>
+      <div id="saveState" class="hint">바꾸는 즉시 자동 저장되고, 동기화가 연결돼 있으면 1~2초 뒤 다른 기기에도 올라갑니다. 저장 버튼을 누를 필요는 없습니다.</div>
       <div class="row wrap"><button id="resetWindows" class="ghost">창 기본값으로 재설정</button></div>
       <h3>디자인 안 (A안 · B안 · C안)</h3>
       <div class="hint">위쪽 바의 A안·B안·C안 버튼으로 바꿔 봅니다. 안마다 따로 자동 저장되고, 비어 있는 안(+)을 누르면 지금 디자인을 복사해 새 안을 만듭니다.</div>
