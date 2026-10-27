@@ -4,8 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>Kobe Gallery Studio 3D</title>
-  <script type="module" crossorigin src="./assets/index-DdD7fYyh.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-Ee2QvLWK.css">
+  <script type="module" crossorigin src="./assets/index-DYr2Rhu8.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-D_n8H1i9.css">
 </head>
 <body>
   <canvas id="c"></canvas>
@@ -101,6 +101,12 @@
       <div class="hint">이 브라우저에 자동 저장됩니다. 다른 기기로 옮기려면 JSON 을 복사해 붙여 넣으세요.</div>
       <div class="row wrap"><button id="exportDesign">JSON 내보내기</button><button id="importDesign" class="ghost">JSON 불러오기</button><button id="resetDesign" class="ghost">디자인 초기화</button></div>
       <textarea id="designJson" rows="3" placeholder="디자인 JSON"></textarea>
+      <h3>다른 기기로 보내기</h3>
+      <div class="row wrap"><button id="shareLink"><b>공유 링크 만들기</b></button></div>
+      <div class="hint">지금 안이 담긴 링크를 복사합니다. 카톡·메시지로 보내 다른 기기에서 열면 A안·B안·C안 중 어디에 넣을지 고릅니다.</div>
+      <input id="shareUrl" readonly placeholder="공유 링크" />
+      <h3>저장소에 보관된 디자인</h3>
+      <div id="presetList" class="row wrap"></div>
     </section>
 
     <section>
@@ -109,6 +115,10 @@
     </section>
   </aside>
 
+  <div id="shareBanner" hidden>
+    <div><b>링크로 받은 디자인</b> — 어느 안에 넣을까요? <span class="hint">(그 안의 기존 내용은 덮어씁니다)</span></div>
+    <div class="row wrap"><button data-to="A">A안에 넣기</button><button data-to="B">B안에 넣기</button><button data-to="C">C안에 넣기</button><button data-to="" class="ghost">닫기</button></div>
+  </div>
   <div id="propFab" hidden>
     <span id="fabName">소품</span>
     <button id="fabRotL" title="왼쪽으로 15°">↺</button><button id="fabRotR" title="오른쪽으로 15°">↻</button><button id="fabDup">복제</button><button id="fabDel" class="danger">🗑 삭제</button><button id="fabClose" class="ghost">✕</button>
