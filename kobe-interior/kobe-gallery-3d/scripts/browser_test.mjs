@@ -65,14 +65,17 @@ try {
     e.select({ kind: 'column', id: col.id }); const c = s.column(col.id); c.w = 0.4; c.mirror = true; s.commit('size');
     const wallWithWin = Object.keys(s.design.windows)[0]; const win = s.windowsOf(wallWithWin)[0]; if (win) { win.curtain.on = true; win.curtain.color = '#5a3a22'; s.commit('curtain'); e.select({ kind: 'window', id: win.id, wall: wallWithWin }); }
     s.surface('floor_t1').paint = '#5c3d26'; s.surface('ceiling').paint = '#f2efe9'; s.commit('paint');
-    const p = s.addProp({ type: 'easel_canvas', x: 0, z: -2, rot: 0.5, scale: 1, color: null }); s.addProp({ type: 'plant', x: 1, z: -3, rot: 0, scale: 1, color: null }); s.commit('prop'); e.select({ kind: 'prop', id: p.id });
+    const p = s.addProp({ type: 'easel_canvas', x: 0.3, z: -1.2, rot: 2.6, scale: 1, color: null }); s.addProp({ type: 'couple_set', x: -1.2, z: -4.0, rot: 0, scale: 1, color: null }); s.commit('prop'); e.select({ kind: 'prop', id: p.id });
+    const before = s.exportJSON().length; s.undo(); const afterUndo = s.exportJSON().length; s.redo(); const afterRedo = s.exportJSON().length;
+    if (!(afterUndo !== before && afterRedo === before)) throw new Error('undo/redo 불일치');
+    s.saveExplicit(); s.surface('ceiling').paint = '#333333'; s.commit('paint'); s.revertToSaved(); if (s.getSurface('ceiling').paint !== '#f2efe9') throw new Error('저장본 복원 실패');
     const json = s.exportJSON();
     return { items: e.items.length, chips: document.querySelectorAll('#itemChips button').length, overlays: e.overlays.children.length, windows: e.windows.children.length, props: e.props.children.length, labels: e.labels.children.length, jsonLen: json.length, inspector: document.querySelector('#inspector').textContent.slice(0, 40) };
   });
   console.log('편집기:', JSON.stringify(ed));
   if (!ed.overlays || !ed.props || !ed.windows || ed.chips < 10) problems.push('편집기 기능 검증 실패: ' + JSON.stringify(ed));
   await page.click('button[data-mode=interior]', { force: true }); await wait(800);
-  await page.evaluate(() => window.__viewer.goBookmark(window.__viewer.bookmarks[0])); await wait(1200);
+  await page.evaluate(() => { const v = window.__viewer; v.camera.position.set(0.2, 1.5, 0.8); v.controls.target.set(-0.6, 1.0, -3.2); v.controls.update(); }); await wait(1200);
   await page.screenshot({ path: path.join(root, 'screenshots', 'editor_demo.png') });
   await page.evaluate(() => { window.__store.reset(); });   // 테스트 디자인은 남기지 않음
   const counts = await page.evaluate(() => { const i = window.__interior; const o = {}; for (const k in i.layers) o[k] = i.layers[k].children.length; return o; });

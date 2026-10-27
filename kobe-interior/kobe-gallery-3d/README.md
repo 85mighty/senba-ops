@@ -30,6 +30,8 @@ python3 scripts/clean_scan.py             # reports/clean_log.md  (--keep/--drop
 python3 scripts/reconstruct_room.py       # 벽/기둥 평면 검출 (reports/geometry_assumptions.md, screenshots/recon_footprint.png)
 python3 scripts/flatten_scan.py           # ② 평탄화: 정점을 검출 평면에 스냅 (scan_cleaned_raw.glb 보관)
 python3 scripts/reconstruct_room.py       # ③ 텍스처 베이크: 평탄화 스캔 색을 벽·기둥·바닥·천장에 입힘 (--no-bake 면 회색 박스)
+#    사진으로 창이 없는 벽은:  --no-window wall_x_0 --no-window wall_x_1  (메타데이터에 기억됨)
+#    스캔이 빈 바닥/천장은 벽 경계까지 최대 1 m 자동으로 메움
 #    사진으로 확인한 값이 있으면:  --chair-rail 0.92 --baseboard 0.08 --central-column wide_column_3
 
 # 3) 뷰어
@@ -72,7 +74,7 @@ npm run dev                               # 터미널에 뜨는 http://localhost
 | 소품 | '소품 놓기' 버튼 → 바닥 클릭 | 이젤(+캔버스), 작업 테이블, 스툴, 벤치, 전시 좌대, 화분, 파티션, 러그, 접수 카운터, 안내판, 펜던트 조명. 드래그 이동, 회전·크기·색, 복제/삭제(Delete) |
 | 📍 랜드마크 | 핀 클릭 | 입구·주방·화장실·창가·메인 핀을 드래그해 실제 위치로 → 북마크가 따라감 |
 | 도구 | | 거리 재기(두 점 클릭), 화면 캡처 PNG 저장, 번호 라벨 표시 |
-| 저장 | | 슬롯 A/B/C 저장·열기, JSON 내보내기/불러오기(다른 기기로 옮길 때), 초기화 |
+| 저장 | | **저장**(⌘/Ctrl+S)·**되돌리기**(⌘/Ctrl+Z)·다시 실행·저장본으로 복원, 창 기본값 재설정, 슬롯 A/B/C, JSON 내보내기/불러오기(다른 기기로 옮길 때), 초기화 |
 
 디자인 파일은 `src/design.js` 의 스키마(JSON)로, 면 설정 `surfaces`, 기둥 `columns`, 창 `windows`, 소품 `props`, 랜드마크 `landmarks` 를 담는다.
 
