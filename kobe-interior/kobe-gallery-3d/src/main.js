@@ -1,6 +1,5 @@
 // UI 배선 — 모드/북마크/토글/편집/내보내기. 테스트 하네스를 위해 window.__viewer* 를 노출한다.
 import * as THREE from 'three';
-import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { Viewer } from './viewer.js';
 import { InteriorA, LAYERS } from './interior.js';
@@ -61,34 +60,24 @@ $('#mirrorMode').addEventListener('change', (e) => { interior.opts.mirrorMode = 
 // ---- 기둥 선택 → 거울 대상 변경
 function setCentral(id, status) {
   interior.opts.central = id; meta.central_wide_column = id; viewer.updateHighlight(); interior.rebuild('mirror_4_sides'); interior.rebuild('molding');
-  $('#centralId').textContent = id || '-'; $('#centralStatus').textContent = status || '';
   try { localStorage.setItem('kobe3d.central', id); } catch {}
 }
 try { const saved = localStorage.getItem('kobe3d.central'); if (saved && meta.elements?.some((e) => e.id === saved)) setCentral(saved, '(이 브라우저에 저장된 선택)'); else setCentral(meta.central_wide_column, `(${meta.central_wide_column_status || 'inferred'})`); } catch { setCentral(meta.central_wide_column, ''); }
 const canvas = $('#c'); let downAt = null;
 canvas.addEventListener('pointerdown', (e) => { downAt = [e.clientX, e.clientY]; });
+// 소품(편집 중에는 위치 핀도)을 손가락으로 바로 끌어 옮긴다 — 화면 회전보다 먼저 잡아야 해서 capture 단계
+(canvas.parentElement || document).addEventListener('pointerdown', (e) => { if (e.target === canvas && editor && e.isPrimary && (viewer.mode === 'reconstructed' || viewer.mode === 'interior') && !editor.placing && !editor.measuring) { const g = editor.dragTargetAt(e); if (g) { viewer.controls.enabled = false; editor.beginDrag(g, e); } } }, { capture: true });
+window.addEventListener('pointermove', (e) => { if (editor?.drag && e.isPrimary) editor.dragMove(e); });
+const finishDrag = (e) => { if (!editor?.drag) return false; editor.endDrag(e); viewer.controls.enabled = true; downAt = null; return true; };
+window.addEventListener('pointerup', finishDrag); window.addEventListener('pointercancel', finishDrag);
 canvas.addEventListener('pointerup', (e) => {
+  if (finishDrag(e)) return;
   if (!downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 6) return; downAt = null;
   if (editor && (viewer.mode === 'reconstructed' || viewer.mode === 'interior') && !editor.placing && !editor.measuring) {   // 문을 누르면 열고 닫기
     const door = editor.doorAt(e); if (door) { const open = editor.toggleDoor(door); toast(`${door.name === 'stall_door_leaf' ? '양변기 칸 문' : '화장실 문'} ${open ? '열림' : '닫힘'}`); return; }
   }
   if (editor && editor.enabled && (viewer.mode === 'reconstructed' || viewer.mode === 'interior')) { editor.onClick(e); return; }
-  if ($('#pickColumn').checked) {
-    const hit = viewer.pick(e, (o) => o.userData.model === 'reconstructed' && /^(wide_column|thin_column|partition)_\d+$/.test(o.name));
-    if (hit) { setCentral(hit.object.name, '(사용자 선택 — 메타데이터 반영: reconstruct_room.py --central-column ' + hit.object.name + ')'); toast(`거울 대상: ${hit.object.name}`); }
-    else toast('기둥을 클릭하세요 (③/④ 모드의 복원 모델 기둥만 선택 가능)');
-  } else if ($('#editFurniture').checked && viewer.mode === 'interior') {
-    const hit = viewer.pick(e, (o) => { let p = o; while (p) { if (p.name === 'table') return true; p = p.parent; } return false; });
-    if (hit) { let p = hit.object; while (p && p.name !== 'table') p = p.parent; tc.attach(p); } else tc.detach();
-  }
 });
-// ---- 가구 이동 (TransformControls)
-const tc = new TransformControls(viewer.camera, canvas); tc.setSize(0.8); tc.showY = false; viewer.scene.add(tc.getHelper ? tc.getHelper() : tc);
-tc.addEventListener('dragging-changed', (e) => { viewer.controls.enabled = !e.value; });
-tc.addEventListener('objectChange', () => { const o = tc.object; if (o) { o.position.y = 0; } });
-window.addEventListener('keydown', (e) => { if (e.key === 'g') tc.setMode('translate'); if (e.key === 'r') { tc.setMode('rotate'); tc.showX = tc.showZ = false; tc.showY = true; } if (e.key === 'g') { tc.showX = tc.showZ = true; tc.showY = false; } if (e.key === 'Escape') tc.detach(); });
-$('#editFurniture').addEventListener('change', (e) => { if (!e.target.checked) tc.detach(); else { $('[data-layer=furniture]').checked = true; interior.setLayer('furniture', true); } });
-$('#copyLayout').addEventListener('click', async () => { const j = JSON.stringify({ tables: interior.furnitureLayout(), central_wide_column: interior.opts.central }, null, 1); try { await navigator.clipboard.writeText(j); toast('가구 배치 JSON 복사됨'); } catch { prompt('복사:', j); } });
 
 // ---- 내보내기 (복원 모델 + 인테리어 A안 → interior_A.glb)
 $('#exportGlb').addEventListener('click', () => {

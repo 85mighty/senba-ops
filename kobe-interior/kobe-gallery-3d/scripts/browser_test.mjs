@@ -53,7 +53,7 @@ try {
   await page.selectOption('#mirrorMode', 'reflector'); await wait(1500);
   await page.screenshot({ path: path.join(root, 'screenshots', 'interior_column_mirror_reflector.png'), timeout: 60000 });
   await page.selectOption('#mirrorMode', 'env'); await wait(800);
-  await page.check('[data-layer=furniture]'); await page.check('[data-layer=wine_accent_optional]'); await wait(300);
+  await page.check('[data-layer=wine_accent_optional]'); await wait(300);
   await page.screenshot({ path: path.join(root, 'screenshots', 'interior_options_on.png') });
   // 편집기: 번호 선택 → 칠하기/분할/몰딩·액자 끄기, 기둥 실측, 창+커튼, 소품, JSON 내보내기
   await page.check('#editMode'); await page.check('#showLabels'); await wait(300);
@@ -141,6 +141,16 @@ try {
   const [r0, r1] = await tapDoor('toilet_door_leaf'); const [, r2] = await tapDoor('toilet_door_leaf');
   console.log('화장실 문 회전:', [r0, r1, r2].map((x) => +x.toFixed(2)));
   if (!(Math.abs(r1) < 0.05 && Math.abs(r2 - r0) < 0.05)) problems.push('화장실 문 터치 열고 닫기 실패 ' + JSON.stringify([r0, r1, r2]));
+  // 소품: 손가락(마우스)으로 바로 끌어 옮기기 — 편집 모드가 꺼져 있어도 누르면 선택·편집 모드 켜짐
+  const dragRes = await page.evaluate(() => { const s = window.__store, e = window.__editor; window.__setMode('interior'); e.setEnabled(false); document.querySelector('#editMode').checked = false;
+    const p = s.addProp({ type: 'pedestal', x: 0.4, z: -2.4, rot: 0, scale: 1, color: null }); s.commit('prop'); const v = window.__viewer; v.camera.position.set(0.4, 6, -0.4); v.controls.target.set(0.4, 0, -2.4); v.controls.update(); return p.id; });
+  await wait(1200);
+  const pp = await page.evaluate((id) => { const e = window.__editor; const g = e.props.children.find((c) => c.userData.pick?.id === id); const w = g.position.clone(); w.y = 0.9; const q = w.project(window.__viewer.camera); const c = window.__viewer.renderer.domElement.getBoundingClientRect(); return { x: c.left + (q.x + 1) / 2 * c.width, y: c.top + (1 - q.y) / 2 * c.height }; }, dragRes);
+  await page.mouse.move(pp.x, pp.y); await page.mouse.down(); for (let k = 1; k <= 6; k++) { await page.mouse.move(pp.x + k * 15, pp.y); await wait(60); } await page.mouse.up(); await wait(800);
+  const moved = await page.evaluate((id) => { const p = window.__store.design.props.find((x) => x.id === id); return { x: p.x, z: p.z, sel: window.__editor.selected?.id === id, edit: window.__editor.enabled, fab: !document.querySelector('#propFab').hidden }; }, dragRes);
+  console.log('소품 끌기:', JSON.stringify(moved));
+  if (!(moved.x > 0.6 && Math.abs(moved.z + 2.4) < 0.3 && moved.sel && moved.edit && moved.fab)) problems.push('소품 끌어 옮기기 실패 ' + JSON.stringify(moved));
+  await page.evaluate((id) => { window.__editor.deleteProp(id); }, dragRes);
   // ①②에서는 디자인·설비를 그리지 않는다
   const scanOnly = await page.evaluate(() => { window.__setMode('original'); const e = window.__editor; const r = [e.overlays, e.bands, e.fixtures, e.windows].every((g) => !g.visible) && !(e.intCeil?.visible); window.__setMode('interior'); return r && e.fixtures.visible; });
   if (!scanOnly) problems.push('① 원본 스캔에 디자인 오버레이가 겹쳐 보임');
