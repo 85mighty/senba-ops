@@ -25,6 +25,12 @@ function tilePlane(g, w, h, pos, rotY, mat) {
   const m = new THREE.Mesh(geo, mat); m.position.copy(pos); m.rotation.y = rotY; g.add(m); return m;
 }
 
+// 경첩(pivot)에 열림·닫힘 각도를 달아 둔다 — 화면에서 문을 누르면 Editor.toggleDoor 가 돌린다
+function hinge(pivot, closed, open, isOpen, name) {
+  pivot.name = name; pivot.userData.swing = { closed, open, isOpen }; pivot.rotation.y = isOpen ? open : closed;
+  pivot.traverse((o) => { o.userData.doorPivot = pivot; });
+}
+
 export function buildFixtures(meta) {
   const root = new THREE.Group(); root.name = 'fixtures'; const ceil = meta.ceiling_height_m || 2.38;
   const k = meta.kitchen;
@@ -68,24 +74,33 @@ export function buildFixtures(meta) {
     const frameM = std(0x8b8e90, { metalness: 0.3, roughness: 0.45 }), leafM = std(0x63666a, { metalness: 0.45, roughness: 0.38 }), steel = std(0xc3c6c8, { metalness: 0.7, roughness: 0.3 });
     const z0 = wall.offset - 0.07, z1 = wall.offset + 0.07, jt = 0.035;
     boxAt(g, [d.from, d.from + jt], [0, d.y1], [z0, z1], frameM); boxAt(g, [d.to - jt, d.to], [0, d.y1], [z0, z1], frameM); boxAt(g, [d.from, d.to], [d.y1 - jt, d.y1], [z0, z1], frameM);
-    // 문짝: 경첩 쪽(from)에서 방 쪽으로 열린 상태
+    // 문짝: 경첩 쪽(from)에서 방 쪽으로 열림(기본 열린 상태). 닫으면 문틀 안에 들어간다
     const lw = d.to - d.from - 2 * jt - 0.006, lh = d.y1 - jt - 0.015, t = 0.04, side = d.room_side || -1;
-    const pivot = new THREE.Group(); pivot.position.set(d.from + jt, 0, side < 0 ? z0 : z1); pivot.rotation.y = side * -(d.swing_deg ?? 70) * Math.PI / 180; g.add(pivot);
-    const leaf = new THREE.Mesh(new THREE.BoxGeometry(lw, lh, t), leafM); leaf.position.set(lw / 2, 0.01 + lh / 2, side * t / 2); pivot.add(leaf);
-    for (const sz of [-1, 1]) { const lev = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.018, 0.018), steel); lev.position.set(lw - 0.1, 0.98, side * t / 2 + sz * (t / 2 + 0.03)); pivot.add(lev); const rose = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.012, 14), steel); rose.rotation.x = Math.PI / 2; rose.position.set(lw - 0.06, 0.98, side * t / 2 + sz * (t / 2 + 0.008)); pivot.add(rose); }
-    const closer = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.06, 0.06), std(0x2b2b2b)); closer.position.set(0.2, lh - 0.04, side * (t + 0.03)); pivot.add(closer);
+    const pivot = new THREE.Group(); pivot.position.set(d.from + jt, 0, side < 0 ? z0 : z1); g.add(pivot); const lz = -side * t / 2;
+    const leaf = new THREE.Mesh(new THREE.BoxGeometry(lw, lh, t), leafM); leaf.position.set(lw / 2, 0.01 + lh / 2, lz); pivot.add(leaf);
+    for (const sz of [-1, 1]) { const lev = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.018, 0.018), steel); lev.position.set(lw - 0.1, 0.98, lz + sz * (t / 2 + 0.03)); pivot.add(lev); const rose = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.012, 14), steel); rose.rotation.x = Math.PI / 2; rose.position.set(lw - 0.06, 0.98, lz + sz * (t / 2 + 0.008)); pivot.add(rose); }
+    const closer = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.06, 0.06), std(0x2b2b2b)); closer.position.set(0.2, lh - 0.04, lz + side * (t / 2 + 0.03)); pivot.add(closer);
+    hinge(pivot, 0, side * -(d.swing_deg ?? 70) * Math.PI / 180, true, 'toilet_door_leaf');
     // 안쪽: 벽걸이 세면대(왼쪽 벽) + 안쪽 칸막이 문(오른쪽 벽) — 사진 11
     const inner = (meta.elements || []).filter((e) => e.type === 'wall' && e.axis === 'x' && e.from <= wall.offset + 0.1 && e.to > wall.offset + 1.0 && e.offset > d.from - 0.3 && e.offset < d.to + 0.6);
     const right = inner.reduce((a, e) => (!a || e.offset < a.offset ? e : a), null), left = inner.reduce((a, e) => (!a || e.offset > a.offset ? e : a), null);
     const st = meta.toilet_stall;
     if (left && left !== right) { const bowl = new THREE.Mesh(new THREE.SphereGeometry(0.19, 20, 10, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), std(0xb8bbbd, { metalness: 0.5, roughness: 0.3, side: THREE.DoubleSide })); bowl.scale.y = 0.55; bowl.position.set(left.offset - 0.05 - 0.17, 0.82, st?.basin_z ?? wall.offset + 0.62); g.add(bowl); }
-    if (right) { const x = right.offset + 0.002, dz = st?.door_z || [wall.offset + 0.64, wall.offset + 1.29]; boxAt(g, [x, x + 0.03], [0, 1.88], dz, std(0x5a3d28, { roughness: 0.6 })); boxAt(g, [x + 0.005, x + 0.035], [0.02, 1.84], [dz[0] + 0.04, dz[1] - 0.04], std(0x9b968d, { roughness: 0.5 })); const kn = new THREE.Mesh(new THREE.SphereGeometry(0.025, 10, 8), steel); kn.position.set(x + 0.05, 0.95, dz[0] + 0.1); g.add(kn); }
+    if (right) {
+      const dz = st?.door_z || [wall.offset + 0.64, wall.offset + 1.29], wf = right.offset, ft = 0.03, brown = std(0x5a3d28, { roughness: 0.6 });
+      boxAt(g, [wf - 0.1, wf + 0.02], [0, 1.88], [dz[0], dz[0] + ft], brown); boxAt(g, [wf - 0.1, wf + 0.02], [0, 1.88], [dz[1] - ft, dz[1]], brown); boxAt(g, [wf - 0.1, wf + 0.02], [1.85, 1.88], dz, brown);
+      const sw = dz[1] - dz[0] - 2 * ft - 0.006, sh = 1.82, stt = 0.035;
+      const sp = new THREE.Group(); sp.position.set(wf, 0, dz[1] - ft); g.add(sp);   // 경첩: 안쪽 끝, 세면실 쪽 면
+      const sl = new THREE.Mesh(new THREE.BoxGeometry(sw, sh, stt), std(0x9b968d, { roughness: 0.5 })); sl.position.set(sw / 2, 0.02 + sh / 2, -stt / 2); sp.add(sl);
+      const kn = new THREE.Mesh(new THREE.SphereGeometry(0.025, 10, 8), steel); kn.position.set(sw - 0.07, 0.95, 0.02); sp.add(kn);
+      hinge(sp, Math.PI / 2, Math.PI / 2 - 1.25, false, 'stall_door_leaf');
+    }
     // 양변기 칸(Polycam 스캔 확인 — Scaniverse 에는 비어 있던 곳): 베이지 벽·바닥 + 양변기(물탱크는 큰방 쪽 벽)
     if (st) {
       const beige = std(0xe4d6bb, { roughness: 0.85, polygonOffset: true, polygonOffsetFactor: -2 }), white = std(0xf3f1ec, { roughness: 0.25 });
       boxAt(g, st.x, [0, 0.004], st.z, std(0xd8c6a2, { roughness: 0.9 }), 'toilet_stall_floor');
       boxAt(g, st.x, [0, ceil], [st.z[1], st.z[1] + 0.1], beige, 'toilet_stall_back');
-      boxAt(g, [st.x[0], st.x[0] + 0.004], [0, ceil], st.z, beige); boxAt(g, [st.x[1] - 0.004, st.x[1]], [0, ceil], st.z, beige); boxAt(g, st.x, [0, ceil], [st.z[0], st.z[0] + 0.004], beige);
+      boxAt(g, [st.x[0], st.x[0] + 0.004], [0, ceil], st.z, beige); const dz = st.door_z; if (dz) { boxAt(g, [st.x[1] - 0.004, st.x[1]], [0, ceil], [st.z[0], dz[0]], beige); boxAt(g, [st.x[1] - 0.004, st.x[1]], [0, ceil], [dz[1], st.z[1]], beige); boxAt(g, [st.x[1] - 0.004, st.x[1]], [1.88, ceil], dz, beige); } else boxAt(g, [st.x[1] - 0.004, st.x[1]], [0, ceil], st.z, beige); boxAt(g, st.x, [0, ceil], [st.z[0], st.z[0] + 0.004], beige);
       const cx = (st.x[0] + st.x[1]) / 2, z0 = st.z[0] + 0.005;
       boxAt(g, [cx - 0.19, cx + 0.19], [0.42, 0.82], [z0, z0 + 0.19], white, 'toilet_wc_tank');
       const base = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.16, 0.36, 18), white); base.scale.z = 1.35; base.position.set(cx, 0.18, z0 + 0.42); g.add(base);
