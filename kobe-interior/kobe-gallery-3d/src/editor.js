@@ -28,7 +28,7 @@ export class Editor {
     this.tc.addEventListener('objectChange', () => { const o = this.tc.object; if (o) o.position.y = 0; });
     this.buildItems(); this.buildPicks(); this.buildLabels();
     this.rebuildAll();
-    store.onChange(() => { this.rebuildAll(); this.renderInspector(); this.renderTrimPanel(); });
+    store.onChange(() => { this.rebuildAll(); this.renderInspector(); });
   }
   get ceil() { return this.meta.ceiling_height_m || 2.4; }
   get chair() { return this.meta.chair_rail_height_m || 0.9; }
@@ -107,31 +107,38 @@ export class Editor {
     if (keep?.kind === 'prop' || keep?.kind === 'landmark') this.reattach(keep);
     this.buildBands(); this.buildInteriorCeiling(); this.applyHidden();
   }
-  // ---------------- 띠(체어레일)·걸레받이 커스텀: 색/형태가 기본(검정·평면)과 다르면 GLB 띠를 숨기고 직접 그린다
-  bandsCustom() { const g = this.s.global; return g.rail.color !== '#1c1c1c' || g.rail.style !== 'flat' || g.base.color !== '#1c1c1c' || g.base.style !== 'flat'; }
+  // ---------------- 띠(체어레일)·걸레받이: 벽/기둥별. 기본(검정·평면)과 다른 면만 GLB 띠를 숨기고 직접 그린다
+  isDefaultTrim(t) { return t.rail.color === '#1c1c1c' && t.rail.style === 'flat' && t.base.color === '#1c1c1c' && t.base.style === 'flat'; }
   buildBands() {
-    this.bands.clear(); const custom = this.bandsCustom();
-    const rec = this.v.loaded?.reconstructed; if (rec) rec.traverse((o) => { if (o.isMesh && /_(chairrail|baseboard)(_b)?$/.test(o.name)) o.userData.keepVisible = !custom; });
-    if (!custom) return;
-    const g = this.s.global; const railT = this.meta.chair_rail_thickness_m || 0.08; const base = this.base, chair = this.chair;
-    const mk = (color) => new THREE.MeshStandardMaterial({ color, roughness: 0.6, metalness: color === '#c9a24a' ? 0.6 : 0.0 });
-    const strip = (w, y0, y1, depth, mat, sd, sid) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w.to - w.from, y1 - y0, depth), mat); const ww = { ...w, inward: sd, sid: sid || w.sid || w.id }; this.placeOnWall(m, ww, (w.from + w.to) / 2, (y0 + y1) / 2, depth / 2 + 0.002); return m; };
+    this.bands.clear();
+    const rec = this.v.loaded?.reconstructed;
+    if (rec) rec.traverse((o) => { const m = o.isMesh && o.name.match(/^(.*)_(chairrail|baseboard)(_b)?$/); if (m) o.userData.keepVisible = this.isDefaultTrim(this.s.trimOf(m[1])); });
+    const railT = this.meta.chair_rail_thickness_m || 0.08; const base = this.base, chair = this.chair;
+    const mats = {}; const mk = (color) => mats[color] || (mats[color] = new THREE.MeshStandardMaterial({ color, roughness: 0.6, metalness: color === '#c9a24a' ? 0.6 : 0.0 }));
+    const strip = (w, y0, y1, depth, mat, sd, sid) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w.to - w.from, y1 - y0, depth), mat); const ww = { ...w, inward: sd, sid }; this.placeOnWall(m, ww, (w.from + w.to) / 2, (y0 + y1) / 2, depth / 2 + 0.002); return m; };
     const addBands = (faces, sid) => {
+      const g = this.s.trimOf(sid); if (this.isDefaultTrim(g)) return;
       for (const f of faces) {
         const sides = f.two_sided ? [f.inward, -f.inward] : [f.inward];
         for (const sd of sides) {
-          // 걸레받이
           if (g.base.style === 'molding') { this.bands.add(strip(f, 0, base, 0.014, mk(g.base.color), sd, sid)); this.bands.add(strip(f, base - 0.02, base, 0.022, mk(g.base.color), sd, sid)); }
           else this.bands.add(strip(f, 0, base, 0.012, mk(g.base.color), sd, sid));
-          // 체어레일: flat = 평면 띠, molding = 단이 있는 몰드(가운데 돌출 + 위아래 얇은 선)
           if (g.rail.style === 'molding') { this.bands.add(strip(f, chair - railT, chair, 0.012, mk(g.rail.color), sd, sid)); this.bands.add(strip(f, chair - railT * 0.65, chair - railT * 0.35, 0.03, mk(g.rail.color), sd, sid)); this.bands.add(strip(f, chair - 0.006, chair, 0.02, mk(g.rail.color), sd, sid)); }
           else this.bands.add(strip(f, chair - railT, chair, 0.012, mk(g.rail.color), sd, sid));
         }
       }
     };
-    addBands(this.walls().map((w) => ({ ...w, sid: w.id })), null);
+    for (const w of this.walls()) addBands([w], w.id);
     for (const col of this.columns()) addBands(this.i.columnFaces(col).map((f) => ({ ...f, two_sided: false })), col.id);
-    this.bands.traverse((o) => { if (o.isMesh && !o.userData.surface) o.userData.surface = 'bands'; });
+  }
+  // 하부 벽(띠 사이) 마감 오버레이 — 벽/기둥별
+  addLower(face, sid, sides) {
+    const lower = this.s.trimOf(sid).lower; if (!lower.paint) return;
+    const top = this.chair - (this.meta.chair_rail_thickness_m || 0.08);
+    for (const sd of sides) {
+      const q = this.wallQuad(face, face.from, face.to, this.base, top, 0.0012, this.paintMat(lower.paint), sd); q.userData.surface = sid; this.overlays.add(q);
+      if (lower.style === 'wood_panel') { const dark = this.paintMat(this.shade(lower.paint, 0.7)); for (let t = face.from + 0.1; t < face.to - 0.02; t += 0.1) { const line = this.wallQuad(face, t, t + 0.006, this.base, top, 0.0014, dark, sd); line.userData.surface = sid; this.overlays.add(line); } }
+    }
   }
   // ---------------- 숨기기 / 보이기
   surfaceOfMesh(o) {
@@ -202,19 +209,16 @@ export class Editor {
         const sf = this.s.getSurface(seg.key); if (!sf.paint) continue; const [y0, y1] = this.zoneRange(sf.zone || 'all');
         for (const sd of sides) { const q = this.wallQuad(w, seg.from, seg.to, y0, y1, 0.0015, this.paintMat(sf.paint), sd); q.userData.surface = w.id; this.overlays.add(q); }
       }
-      // 전역 하부 벽(띠 사이) 마감 — 세그먼트/벽에 직접 칠한 색이 없을 때
-      const lower = this.s.global.lower; const sfw0 = this.s.getSurface(w.id);
-      if (lower.paint && !sfw0.paint && !this.segmentsOf(w).some((sg) => this.s.getSurface(sg.key).paint && (this.s.getSurface(sg.key).zone || 'all') !== 'upper')) {
-        for (const sd of sides) {
-          const q = this.wallQuad(w, w.from, w.to, this.base, this.chair - (this.meta.chair_rail_thickness_m || 0.08), 0.0012, this.paintMat(lower.paint), sd); q.userData.surface = w.id; this.overlays.add(q);
-          if (lower.style === 'wood_panel') { const dark = this.paintMat(this.shade(lower.paint, 0.7)); for (let t = w.from + 0.1; t < w.to - 0.02; t += 0.1) { const line = this.wallQuad(w, t, t + 0.006, this.base, this.chair - (this.meta.chair_rail_thickness_m || 0.08), 0.0014, dark, sd); line.userData.surface = w.id; this.overlays.add(line); } }
-        }
-      }
+      // 하부 벽(띠 사이) 마감 — 이 벽 설정. 벽 '색'을 띠 아래(하부)로 칠했으면 그쪽 우선, 상부/전체 칠과는 함께 쓴다(하부가 위에 그려짐)
+      const sfw0 = this.s.getSurface(w.id);
+      if (!(sfw0.paint && sfw0.zone === 'lower')) this.addLower(w, w.id, sides);
       // 벽 전체 설정(세그먼트 없이 칠한 경우)
       const sfw = this.s.getSurface(w.id); if (sfw.paint) { const [y0, y1] = this.zoneRange(sfw.zone || 'all'); for (const sd of sides) { const q = this.wallQuad(w, w.from, w.to, y0, y1, 0.001, this.paintMat(sfw.paint), sd); q.userData.surface = w.id; this.overlays.add(q); } }
     }
     for (const col of this.columns()) {
-      const sf = this.s.getSurface(col.id); if (!sf.paint) continue; const [y0, y1] = this.zoneRange(sf.zone || 'all'); const fp = this.s.footprint(col);
+      const sf = this.s.getSurface(col.id);
+      if (!(sf.paint && sf.zone === 'lower')) for (const f of this.i.columnFaces(col)) this.addLower(f, col.id, [f.inward]);
+      if (!sf.paint) continue; const [y0, y1] = this.zoneRange(sf.zone || 'all'); const fp = this.s.footprint(col);
       for (const f of this.i.columnFaces({ footprint: fp })) { const q = this.wallQuad(f, f.from, f.to, y0, y1, 0.0015, this.paintMat(sf.paint)); q.userData.surface = col.id; this.overlays.add(q); }
     }
     for (const t of this.tiles) for (const [kind, y, rot] of [['floor', 0.002, -Math.PI / 2]]) {
@@ -309,18 +313,25 @@ export class Editor {
     for (const t of this.tiles) mk(`바닥 ${t.num}`, { kind: 'floor', id: `floor_t${t.num}` }, 'floor'); mk('바닥 전체', { kind: 'floor', id: 'floor' }, 'floor');
     for (const w of this.walls()) for (const win of this.s.windowsOf(w.id)) mk(`창 (벽 ${w.num})`, { kind: 'window', id: win.id, wall: w.id }, 'win');
   }
-  renderTrimPanel() {
-    const box = $('#trimPanel'); if (!box) return; box.innerHTML = ''; const g = this.s.global; const commit = () => this.s.commit('trim');
+  // 이 벽/기둥의 띠·걸레받이·흰 몰딩·하부 벽 편집 (인스펙터 안)
+  renderTrimControls(box, id, noun) {
+    const own = this.s.hasOwnTrim(id); const t = this.s.trimOf(id); const commit = () => this.s.commit('trim'); const ed = () => this.s.trimEdit(id);
+    const h = document.createElement('h4'); h.innerHTML = `띠 · 몰딩 · 하부 벽 <small>${own ? `이 ${noun}만의 설정` : '기본값 따름 — 바꾸면 이 ' + noun + '만 적용'}</small>`; box.appendChild(h);
     const row = (label, node) => { const d = document.createElement('div'); d.className = 'irow'; const l = document.createElement('span'); l.textContent = label; d.append(l, node); box.appendChild(d); };
-    const selectEl = (opts, val, onChange) => { const sEl = document.createElement('select'); for (const [t, v] of opts) { const o = document.createElement('option'); o.value = v; o.textContent = t; if (v === val) o.selected = true; sEl.appendChild(o); } sEl.addEventListener('change', () => onChange(sEl.value)); return sEl; };
-    row('검은 띠 색', this.palette(PALETTE_TRIM, g.rail.color, (hex) => { g.rail.color = hex; commit(); }));
-    row('띠 형태', selectEl([['평면 띠(현재)', 'flat'], ['액자 몰드(단 있음)', 'molding']], g.rail.style, (v) => { g.rail.style = v; commit(); }));
-    row('걸레받이 색', this.palette(PALETTE_TRIM, g.base.color, (hex) => { g.base.color = hex; commit(); }));
-    row('걸레받이 형태', selectEl([['평면', 'flat'], ['몰드', 'molding']], g.base.style, (v) => { g.base.style = v; commit(); }));
-    row('흰 몰딩 색', this.palette([['화이트', '#f4f1ea'], ['웜 화이트', '#efe6d6'], ['원목', '#a98457'], ['월넛', '#6b4a2e'], ['골드', '#c9a24a'], ['블랙', '#1c1c1c']], g.moldingColor, (hex) => { g.moldingColor = hex; commit(); }));
-    row('띠 사이(하부 벽)', this.palette(PALETTE_LOWER, g.lower.paint, (hex) => { g.lower.paint = hex; if (hex && /#a98457|#6b4a2e/.test(hex)) g.lower.style = 'wood_panel'; commit(); }));
-    row('하부 형태', selectEl([['단색', 'flat'], ['원목 패널(세로 홈)', 'wood_panel']], g.lower.style, (v) => { g.lower.style = v; commit(); }));
-    const b = document.createElement('button'); b.className = 'ghost'; b.textContent = '띠·몰딩 기본값(검정 띠·흰 몰딩)으로'; b.addEventListener('click', () => { Object.assign(g, { rail: { color: '#1c1c1c', style: 'flat' }, base: { color: '#1c1c1c', style: 'flat' }, moldingColor: '#f4f1ea', lower: { paint: null, style: 'flat' } }); commit(); }); box.appendChild(b);
+    const selectEl = (opts, val, onChange) => { const sEl = document.createElement('select'); for (const [tx, v] of opts) { const o = document.createElement('option'); o.value = v; o.textContent = tx; if (v === val) o.selected = true; sEl.appendChild(o); } sEl.addEventListener('change', () => onChange(sEl.value)); return sEl; };
+    const btn = (text, fn, cls = 'ghost') => { const b = document.createElement('button'); b.textContent = text; b.className = cls; b.addEventListener('click', fn); return b; };
+    row('띠 색', this.palette(PALETTE_TRIM, t.rail.color, (hex) => { ed().rail.color = hex; commit(); }));
+    row('띠 형태', selectEl([['평면 띠', 'flat'], ['액자 몰드(단 있음)', 'molding']], t.rail.style, (v) => { ed().rail.style = v; commit(); }));
+    row('걸레받이 색', this.palette(PALETTE_TRIM, t.base.color, (hex) => { ed().base.color = hex; commit(); }));
+    row('걸레받이 형태', selectEl([['평면', 'flat'], ['몰드', 'molding']], t.base.style, (v) => { ed().base.style = v; commit(); }));
+    row('흰 몰딩 색', this.palette([['화이트', '#f4f1ea'], ['웜 화이트', '#efe6d6'], ['원목', '#a98457'], ['월넛', '#6b4a2e'], ['골드', '#c9a24a'], ['블랙', '#1c1c1c']], t.moldingColor, (hex) => { ed().moldingColor = hex; commit(); }));
+    row('하부 벽(띠 사이)', this.palette(PALETTE_LOWER, t.lower.paint, (hex) => { const e = ed(); e.lower.paint = hex; if (hex && /#a98457|#6b4a2e/.test(hex)) e.lower.style = 'wood_panel'; commit(); }));
+    row('하부 형태', selectEl([['단색', 'flat'], ['원목 패널(세로 홈)', 'wood_panel']], t.lower.style, (v) => { ed().lower.style = v; commit(); }));
+    const r = document.createElement('div'); r.className = 'row wrap';
+    if (own) r.appendChild(btn('기본값 따르기(이 설정 지우기)', () => { this.s.clearTrim(id); commit(); }));
+    r.appendChild(btn(`이 ${noun} 설정을 모든 벽·기둥에`, () => { this.s.applyTrimToAll(id); commit(); this.toast('모든 벽·기둥에 적용'); }));
+    r.appendChild(btn('모두 검정 띠·흰 몰딩으로', () => { this.s.resetAllTrim(); commit(); this.toast('모든 벽·기둥 초기화'); }));
+    box.appendChild(r);
   }
   renderHiddenChips() {
     const box = $('#hiddenChips'); if (!box) return; box.innerHTML = '';
@@ -357,6 +368,7 @@ export class Editor {
       row('액자', check(sfw.art !== false, (v) => { sfw.art = v; commit('art'); }, '이 벽에 작품 걸기'));
       row('액자 수', num(sfw.artCount ?? '', 1, (v) => { sfw.artCount = v || null; commit('art'); }, '개 (비우면 자동)'));
       row('액자 틀', selectEl(FRAME_STYLES, sfw.frame || 'gold', (v) => { sfw.frame = v; commit('frame'); }));
+      this.renderTrimControls(box, w.id, '벽');
       box.appendChild(btn(this.hidden.has(w.id) ? '👁 이 벽 보이기' : '🙈 이 벽 숨기기', () => this.setHidden(w.id, !this.hidden.has(w.id)), 'ghost'));
       const wins = this.s.windowsOf(w.id); h(`<h4>창 (${wins.length})</h4>`);
       box.appendChild(btn('+ 이 벽에 창 추가', () => { const L = w.to - w.from; this.s.addWindow(w.id, { id: `${w.id}_w${Date.now() % 100000}`, from: +(w.from + L * 0.3).toFixed(2), to: +(w.from + L * 0.7).toFixed(2), y0: 0.95, y1: 2.0, frame: '#8a8f94', curtain: { on: false, color: '#5a3a22', style: 'open' } }); commit('window'); this.renderChips(); }));
@@ -376,6 +388,7 @@ export class Editor {
       row('색', this.palette(PALETTE_WALL, sf.paint, (hex) => { sf.paint = hex; commit('paint'); }));
       row('스캔 텍스처', check(sf.texture !== false, (v) => { sf.texture = v; commit('tex'); }, '보이기'));
       row('화이트 몰딩', check(sf.molding !== false, (v) => { sf.molding = v; commit('molding'); }, '이 기둥에 몰딩'));
+      this.renderTrimControls(box, col.id, '기둥');
       box.appendChild(btn(this.hidden.has(col.id) ? '👁 이 기둥 보이기' : '🙈 이 기둥 숨기기', () => this.setHidden(col.id, !this.hidden.has(col.id)), 'ghost'));
     }
     if (sel.kind === 'ceiling' || sel.kind === 'floor') {
