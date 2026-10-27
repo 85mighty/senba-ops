@@ -94,8 +94,8 @@ try {
     // 입구 자동문
     if (!e.doors || e.doors.children.length < 1) throw new Error('입구 자동문 없음');
     // 디자인 안 전환: B안 새로 → 바꾸고 → A안으로 돌아가면 A 는 그대로
-    const before = s.getSurface('ceiling').paint; window.__switchSlot('B'); s.surface('ceiling').paint = '#1c1c1c'; s.commit('paint'); window.__switchSlot('A');
-    if (s.active !== 'A' || s.getSurface('ceiling').paint !== before) throw new Error('안 전환 실패');
+    const ceilA = s.getSurface('ceiling').paint; window.__switchSlot('B'); s.surface('ceiling').paint = '#1c1c1c'; s.commit('paint'); window.__switchSlot('A');
+    if (s.active !== 'A' || s.getSurface('ceiling').paint !== ceilA) throw new Error('안 전환 실패');
     window.__switchSlot('B'); if (s.getSurface('ceiling').paint !== '#1c1c1c') throw new Error('B안 저장 실패'); window.__switchSlot('A');
     if (document.querySelectorAll('#slotBar button').length !== 3) throw new Error('안 버튼 3개 아님');
     const json = s.exportJSON();
