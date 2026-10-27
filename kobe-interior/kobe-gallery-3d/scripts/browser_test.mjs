@@ -74,6 +74,11 @@ try {
     e.setHidden('ceiling_t1', true); const tileOk = e.ceilTiles.visible && e.ceilTiles.children.some((t) => !t.visible); e.showAll();
     e.setAutoHide(true); e.runAutoHide(); const auto = e._autoHidden.size; e.setAutoHide(false);
     if (!hiddenOk || !tileOk) throw new Error('숨기기 검증 실패 ' + JSON.stringify({ hiddenOk, tileOk, auto }));
+    // 띠/하부 벽/몰딩 전역 옵션 + 전체 바닥 덮어쓰기 + 소품 삭제
+    s.global.rail = { color: '#a98457', style: 'molding' }; s.global.lower = { paint: '#a98457', style: 'wood_panel' }; s.global.moldingColor = '#efe6d6'; s.commit('trim');
+    const bandsN = e.bands.children.length; if (!bandsN) throw new Error('커스텀 띠 생성 실패');
+    s.paintAll('floor', '#866752'); s.commit('paint'); if (s.getSurface('floor_t1').paint) throw new Error('전체 바닥 덮어쓰기 실패');
+    const before2 = s.design.props.length; e.deleteProp(s.design.props[0].id); if (s.design.props.length !== before2 - 1) throw new Error('소품 삭제 실패');
     const json = s.exportJSON();
     return { items: e.items.length, chips: document.querySelectorAll('#itemChips button').length, overlays: e.overlays.children.length, windows: e.windows.children.length, props: e.props.children.length, labels: e.labels.children.length, jsonLen: json.length, inspector: document.querySelector('#inspector').textContent.slice(0, 40) };
   });

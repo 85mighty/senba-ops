@@ -78,7 +78,7 @@ export class InteriorA {
   }
   // ---- 하부 화이트 사각 몰딩 (검은 띠와 걸레받이 사이)
   build_molding() {
-    const g = this.layers.molding; const mat = new THREE.MeshStandardMaterial({ color: WHITE, roughness: 0.55 });
+    const g = this.layers.molding; const mat = new THREE.MeshStandardMaterial({ color: (this.store && this.store.global.moldingColor) || WHITE, roughness: 0.55 });
     const yBottom = this.base + 0.08, yTop = this.chair - 0.06 - 0.08; const ht = yTop - yBottom; if (ht < 0.25) return;
     const mirrored = new Set(this.mirrorColumns().map((c) => c.id));
     const targets = this.walls().filter((w) => this.sf(w.id).molding !== false).map((w) => this.withEditedWindows(w));
