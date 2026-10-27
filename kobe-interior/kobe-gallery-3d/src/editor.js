@@ -158,6 +158,20 @@ export class Editor {
       for (const o of meshes) { cutWallOpening(o, w.axis, d.from, d.to, -1, d.y1); (o.userData.cut = o.userData.cut || []).push(d.id); }
     }
   }
+  // ---------------- 문 열고 닫기: 화면에서 문짝을 누르면 경첩을 돌린다(가려진 문은 안 잡힘)
+  doorAt(ev) {
+    if (!this.fixtures?.visible) return null;
+    const r = this.v.renderer.domElement.getBoundingClientRect(); const p = new THREE.Vector2(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+    const rc = new THREE.Raycaster(); rc.setFromCamera(p, this.v.camera);
+    const shown = (o) => { for (let q = o; q; q = q.parent) if (!q.visible || q === this.picks) return false; return true; };
+    const objs = []; this.v.scene.traverse((o) => { if (o.isMesh && shown(o)) objs.push(o); });
+    const hit = rc.intersectObjects(objs, false)[0]; return hit?.object.userData.doorPivot || null;
+  }
+  toggleDoor(pivot) {
+    const sw = pivot.userData.swing; sw.isOpen = !sw.isOpen; const from = pivot.rotation.y, to = sw.isOpen ? sw.open : sw.closed; let t = 0;
+    this.v.onFrame.push((dt) => { t = Math.min(1, t + dt * 1.8); const k = t * t * (3 - 2 * t); pivot.rotation.y = from + (to - from) * k; return t < 1; });
+    return sw.isOpen;
+  }
   // ---------------- 띠(체어레일)·걸레받이: 벽/기둥별. 기본(검정·평면)과 다른 면만 GLB 띠를 숨기고 직접 그린다
   // 주방·화장실 안쪽 벽은 실제로 띠가 없다(타일·회색 벽) — 그 벽만의 띠 설정을 하지 않았으면 전체 설정(띠·하부 벽)을 적용하지 않는다
   plainService(id) { return !!serviceOf(this.meta, id) && !this.s.hasOwnTrim(id); }

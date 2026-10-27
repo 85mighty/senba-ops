@@ -69,6 +69,9 @@ const canvas = $('#c'); let downAt = null;
 canvas.addEventListener('pointerdown', (e) => { downAt = [e.clientX, e.clientY]; });
 canvas.addEventListener('pointerup', (e) => {
   if (!downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 6) return; downAt = null;
+  if (editor && (viewer.mode === 'reconstructed' || viewer.mode === 'interior') && !editor.placing && !editor.measuring) {   // 문을 누르면 열고 닫기
+    const door = editor.doorAt(e); if (door) { const open = editor.toggleDoor(door); toast(`${door.name === 'stall_door_leaf' ? '양변기 칸 문' : '화장실 문'} ${open ? '열림' : '닫힘'}`); return; }
+  }
   if (editor && editor.enabled && (viewer.mode === 'reconstructed' || viewer.mode === 'interior')) { editor.onClick(e); return; }
   if ($('#pickColumn').checked) {
     const hit = viewer.pick(e, (o) => o.userData.model === 'reconstructed' && /^(wide_column|thin_column|partition)_\d+$/.test(o.name));

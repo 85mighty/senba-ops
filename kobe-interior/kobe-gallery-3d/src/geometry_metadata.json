@@ -864,6 +864,16 @@
       "room_side": -1,
       "status": "observed",
       "note": "원본 스캔·사진 08/11: 회색 철문(바깥여닫이, 오른쪽 경첩, 도어클로저)"
+    },
+    {
+      "id": "stall_door",
+      "wall": "wall_x_5",
+      "from": 3.05,
+      "to": 3.7,
+      "y1": 1.88,
+      "kind": "stall",
+      "status": "observed",
+      "note": "양변기 칸 문(세면실 쪽) — Polycam 화면"
     }
   ],
   "kitchen": {

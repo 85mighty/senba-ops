@@ -129,6 +129,18 @@ try {
   await page.evaluate(() => { const v = window.__viewer; v.camera.position.set(3.5, 7.5, 5.5); v.controls.target.set(-0.8, 0.5, -1.2); v.controls.update(); }); await wait(1200);
   await page.screenshot({ path: path.join(root, 'screenshots', 'overview_above.png') });
   await page.evaluate(() => { window.__store.reset(); });   // 테스트 디자인은 남기지 않음
+  // 화장실 문: 화면에서 문짝을 누르면 닫히고 다시 누르면 열린다
+  await page.evaluate(() => { const v = window.__viewer; v.camera.position.set(1.0, 1.5, 0.2); v.controls.target.set(1.4, 1.0, 2.4); v.controls.update(); }); await wait(800);
+  const tapDoor = async (name) => {
+    const pt = await page.evaluate((name) => { const e = window.__editor; let pv = null; e.fixtures.traverse((o) => { if (o.name === name) pv = o; }); const leaf = pv.children[0]; const w = leaf.getWorldPosition(leaf.position.clone()); w.y = 1.3; const c = window.__viewer.renderer.domElement.getBoundingClientRect(); const q = w.project(window.__viewer.camera); return { x: c.left + (q.x + 1) / 2 * c.width, y: c.top + (1 - q.y) / 2 * c.height, rot: pv.rotation.y }; }, name);
+    await page.mouse.click(pt.x, pt.y); await wait(300);
+    await page.waitForFunction((name) => { let pv = null; window.__editor.fixtures.traverse((o) => { if (o.name === name) pv = o; }); const sw = pv.userData.swing; return Math.abs(pv.rotation.y - (sw.isOpen ? sw.open : sw.closed)) < 1e-3; }, name, { timeout: 120000 });   // 소프트웨어 렌더링은 느려서 애니메이션 끝까지 기다림
+    const after = await page.evaluate((name) => { let pv = null; window.__editor.fixtures.traverse((o) => { if (o.name === name) pv = o; }); return pv.rotation.y; }, name);
+    return [pt.rot, after];
+  };
+  const [r0, r1] = await tapDoor('toilet_door_leaf'); const [, r2] = await tapDoor('toilet_door_leaf');
+  console.log('화장실 문 회전:', [r0, r1, r2].map((x) => +x.toFixed(2)));
+  if (!(Math.abs(r1) < 0.05 && Math.abs(r2 - r0) < 0.05)) problems.push('화장실 문 터치 열고 닫기 실패 ' + JSON.stringify([r0, r1, r2]));
   // ①②에서는 디자인·설비를 그리지 않는다
   const scanOnly = await page.evaluate(() => { window.__setMode('original'); const e = window.__editor; const r = [e.overlays, e.bands, e.fixtures, e.windows].every((g) => !g.visible) && !(e.intCeil?.visible); window.__setMode('interior'); return r && e.fixtures.visible; });
   if (!scanOnly) problems.push('① 원본 스캔에 디자인 오버레이가 겹쳐 보임');
