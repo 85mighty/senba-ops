@@ -36,7 +36,7 @@ $('#panelToggle').addEventListener('click', () => $('#panel').classList.toggle('
 
 // ---- 보기
 const sectionY = $('#sectionY');
-const applySection = () => { viewer.setCeilingHidden($('#hideCeiling').checked, +sectionY.value); $('#sectionYv').textContent = `${(+sectionY.value).toFixed(2)} m`; };
+const applySection = () => { viewer.setCeilingHidden($('#hideCeiling').checked, +sectionY.value); $('#sectionYv').textContent = `${(+sectionY.value).toFixed(2)} m`; editor?.applyHidden(); };
 $('#hideCeiling').addEventListener('change', applySection); sectionY.addEventListener('input', applySection);
 sectionY.max = ((meta.ceiling_height_m || 3) + 0.3).toFixed(2); sectionY.value = ((meta.ceiling_height_m || 3) - 0.4).toFixed(2); $('#sectionYv').textContent = `${(+sectionY.value).toFixed(2)} m`;
 $('#showDims').addEventListener('change', (e) => viewer.setDims(e.target.checked));
@@ -118,6 +118,9 @@ function setupEditorUI() {
   $('#editMode').addEventListener('change', (e) => { editor.setEnabled(e.target.checked); if (e.target.checked && viewer.mode !== 'interior' && viewer.mode !== 'reconstructed') setMode('interior'); });
   $('#showLabels').addEventListener('change', (e) => editor.setLabels(e.target.checked));
   $('#showTileLabels').addEventListener('change', (e) => editor.setTileLabels(e.target.checked));
+  $('#autoHide').addEventListener('change', (e) => editor.setAutoHide(e.target.checked));
+  $('#showAll').addEventListener('click', () => { editor.showAll(); toast('모든 면 보이기'); });
+  editor.renderHiddenChips();
   const bar = $('#propBar'); for (const [name, type] of PROP_TYPES) { const b = document.createElement('button'); b.textContent = name; b.addEventListener('click', () => { if (!editor.enabled) { $('#editMode').checked = true; editor.setEnabled(true); } editor.startPlacing(type); }); bar.appendChild(b); }
   $('#measureBtn').addEventListener('click', () => { if (!editor.enabled) { $('#editMode').checked = true; editor.setEnabled(true); } editor.startMeasure(); });
   $('#measureClear').addEventListener('click', () => editor.clearMeasures());

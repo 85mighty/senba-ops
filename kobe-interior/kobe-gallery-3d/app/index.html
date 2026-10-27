@@ -4,8 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>Kobe Gallery Studio 3D</title>
-  <script type="module" crossorigin src="./assets/index-CMWoE7ba.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-CY3nWakQ.css">
+  <script type="module" crossorigin src="./assets/index-C3ftO6Ew.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-CTOPHe5P.css">
 </head>
 <body>
   <canvas id="c"></canvas>
@@ -75,7 +75,10 @@
       <label><input type="checkbox" id="showTileLabels" /> 천장·바닥 타일 번호 표시</label>
       <label><input type="checkbox" id="toggleWindows" checked /> 창·커튼 보이기</label>
       <label><input type="checkbox" id="toggleProps" checked /> 소품 보이기</label>
-      <div class="hint">번호로 선택:</div>
+      <label><input type="checkbox" id="autoHide" /> <b>시야 가리는 벽·천장 자동 숨김</b> (카메라 앞 벽, 천장 위에서 볼 때)</label>
+      <div class="row wrap"><span class="hint">숨긴 면:</span><button id="showAll" class="ghost">모두 보이기</button></div>
+      <div id="hiddenChips" class="chips"></div>
+      <div class="hint">번호로 선택 (선택 후 아래 '숨기기' 버튼):</div>
       <div id="itemChips" class="chips"></div>
       <div id="inspector" class="inspector"></div>
       <h3>소품 놓기</h3>

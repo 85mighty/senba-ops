@@ -374,6 +374,25 @@ def main():
                     d = {"kind": "door", "from": float(gap_lo), "to": float(gap_hi), "y": [0.0, 2.0], "status": "inferred", "note": "벽 선분 사이 틈 — 문/통로 후보"}
                     w1["openings"].append(d); doors.append((w1, d))
 
+    # 벽 끝을 직교 벽까지 연장 (모서리 틈 제거): 끝에서 0.45 m 안에 직교 벽 평면이 있으면 그 오프셋(+두께)까지
+    for w in walls:
+        ax = "x" if w["axis"] == "x" else "z"
+        for end in ("from", "to"):
+            best = None
+            for o in walls:
+                if o["axis"] == w["axis"]: continue
+                # o 의 구간이 w 의 오프셋을 포함해야 실제로 만나는 벽
+                if not (o["from"] - 0.3 <= w["offset"] <= o["to"] + 0.3): continue
+                d = (o["offset"] - w[end]) if end == "to" else (w[end] - o["offset"])
+                if -0.12 <= d <= 0.45 and (best is None or d < best[0]): best = (d, o)
+            if best:
+                o = best[1]
+                # 직교 벽의 바깥면(안쪽 반대 방향으로 두께만큼)까지 → 모서리에서 박스가 겹친다
+                target = o["offset"] + (-o["inward"] * WALL_T if not o["two_sided"] else 0)
+                if end == "to" and target > w["to"]: w["to"] = float(target)
+                if end == "from" and target < w["from"]: w["from"] = float(target)
+        w["length"] = w["to"] - w["from"]
+
     # 창 없는 벽 (사용자 확인) — 메타데이터에 기억
     no_win = set(args.no_window if args.no_window is not None else meta.get("no_window_walls", []))
     for w in walls:

@@ -17,6 +17,10 @@ export class Editor {
     this.windows = new THREE.Group(); this.windows.name = 'windows'; this.props = new THREE.Group(); this.props.name = 'props'; this.marks = new THREE.Group(); this.measures = new THREE.Group();
     for (const g of [this.overlays, this.picks, this.labels, this.hl, this.windows, this.props, this.marks, this.measures]) this.root.add(g);
     this.labels.visible = false; this.picks.visible = false;
+    this.ceilTiles = new THREE.Group(); this.ceilTiles.name = 'ceilTiles'; this.root.add(this.ceilTiles);
+    this.hidden = new Set(); try { const h = JSON.parse(localStorage.getItem('kobe3d.hidden') || '[]'); for (const x of h) this.hidden.add(x); } catch {}
+    this.autoHide = false; this._autoHidden = new Set();
+    viewer.controls.addEventListener('change', () => { if (this.autoHide) this.scheduleAutoHide(); });
     this.tc = new TransformControls(viewer.camera, viewer.renderer.domElement); this.tc.setSize(0.7); this.tc.showY = false;
     viewer.scene.add(this.tc.getHelper ? this.tc.getHelper() : this.tc);
     this.tc.addEventListener('dragging-changed', (e) => { viewer.controls.enabled = !e.value; if (!e.value) this.onDragEnd(); });
@@ -100,6 +104,59 @@ export class Editor {
     this.i.rebuild('molding'); this.i.rebuild('gallery_art'); this.i.rebuild('mirror_4_sides'); this.applyColumnSizes(); this.buildLabels();
     this.v.updateHighlight(); this.refreshHighlight();
     if (keep?.kind === 'prop' || keep?.kind === 'landmark') this.reattach(keep);
+    this.buildCeilingTiles(); this.applyHidden();
+  }
+  // ---------------- 숨기기 / 보이기
+  surfaceOfMesh(o) {
+    if (o.userData.surface) return o.userData.surface;
+    const n = o.name || ''; const m = n.match(/^(wall_[xz]_\d+|wide_column_\d+|thin_column_\d+|enclosure_\d+|door_panel_\d+|fixture_candidate_\d+)/); if (m) return m[1];
+    if (n.startsWith('ceiling')) return 'ceiling'; if (n.startsWith('floor')) return 'floor'; return null;
+  }
+  isHidden(id) { return this.hidden.has(id) || this._autoHidden.has(id); }
+  applyHidden() {
+    const anyCeilTile = [...this.hidden, ...this._autoHidden].some((x) => x.startsWith('ceiling_t')); const ceilHidden = this.isHidden('ceiling');
+    const rec = this.v.loaded?.reconstructed;
+    const visit = (o) => {
+      if (!o.isMesh) return; const sid = this.surfaceOfMesh(o); if (!sid) return;
+      if (sid === 'ceiling') { o.visible = !(ceilHidden || anyCeilTile) && !this.v.clipping; return; }     // 타일 단위 숨김이면 GLB 천장 대신 타일 그룹
+      if (o.userData.windowOf) { o.visible = !this.isHidden(o.userData.windowOf); return; }
+      o.visible = !this.isHidden(sid) && (o.userData.keepVisible ?? true);
+    };
+    if (rec) rec.traverse(visit); this.i.root.traverse(visit); this.overlays.traverse(visit); this.windows.traverse((o) => { if (o.isMesh) { const w = o.userData.windowOf; o.visible = !(w && this.isHidden(w)); } });
+    this.ceilTiles.visible = (anyCeilTile && !ceilHidden) && !this.v.clipping;
+    for (const t of this.ceilTiles.children) t.visible = !this.isHidden(`ceiling_t${t.userData.tile}`);
+    this.renderHiddenChips?.();
+  }
+  buildCeilingTiles() {
+    this.ceilTiles.clear(); const rec = this.v.loaded?.reconstructed; if (!rec) return;
+    let texMesh = null, gridMat = null; rec.traverse((o) => { if (o.isMesh && o.name === 'ceiling_tex') texMesh = o; if (o.isMesh && o.name === 'ceiling') gridMat = o.material; });
+    const b = this.meta.bounds_world_m; const x0 = b.min[0], z0 = b.min[2]; const W = b.max[0] - x0, D = b.max[2] - z0;
+    for (const t of this.tiles) {
+      const w = t.x[1] - t.x[0], d = t.z[1] - t.z[0]; const geo = new THREE.PlaneGeometry(w, d);
+      if (texMesh) { // 구운 천장 텍스처의 해당 영역만 UV 로 잘라 쓴다 (텍스처 사각형: x0..x1 → u 0..1, z0..z1 → v 1..0)
+        const uv = geo.attributes.uv; const u0 = (t.x[0] - x0) / W, u1 = (t.x[1] - x0) / W, v0 = 1 - (t.z[0] - z0) / D, v1 = 1 - (t.z[1] - z0) / D;
+        uv.setXY(0, u0, v0); uv.setXY(1, u1, v0); uv.setXY(2, u0, v1); uv.setXY(3, u1, v1); uv.needsUpdate = true;
+      }
+      const m = new THREE.Mesh(geo, texMesh ? texMesh.material : (gridMat || new THREE.MeshStandardMaterial({ color: 0xeceae4 }))); m.rotation.x = Math.PI / 2; m.position.set((t.x[0] + t.x[1]) / 2, this.ceil - 0.001, (t.z[0] + t.z[1]) / 2); m.userData.tile = t.num; m.userData.keepVisible = true; this.ceilTiles.add(m);
+    }
+  }
+  setHidden(id, on) { if (on) this.hidden.add(id); else this.hidden.delete(id); try { localStorage.setItem('kobe3d.hidden', JSON.stringify([...this.hidden])); } catch {} this.applyHidden(); this.renderInspector(); }
+  showAll() { this.hidden.clear(); this._autoHidden.clear(); try { localStorage.removeItem('kobe3d.hidden'); } catch {} this.applyHidden(); this.renderInspector(); }
+  // 자동 숨김: 카메라가 벽의 바깥쪽에 있거나 벽이 카메라와 주시점 사이에 끼면 숨김. 카메라가 천장 가까이/위면 천장 숨김.
+  setAutoHide(on) { this.autoHide = on; if (!on) { this._autoHidden.clear(); this.applyHidden(); } else this.runAutoHide(); }
+  scheduleAutoHide() { if (this._ah) return; this._ah = setTimeout(() => { this._ah = null; this.runAutoHide(); }, 120); }
+  runAutoHide() {
+    const cam = this.v.camera.position, tgt = this.v.controls.target; const next = new Set();
+    for (const w of this.walls()) {
+      if (w.two_sided) continue; const ax = w.axis === 'x' ? 0 : 2; const other = 2 - ax; const c = [cam.x, cam.y, cam.z], t = [tgt.x, tgt.y, tgt.z];
+      const sideCam = (c[ax] - w.offset) * w.inward, sideTgt = (t[ax] - w.offset) * w.inward;
+      const inSpan = (p) => p[other] > w.from - 0.3 && p[other] < w.to + 0.3;
+      // 카메라가 벽 바깥(안쪽 반대)이고 주시점이 안쪽이면 이 벽이 시야를 막는다
+      if (sideCam < 0.05 && sideTgt > 0 && (inSpan(c) || inSpan(t))) next.add(w.id);
+    }
+    if (cam.y > this.ceil - 0.25) next.add('ceiling');
+    const changed = next.size !== this._autoHidden.size || [...next].some((x) => !this._autoHidden.has(x));
+    if (changed) { this._autoHidden = next; this.applyHidden(); }
   }
   reattach(sel) {
     const list = sel.kind === 'prop' ? this.props.children : this.marks.children; const g = list.find((c) => c.userData.pick?.id === sel.id);
@@ -112,18 +169,18 @@ export class Editor {
       const sides = w.two_sided ? [w.inward, -w.inward] : [w.inward];
       for (const seg of this.segmentsOf(w)) {
         const sf = this.s.getSurface(seg.key); if (!sf.paint) continue; const [y0, y1] = this.zoneRange(sf.zone || 'all');
-        for (const sd of sides) this.overlays.add(this.wallQuad(w, seg.from, seg.to, y0, y1, 0.0015, this.paintMat(sf.paint), sd));
+        for (const sd of sides) { const q = this.wallQuad(w, seg.from, seg.to, y0, y1, 0.0015, this.paintMat(sf.paint), sd); q.userData.surface = w.id; this.overlays.add(q); }
       }
       // 벽 전체 설정(세그먼트 없이 칠한 경우)
-      const sfw = this.s.getSurface(w.id); if (sfw.paint) { const [y0, y1] = this.zoneRange(sfw.zone || 'all'); for (const sd of sides) this.overlays.add(this.wallQuad(w, w.from, w.to, y0, y1, 0.001, this.paintMat(sfw.paint), sd)); }
+      const sfw = this.s.getSurface(w.id); if (sfw.paint) { const [y0, y1] = this.zoneRange(sfw.zone || 'all'); for (const sd of sides) { const q = this.wallQuad(w, w.from, w.to, y0, y1, 0.001, this.paintMat(sfw.paint), sd); q.userData.surface = w.id; this.overlays.add(q); } }
     }
     for (const col of this.columns()) {
       const sf = this.s.getSurface(col.id); if (!sf.paint) continue; const [y0, y1] = this.zoneRange(sf.zone || 'all'); const fp = this.s.footprint(col);
-      for (const f of this.i.columnFaces({ footprint: fp })) this.overlays.add(this.wallQuad(f, f.from, f.to, y0, y1, 0.0015, this.paintMat(sf.paint)));
+      for (const f of this.i.columnFaces({ footprint: fp })) { const q = this.wallQuad(f, f.from, f.to, y0, y1, 0.0015, this.paintMat(sf.paint)); q.userData.surface = col.id; this.overlays.add(q); }
     }
     for (const t of this.tiles) for (const [kind, y, rot] of [['ceiling', this.ceil - 0.002, Math.PI / 2], ['floor', 0.002, -Math.PI / 2]]) {
       const sf = this.s.getSurface(`${kind}_t${t.num}`); const sfa = this.s.getSurface(kind); const paint = sf.paint || sfa.paint; if (!paint) continue;
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(t.x[1] - t.x[0], t.z[1] - t.z[0]), this.paintMat(paint)); m.rotation.x = rot; m.position.set((t.x[0] + t.x[1]) / 2, y, (t.z[0] + t.z[1]) / 2); this.overlays.add(m);
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(t.x[1] - t.x[0], t.z[1] - t.z[0]), this.paintMat(paint)); m.rotation.x = rot; m.position.set((t.x[0] + t.x[1]) / 2, y, (t.z[0] + t.z[1]) / 2); m.userData.surface = kind === 'ceiling' ? `ceiling_t${t.num}` : 'floor'; this.overlays.add(m);
     }
     // 스캔 텍스처 끄기(단색 보기) — 면별 texture=false 면 해당 _tex 숨김
     const rec = this.v.loaded?.reconstructed; if (rec) rec.traverse((o) => {
@@ -136,8 +193,8 @@ export class Editor {
     this.windows.clear();
     for (const w of this.walls()) for (const win of this.s.windowsOf(w.id)) {
       const place = (obj, t, y, off) => this.placeOnWall(obj, w, t, y, off);
-      const wm = buildWindow(win, place); wm.userData.pick = { kind: 'window', id: win.id, wall: w.id }; this.windows.add(wm);
-      if (win.curtain?.on) this.windows.add(buildCurtain(win, this.ceil, place));
+      const wm = buildWindow(win, place); wm.userData.pick = { kind: 'window', id: win.id, wall: w.id }; wm.traverse((o) => { o.userData.windowOf = w.id; }); this.windows.add(wm);
+      if (win.curtain?.on) { const cm = buildCurtain(win, this.ceil, place); cm.traverse((o) => { o.userData.windowOf = w.id; }); this.windows.add(cm); }
     }
   }
   buildProps() { this.props.clear(); for (const p of this.s.design.props) { const g = buildProp(p); g.userData.pick = { kind: 'prop', id: p.id }; this.props.add(g); } }
@@ -211,6 +268,13 @@ export class Editor {
     for (const t of this.tiles) mk(`바닥 ${t.num}`, { kind: 'floor', id: `floor_t${t.num}` }, 'floor'); mk('바닥 전체', { kind: 'floor', id: 'floor' }, 'floor');
     for (const w of this.walls()) for (const win of this.s.windowsOf(w.id)) mk(`창 (벽 ${w.num})`, { kind: 'window', id: win.id, wall: w.id }, 'win');
   }
+  renderHiddenChips() {
+    const box = $('#hiddenChips'); if (!box) return; box.innerHTML = '';
+    const label = (id) => { const it = this.itemById(id); return it ? it.label : id; };
+    for (const id of this.hidden) { const b = document.createElement('button'); b.className = 'chip'; b.textContent = `${label(id)} ✕`; b.title = '다시 보이기'; b.addEventListener('click', () => this.setHidden(id, false)); box.appendChild(b); }
+    for (const id of this._autoHidden) if (!this.hidden.has(id)) { const b = document.createElement('button'); b.className = 'chip auto'; b.textContent = `${label(id)} (자동)`; b.disabled = true; box.appendChild(b); }
+    if (!box.children.length) box.innerHTML = '<span class="hint">숨긴 면 없음</span>';
+  }
   palette(list, cur, onPick) {
     const d = document.createElement('div'); d.className = 'swatches';
     for (const [name, hex] of list) { const b = document.createElement('button'); b.className = 'sw' + ((cur || null) === hex ? ' active' : ''); b.title = name; b.style.background = hex || 'linear-gradient(135deg,#9a9892,#6a4f35)'; b.addEventListener('click', () => onPick(hex)); d.appendChild(b); }
@@ -239,6 +303,7 @@ export class Editor {
       row('액자', check(sfw.art !== false, (v) => { sfw.art = v; commit('art'); }, '이 벽에 작품 걸기'));
       row('액자 수', num(sfw.artCount ?? '', 1, (v) => { sfw.artCount = v || null; commit('art'); }, '개 (비우면 자동)'));
       row('액자 틀', selectEl(FRAME_STYLES, sfw.frame || 'gold', (v) => { sfw.frame = v; commit('frame'); }));
+      box.appendChild(btn(this.hidden.has(w.id) ? '👁 이 벽 보이기' : '🙈 이 벽 숨기기', () => this.setHidden(w.id, !this.hidden.has(w.id)), 'ghost'));
       const wins = this.s.windowsOf(w.id); h(`<h4>창 (${wins.length})</h4>`);
       box.appendChild(btn('+ 이 벽에 창 추가', () => { const L = w.to - w.from; this.s.addWindow(w.id, { id: `${w.id}_w${Date.now() % 100000}`, from: +(w.from + L * 0.3).toFixed(2), to: +(w.from + L * 0.7).toFixed(2), y0: 0.95, y1: 2.0, frame: '#8a8f94', curtain: { on: false, color: '#5a3a22', style: 'open' } }); commit('window'); this.renderChips(); }));
       for (const win of wins) box.appendChild(btn(`창 ${win.from.toFixed(2)}~${win.to.toFixed(2)} m 편집`, () => this.select({ kind: 'window', id: win.id, wall: w.id }), 'ghost'));
@@ -257,6 +322,7 @@ export class Editor {
       row('색', this.palette(PALETTE_WALL, sf.paint, (hex) => { sf.paint = hex; commit('paint'); }));
       row('스캔 텍스처', check(sf.texture !== false, (v) => { sf.texture = v; commit('tex'); }, '보이기'));
       row('화이트 몰딩', check(sf.molding !== false, (v) => { sf.molding = v; commit('molding'); }, '이 기둥에 몰딩'));
+      box.appendChild(btn(this.hidden.has(col.id) ? '👁 이 기둥 보이기' : '🙈 이 기둥 숨기기', () => this.setHidden(col.id, !this.hidden.has(col.id)), 'ghost'));
     }
     if (sel.kind === 'ceiling' || sel.kind === 'floor') {
       const sf = this.s.surface(sel.id); const isFloor = sel.kind === 'floor'; const t = this.tiles.find((x) => `${sel.kind}_t${x.num}` === sel.id);
@@ -264,6 +330,7 @@ export class Editor {
       row('색', this.palette(isFloor ? PALETTE_FLOOR : PALETTE_CEIL, sf.paint, (hex) => { sf.paint = hex; commit('paint'); }));
       if (!t) row('스캔 텍스처', check(sf.texture !== false, (v) => { sf.texture = v; commit('tex'); }, '보이기 (끄면 복원 단색)'));
       if (t) box.appendChild(btn('이 타일 색 지우기(전체 설정 따름)', () => { sf.paint = null; commit('paint'); }, 'ghost'));
+      if (!isFloor) box.appendChild(btn(this.hidden.has(sel.id) ? `👁 ${t ? '이 타일' : '천장'} 보이기` : `🙈 ${t ? '이 타일' : '천장 전체'} 숨기기`, () => this.setHidden(sel.id, !this.hidden.has(sel.id)), 'ghost'));
       if (isFloor) h(`<div class="hint">스캔 바닥 중간색 #${(this.meta.sampled_colors?.floor_wood?.median || [106, 79, 53]).map((v) => v.toString(16).padStart(2, '0')).join('')} 기준 밝게/어둡게 프리셋 제공</div>`);
     }
     if (sel.kind === 'window') {
