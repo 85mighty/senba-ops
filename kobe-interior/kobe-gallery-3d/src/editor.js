@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { PALETTE_WALL, PALETTE_FLOOR, PALETTE_CEIL, PALETTE_CURTAIN, PALETTE_TRIM, PALETTE_LOWER, FRAME_STYLES, PROP_TYPES } from './design.js';
 import { buildProp, buildWindow, buildCurtain, measureLine } from './props.js';
+import { disposeTree } from './viewer.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -86,7 +87,7 @@ export class Editor {
 
   // ---------------- 픽 메쉬 (투명) & 라벨
   buildPicks() {
-    this.picks.clear(); const mat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.0, depthWrite: false, side: THREE.DoubleSide });
+    disposeTree(this.picks); const mat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.0, depthWrite: false, side: THREE.DoubleSide });
     for (const w of this.walls()) for (const seg of this.segmentsOf(w)) {
       const sides = w.two_sided ? [w.inward, -w.inward] : [w.inward];
       for (const sd of sides) { const q = this.wallQuad(w, seg.from, seg.to, 0, this.ceil, 0.03, mat, sd); q.userData.pick = { kind: 'wall', id: w.id, seg: seg.key }; this.picks.add(q); }
@@ -97,12 +98,12 @@ export class Editor {
     }
   }
   buildLabels() {
-    this.labels.clear();
+    disposeTree(this.labels);
     const add = (text, pos, color) => { const sp = this.v.textSprite(text, color); sp.scale.set(0.9, 0.22, 1); sp.position.copy(pos); this.labels.add(sp); };
     for (const w of this.walls()) { const p = new THREE.Vector3(); const t = (w.from + w.to) / 2; if (w.axis === 'x') p.set(w.offset + w.inward * 0.25, this.ceil - 0.25, t); else p.set(t, this.ceil - 0.25, w.offset + w.inward * 0.25); add(`벽 ${w.num}`, p, '#ffe08a'); }
     for (const col of this.columns()) { const fp = this.s.footprint(col); add(`기둥 ${col.num}`, new THREE.Vector3((fp.x[0] + fp.x[1]) / 2, this.ceil - 0.15, (fp.z[0] + fp.z[1]) / 2), '#ffb0b0'); }
     if (!this.tileLabels) { this.tileLabels = new THREE.Group(); this.tileLabels.visible = false; this.root.add(this.tileLabels); }
-    this.tileLabels.clear();
+    disposeTree(this.tileLabels);
     const addT = (text, pos, color) => { const sp = this.v.textSprite(text, color); sp.scale.set(0.6, 0.15, 1); sp.position.copy(pos); this.tileLabels.add(sp); };
     for (const t of this.tiles) { const cx = (t.x[0] + t.x[1]) / 2, cz = (t.z[0] + t.z[1]) / 2; addT(`바닥 ${t.num}`, new THREE.Vector3(cx, 0.08, cz), '#d2ffc9'); }
   }
@@ -121,7 +122,7 @@ export class Editor {
   // ---------------- 띠(체어레일)·걸레받이: 벽/기둥별. 기본(검정·평면)과 다른 면만 GLB 띠를 숨기고 직접 그린다
   isDefaultTrim(t) { return t.rail.color === '#1c1c1c' && t.rail.style === 'flat' && t.base.color === '#1c1c1c' && t.base.style === 'flat'; }
   buildBands() {
-    this.bands.clear();
+    disposeTree(this.bands);
     const rec = this.v.loaded?.reconstructed;
     if (rec) rec.traverse((o) => { const m = o.isMesh && o.name.match(/^(.*)_(chairrail|baseboard)(_b)?$/); if (m) o.userData.keepVisible = this.isDefaultTrim(this.s.trimOf(m[1])); });
     const railT = this.meta.chair_rail_thickness_m || 0.08; const base = this.base, chair = this.chair;
@@ -154,7 +155,7 @@ export class Editor {
   // ---------------- 입구 자동문 (스캔의 문짝 블롭 → 문). 양옆 0.45 m 안의 벽까지 폭을 넓혀 복도를 막는다
   buildDoors() {
     if (!this.doors) { this.doors = new THREE.Group(); this.doors.name = 'doors'; this.root.add(this.doors); }
-    this.doors.clear(); const doors = (this.meta.elements || []).filter((e) => e.type === 'door_panel');
+    disposeTree(this.doors); const doors = (this.meta.elements || []).filter((e) => e.type === 'door_panel');
     this.v.loaded?.reconstructed?.traverse((o) => { if (o.isMesh && doors.some((d) => o.name === d.id)) o.userData.keepVisible = false; });
     const frame = new THREE.MeshStandardMaterial({ color: 0x3b2a20, roughness: 0.55 }); const wood = new THREE.MeshStandardMaterial({ color: 0x4a3424, roughness: 0.8 });
     const glass = new THREE.MeshStandardMaterial({ color: 0xdfe9f2, transparent: true, opacity: 0.32, roughness: 0.1, metalness: 0.1, side: THREE.DoubleSide, depthWrite: false });
@@ -244,7 +245,7 @@ export class Editor {
   shade(hex, k) { const c = new THREE.Color(hex); c.multiplyScalar(k); return '#' + c.getHexString(); }
   paintMat(hex) { return new THREE.MeshStandardMaterial({ color: hex, roughness: 0.85, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1 }); }
   buildOverlays() {
-    this.overlays.clear();
+    disposeTree(this.overlays);
     for (const w of this.walls()) {
       const sides = w.two_sided ? [w.inward, -w.inward] : [w.inward];
       for (const seg of this.segmentsOf(w)) {
@@ -277,16 +278,16 @@ export class Editor {
     });
   }
   buildWindows() {
-    this.windows.clear();
+    disposeTree(this.windows);
     for (const w of this.walls()) for (const win of this.s.windowsOf(w.id)) {
       const place = (obj, t, y, off) => this.placeOnWall(obj, w, t, y, off);
       const wm = buildWindow(win, place); wm.userData.pick = { kind: 'window', id: win.id, wall: w.id }; wm.traverse((o) => { o.userData.windowOf = w.id; }); this.windows.add(wm);
       if (win.curtain?.on) { const cm = buildCurtain(win, this.ceil, place); cm.traverse((o) => { o.userData.windowOf = w.id; }); this.windows.add(cm); }
     }
   }
-  buildProps() { this.props.clear(); for (const p of this.s.design.props) { const g = buildProp(p); g.userData.pick = { kind: 'prop', id: p.id }; this.props.add(g); } }
+  buildProps() { disposeTree(this.props); for (const p of this.s.design.props) { const g = buildProp(p); g.userData.pick = { kind: 'prop', id: p.id }; this.props.add(g); } }
   buildMarks() {
-    this.marks.clear(); const lm = { ...(this.meta.landmarks || {}), ...(this.s.design.landmarks || {}) }; this.meta.landmarks = lm;
+    disposeTree(this.marks); const lm = { ...(this.meta.landmarks || {}), ...(this.s.design.landmarks || {}) }; this.meta.landmarks = lm;
     const names = { entrance: '입구', kitchen: '주방', toilet: '화장실', windows: '창가', main: '메인' };
     for (const [k, label] of Object.entries(names)) { const p = lm[k]; if (!p) continue; const g = new THREE.Group(); g.name = 'mark'; g.userData.pick = { kind: 'landmark', id: k };
       const pin = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.3, 10), new THREE.MeshStandardMaterial({ color: 0xff4fd8 })); pin.rotation.x = Math.PI; pin.position.y = 0.2; g.add(pin);
@@ -338,7 +339,7 @@ export class Editor {
     if (pk?.kind === 'landmark') { this.s.design.landmarks[pk.id] = { x: +o.position.x.toFixed(2), z: +o.position.z.toFixed(2), status: 'user' }; this.s.commit('landmark'); this.onLandmarks?.(); }
   }
   refreshHighlight() {
-    this.hl.clear(); const sel = this.selected; if (!sel) return;
+    disposeTree(this.hl); const sel = this.selected; if (!sel) return;
     const mat = new THREE.LineBasicMaterial({ color: 0x4fd8ff, depthTest: false }); const add = (geo, pos, rot) => { const e = new THREE.LineSegments(new THREE.EdgesGeometry(geo), mat); e.position.copy(pos); if (rot) e.rotation.copy(rot); e.renderOrder = 999; this.hl.add(e); };
     if (sel.kind === 'wall') { const w = this.walls().find((x) => x.id === sel.id); const seg = sel.seg ? this.segmentsOf(w).find((s) => s.key === sel.seg) : { from: w.from, to: w.to }; const q = this.wallQuad(w, seg.from, seg.to, 0.02, this.ceil - 0.02, 0.05, mat); add(q.geometry, q.position, q.rotation); }
     if (sel.kind === 'column') { const col = this.columns().find((x) => x.id === sel.id); const fp = this.s.footprint(col); add(new THREE.BoxGeometry(fp.x[1] - fp.x[0] + 0.08, this.ceil, fp.z[1] - fp.z[0] + 0.08), new THREE.Vector3((fp.x[0] + fp.x[1]) / 2, this.ceil / 2, (fp.z[0] + fp.z[1]) / 2)); }
@@ -483,6 +484,6 @@ export class Editor {
   // 소품 배치 시작
   startPlacing(type) { this.placing = type; const name = (PROP_TYPES.find((x) => x[1] === type) || [type])[0]; $('#placingHint').textContent = `${name}: 바닥을 클릭해 놓으세요`; }
   startMeasure() { this.measuring = []; this.toast('두 점을 클릭하면 거리를 잽니다'); }
-  clearMeasures() { this.measures.clear(); this.measuring = null; }
+  clearMeasures() { disposeTree(this.measures); this.measuring = null; }
   screenshot() { this.v.renderer.render(this.v.scene, this.v.camera); const a = document.createElement('a'); a.href = this.v.renderer.domElement.toDataURL('image/png'); a.download = `kobe-design-${Date.now()}.png`; a.click(); }
 }

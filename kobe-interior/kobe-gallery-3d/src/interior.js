@@ -2,6 +2,7 @@
 // 원래 메쉬는 건드리지 않는다. 레이어별 Group 으로 ON/OFF.
 import * as THREE from 'three';
 import { Reflector } from 'three/addons/objects/Reflector.js';
+import { disposeTree } from './viewer.js';
 
 const WHITE = 0xf4f1ea, GOLD = 0xc9a24a, BLACK = 0x1c1c1c, WINE = 0x7a2e2e;
 const FRAME_BAR = 0.045, FRAME_DEPTH = 0.018, FRAME_W_TARGET = 0.9, FRAME_GAP = 0.14, CORNER_MARGIN = 0.18, OPEN_MARGIN = 0.12;
@@ -30,7 +31,7 @@ export class InteriorA {
   mirrorColumns() { return this.columns().filter((c) => { const cs = this.store ? this.store.getColumn(c.id) : {}; return cs.mirror ?? (c.id === this.opts.central); }); }
 
   buildAll() { for (const k of LAYERS) this['build_' + k](); }
-  rebuild(layer) { this.layers[layer].clear(); this['build_' + layer](); this.v.setCeilingHidden(this.v.clipping); }
+  rebuild(layer) { disposeTree(this.layers[layer]); this['build_' + layer](); this.v.setCeilingHidden(this.v.clipping); }
   setLayer(k, on) { this.layers[k].visible = on; }
 
   // 벽 안쪽 면의 "세그먼트" = 몰딩/액자를 놓을 수 있는 구간 (개구부·모서리 제외)

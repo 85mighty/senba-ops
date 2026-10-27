@@ -19,7 +19,7 @@ const errors = []; window.__viewerErrors = errors; window.__viewerReady = false;
 function showError(msg) { errors.push(msg); const d = document.createElement('div'); d.className = 'e'; d.innerHTML = `<b>로딩 오류</b>\n${escapeHtml(msg)}`; $('#errors').appendChild(d); console.error(msg); }
 function escapeHtml(s) { return String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._h); toast._h = setTimeout(() => t.classList.remove('show'), 1800); }
-window.addEventListener('error', (e) => showError(`JS: ${e.message}`));
+window.addEventListener('error', (e) => { if (window.__viewer?.contextLost || /getShaderInfoLog|getProgramInfoLog|WebGL/.test(e.message)) return; showError(`JS: ${e.message}`); });
 window.addEventListener('unhandledrejection', (e) => showError(`Promise: ${e.reason?.message || e.reason}`));
 
 if (!meta.elements) showError('geometry_metadata.json 에 elements 가 없습니다. scripts/inspect_scan.py → clean_scan.py → reconstruct_room.py 를 먼저 실행하세요.');
@@ -32,7 +32,7 @@ let editor = null; // 모델 로드 후 생성 (바닥 타일 판정에 복원 �
 
 // ---- 모드
 const modeBtns = [...document.querySelectorAll('#modes button[data-mode]')];
-function setMode(m) { viewer.setMode(m); editor?.applyHidden(); modeBtns.forEach((b) => b.classList.toggle('active', b.dataset.mode === m)); $('#interiorPanel').style.opacity = m === 'interior' ? 1 : 0.45; }
+function setMode(m) { try { localStorage.setItem('kobe3d.mode', m); } catch {} viewer.setMode(m); editor?.applyHidden(); modeBtns.forEach((b) => b.classList.toggle('active', b.dataset.mode === m)); $('#interiorPanel').style.opacity = m === 'interior' ? 1 : 0.45; }
 modeBtns.forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
 window.__setMode = setMode;
 
@@ -106,9 +106,14 @@ $('#exportGlb').addEventListener('click', () => {
 })();
 
 // ---- 시작
-setMode('original');
+let startMode = 'interior'; try { startMode = localStorage.getItem('kobe3d.mode') || 'interior'; } catch {}
+setMode(startMode);
 // 시작 시점: 방 안 눈높이(메인 북마크) — 바깥에서 닫힌 상자만 보이는 것을 방지
 { const m = viewer.bookmarks[0]; viewer.camera.position.set(...m.pos); viewer.controls.target.set(...m.tgt); viewer.controls.update(); }
+viewer.onLoading = (busy, name) => { const el = $('#loading'); if (!window.__viewerReady) return; el.classList.toggle('hidden', !busy); if (busy) el.querySelector('span').textContent = (name === 'original' ? '원본 스캔' : name === 'cleaned' ? '노이즈 정리 스캔' : '모델') + ' 불러오는 중…'; };
+let lostTimer = null;
+viewer.onContextLost = () => { const el = $('#loading'); el.classList.remove('hidden'); el.querySelector('span').textContent = '화면을 다시 불러오는 중… (기기 메모리 부족)'; clearTimeout(lostTimer); lostTimer = setTimeout(() => location.reload(), 2500); };
+viewer.onContextRestored = () => { clearTimeout(lostTimer); location.reload(); };   // 복구 경로가 기기마다 불안정 — 새로고침이 가장 확실(디자인은 저장됨)
 viewer.loadAll().then((loaded) => {
   $('#loading').classList.add('hidden');
   const ok = Object.keys(loaded); if (!ok.length) showError('불러온 모델이 없습니다. 위 오류를 확인하세요.');
