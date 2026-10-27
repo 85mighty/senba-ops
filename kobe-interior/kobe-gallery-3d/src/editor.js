@@ -45,18 +45,29 @@ export class Editor {
     const b = this.meta.bounds_world_m; const x0 = b.min[0], z0 = b.min[2]; const nx = Math.ceil((b.max[0] - x0) / TILE), nz = Math.ceil((b.max[2] - z0) / TILE);
     this.tiles = []; let t = 0;
     for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
-      const tile = { i, j, x: [x0 + i * TILE, Math.min(x0 + (i + 1) * TILE, b.max[0])], z: [z0 + j * TILE, Math.min(z0 + (j + 1) * TILE, b.max[2])] };
+      const tile = { i, j, x: [x0 + i * TILE, Math.min(x0 + (i + 1) * TILE, b.max[0])], z: [z0 + j * TILE, Math.min(z0 + (j + 1) * TILE, b.max[2])], last: { x: i === nx - 1, z: j === nz - 1 } };
       if (!this.tileOnFloor(tile)) continue; t++; tile.num = t; this.tiles.push(tile);
       this.items.push({ kind: 'floor', id: `floor_t${t}`, label: `바닥 ${t}`, tile });
     }
     this.items.push({ kind: 'ceiling', id: 'ceiling', label: '천장 전체' }); this.items.push({ kind: 'floor', id: 'floor', label: '바닥 전체' });
   }
-  tileOnFloor(tile) {
-    // 복원 바닥(격자 메쉬) 안에 중심이 있는지: 벽 선분 bbox 로 근사 — 타일 중심이 어떤 벽에서 2.5 m 이내면 실내로 간주
-    const cx = (tile.x[0] + tile.x[1]) / 2, cz = (tile.z[0] + tile.z[1]) / 2;
-    const fm = this.v.loaded?.reconstructed; if (fm) { let hit = false; const rc = new THREE.Raycaster(new THREE.Vector3(cx, 1, cz), new THREE.Vector3(0, -1, 0)); fm.traverse((o) => { if (!hit && o.isMesh && o.name === 'floor') hit = rc.intersectObject(o, false).length > 0; }); return hit; }
-    return true;
+  // 복원 바닥 격자(0.1 m 칸)의 삼각형 — 바닥 칠은 이 모양 그대로 덮어 벽 가장자리까지 빈틈이 없게 한다
+  floorTris() {
+    if (this._floorTris !== undefined) return this._floorTris; this._floorTris = null;
+    let src = null; this.v.loaded?.reconstructed?.traverse((o) => { if (o.isMesh && o.name === 'floor') src = o; }); if (!src) return null;
+    src.updateWorldMatrix(true, false); const g = src.geometry.index ? src.geometry.toNonIndexed() : src.geometry.clone(); g.applyMatrix4(src.matrixWorld);
+    this._floorTris = g.attributes.position.array; return this._floorTris;
   }
+  tileGeometry(tile, last) {
+    const pos = this.floorTris(); if (!pos) return null; const out = [];
+    for (let i = 0; i < pos.length; i += 9) {
+      const cx = (pos[i] + pos[i + 3] + pos[i + 6]) / 3, cz = (pos[i + 2] + pos[i + 5] + pos[i + 8]) / 3;
+      if (cx >= tile.x[0] && (cx < tile.x[1] || (last.x && cx <= tile.x[1] + 0.2)) && cz >= tile.z[0] && (cz < tile.z[1] || (last.z && cz <= tile.z[1] + 0.2))) for (let k = 0; k < 9; k++) out.push(pos[i + k]);
+    }
+    if (!out.length) return null;
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(out, 3)); geo.computeVertexNormals(); return geo;
+  }
+  tileOnFloor(tile) { if (!this.floorTris()) return true; tile.geo = this.tileGeometry(tile, tile.last || {}); return !!tile.geo; }
   itemById(id) { return this.items.find((x) => x.id === id); }
 
   // 벽 세그먼트: 분할 수에 따라 구간 나눔
@@ -105,7 +116,7 @@ export class Editor {
     this.i.rebuild('molding'); this.i.rebuild('gallery_art'); this.i.rebuild('mirror_4_sides'); this.applyColumnSizes(); this.buildLabels();
     this.v.updateHighlight(); this.refreshHighlight();
     if (keep?.kind === 'prop' || keep?.kind === 'landmark') this.reattach(keep);
-    this.buildBands(); this.buildInteriorCeiling(); this.applyHidden();
+    this.buildBands(); this.buildInteriorCeiling(); this.buildDoors(); this.applyHidden();
   }
   // ---------------- 띠(체어레일)·걸레받이: 벽/기둥별. 기본(검정·평면)과 다른 면만 GLB 띠를 숨기고 직접 그린다
   isDefaultTrim(t) { return t.rail.color === '#1c1c1c' && t.rail.style === 'flat' && t.base.color === '#1c1c1c' && t.base.style === 'flat'; }
@@ -138,6 +149,37 @@ export class Editor {
     for (const sd of sides) {
       const q = this.wallQuad(face, face.from, face.to, this.base, top, 0.0012, this.paintMat(lower.paint), sd); q.userData.surface = sid; this.overlays.add(q);
       if (lower.style === 'wood_panel') { const dark = this.paintMat(this.shade(lower.paint, 0.7)); for (let t = face.from + 0.1; t < face.to - 0.02; t += 0.1) { const line = this.wallQuad(face, t, t + 0.006, this.base, top, 0.0014, dark, sd); line.userData.surface = sid; this.overlays.add(line); } }
+    }
+  }
+  // ---------------- 입구 자동문 (스캔의 문짝 블롭 → 문). 양옆 0.45 m 안의 벽까지 폭을 넓혀 복도를 막는다
+  buildDoors() {
+    if (!this.doors) { this.doors = new THREE.Group(); this.doors.name = 'doors'; this.root.add(this.doors); }
+    this.doors.clear(); const doors = (this.meta.elements || []).filter((e) => e.type === 'door_panel');
+    this.v.loaded?.reconstructed?.traverse((o) => { if (o.isMesh && doors.some((d) => o.name === d.id)) o.userData.keepVisible = false; });
+    const frame = new THREE.MeshStandardMaterial({ color: 0x3b2a20, roughness: 0.55 }); const wood = new THREE.MeshStandardMaterial({ color: 0x4a3424, roughness: 0.8 });
+    const glass = new THREE.MeshStandardMaterial({ color: 0xdfe9f2, transparent: true, opacity: 0.32, roughness: 0.1, metalness: 0.1, side: THREE.DoubleSide, depthWrite: false });
+    for (const d of doors) {
+      const fx = d.footprint.x, fz = d.footprint.z; const alongX = (fx[1] - fx[0]) >= (fz[1] - fz[0]);
+      let a0 = alongX ? fx[0] : fz[0], a1 = alongX ? fx[1] : fz[1]; const c = alongX ? (fz[0] + fz[1]) / 2 : (fx[0] + fx[1]) / 2;
+      let lo = null, hi = null;
+      for (const w of this.walls()) { if ((w.axis === 'x') !== alongX) continue; if (c < w.from - 0.05 || c > w.to + 0.05) continue;
+        if (w.offset <= a0 + 0.05 && a0 - w.offset < 0.45 && (lo === null || w.offset > lo)) lo = w.offset; if (w.offset >= a1 - 0.05 && w.offset - a1 < 0.45 && (hi === null || w.offset < hi)) hi = w.offset; }
+      if (lo !== null) a0 = lo; if (hi !== null) a1 = hi;
+      const W = a1 - a0, H = 2.02, head = Math.min(0.2, this.ceil - H - 0.02); const g = new THREE.Group(); g.name = 'door'; g.userData.doorOf = d.id;
+      const box = (w, h, dz, mat, x, y, z = 0) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, dz), mat); m.position.set(x, y, z); g.add(m); return m; };
+      box(0.05, H, 0.07, frame, -W / 2 + 0.025, H / 2); box(0.05, H, 0.07, frame, W / 2 - 0.025, H / 2);           // 양옆 프레임
+      if (head > 0.02) box(W, head, 0.14, frame, 0, H + head / 2);                                                       // 상부 헤더(도어 클로저)
+      box(W, 0.03, 0.08, frame, 0, 0.015);                                                                                 // 하부 레일
+      // 나무 고정 패널은 실내에서 문을 바라볼 때 왼쪽(사진 기준). 문이 X 방향이면 실내가 어느 쪽인지로 좌우를 정한다
+      const bb = this.meta.bounds_world_m; const roomZ = (bb.min[2] + bb.max[2]) / 2; const sgn = alongX ? (c > roomZ ? 1 : -1) : 1;
+      const side = Math.min(0.3, W * 0.3); const sx = (x) => sgn * x;
+      box(side, H - 0.06, 0.04, wood, sx(W / 2 - 0.05 - side / 2), H / 2, -0.02);                                          // 나무 고정 패널
+      const slit = new THREE.Mesh(new THREE.PlaneGeometry(0.06, H - 0.4), glass); slit.position.set(sx(W / 2 - 0.05 - side + 0.06), H / 2, 0.001); g.add(slit);
+      const gw = W - 0.1 - side; box(0.04, H - 0.06, 0.05, frame, sx(W / 2 - 0.05 - side - 0.02), H / 2, 0.01);           // 유리문 세로 틀
+      const pane = new THREE.Mesh(new THREE.PlaneGeometry(gw - 0.04, H - 0.12), glass); pane.position.set(sx(W / 2 - 0.05 - side - 0.04 - (gw - 0.04) / 2), H / 2, 0.01); g.add(pane);
+      if (alongX) g.position.set((a0 + a1) / 2, 0, c); else { g.position.set(c, 0, (a0 + a1) / 2); g.rotation.y = Math.PI / 2; }
+      g.traverse((o) => { o.userData.surface = 'door'; }); this.doors.add(g);
+      const sp = this.v.textSprite('입구 (자동문)', '#9be28a'); sp.scale.set(0.9, 0.22, 1); sp.position.set(g.position.x, H + 0.35, g.position.z); this.labels.add(sp);
     }
   }
   // ---------------- 숨기기 / 보이기
@@ -221,14 +263,16 @@ export class Editor {
       if (!sf.paint) continue; const [y0, y1] = this.zoneRange(sf.zone || 'all'); const fp = this.s.footprint(col);
       for (const f of this.i.columnFaces({ footprint: fp })) { const q = this.wallQuad(f, f.from, f.to, y0, y1, 0.0015, this.paintMat(sf.paint)); q.userData.surface = col.id; this.overlays.add(q); }
     }
-    for (const t of this.tiles) for (const [kind, y, rot] of [['floor', 0.002, -Math.PI / 2]]) {
-      const sf = this.s.getSurface(`${kind}_t${t.num}`); const sfa = this.s.getSurface(kind); const paint = sf.paint || sfa.paint; if (!paint) continue;
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(t.x[1] - t.x[0], t.z[1] - t.z[0]), this.paintMat(paint)); m.rotation.x = rot; m.position.set((t.x[0] + t.x[1]) / 2, y, (t.z[0] + t.z[1]) / 2); m.userData.surface = 'floor'; this.overlays.add(m);
+    // 바닥 칠: 칸마다 복원 바닥 모양 그대로(벽 가장자리 포함). 스캔 바닥 텍스처(y 0.003)보다 위(0.006)에 놓는다
+    for (const t of this.tiles) {
+      const sf = this.s.getSurface(`floor_t${t.num}`); const sfa = this.s.getSurface('floor'); const paint = sf.paint || sfa.paint; if (!paint) continue;
+      if (t.geo) { const m = new THREE.Mesh(t.geo, this.paintMat(paint)); m.position.y = 0.011; m.userData.surface = 'floor'; this.overlays.add(m); }
+      else { const m = new THREE.Mesh(new THREE.PlaneGeometry(t.x[1] - t.x[0], t.z[1] - t.z[0]), this.paintMat(paint)); m.rotation.x = -Math.PI / 2; m.position.set((t.x[0] + t.x[1]) / 2, 0.006, (t.z[0] + t.z[1]) / 2); m.userData.surface = 'floor'; this.overlays.add(m); }
     }
     // 스캔 텍스처 끄기(단색 보기) — 면별 texture=false 면 해당 _tex 숨김
     const rec = this.v.loaded?.reconstructed; if (rec) rec.traverse((o) => {
       if (!o.isMesh) return; const base = o.name.replace(/_tex(_.*)?$/, '');
-      if (o.name.includes('_tex')) { const sf = this.s.getSurface(base); o.visible = sf.texture !== false; }
+      if (o.name.includes('_tex')) { const sf = this.s.getSurface(base); const on = sf.texture !== false && !(base === 'floor' && sf.paint); o.userData.keepVisible = on; o.visible = on; }
       if (/_window_\d+$/.test(o.name)) o.visible = false;   // 창은 편집기가 그린다
     });
   }

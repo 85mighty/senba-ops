@@ -87,6 +87,17 @@ try {
     s.resetAllTrim(); s.commit('trim'); const te2 = s.trimEdit(tw.id); te2.rail = { color: '#a98457', style: 'molding' }; te2.lower = { paint: '#a98457', style: 'wood_panel' }; s.commit('trim');
     s.paintAll('floor', '#866752'); s.commit('paint'); if (s.getSurface('floor_t1').paint) throw new Error('전체 바닥 덮어쓰기 실패');
     const before2 = s.design.props.length; e.deleteProp(s.design.props[0].id); if (s.design.props.length !== before2 - 1) throw new Error('소품 삭제 실패');
+    // 바닥 전체 칠 → 스캔 바닥 텍스처 숨김 + 칸 오버레이가 복원 바닥 모양
+    s.paintAll('floor', '#5c3d26'); s.commit('paint'); let floorTex = null; window.__viewer.loaded.reconstructed.traverse((o) => { if (o.isMesh && o.name === 'floor_tex') floorTex = o; });
+    if (floorTex && floorTex.visible) throw new Error('바닥 전체 칠 후 스캔 바닥 텍스처가 보임');
+    if (!e.tiles.every((t) => t.geo)) throw new Error('바닥 칸 형상 누락');
+    // 입구 자동문
+    if (!e.doors || e.doors.children.length < 1) throw new Error('입구 자동문 없음');
+    // 디자인 안 전환: B안 새로 → 바꾸고 → A안으로 돌아가면 A 는 그대로
+    const ceilA = s.getSurface('ceiling').paint; window.__switchSlot('B'); s.surface('ceiling').paint = '#1c1c1c'; s.commit('paint'); window.__switchSlot('A');
+    if (s.active !== 'A' || s.getSurface('ceiling').paint !== ceilA) throw new Error('안 전환 실패');
+    window.__switchSlot('B'); if (s.getSurface('ceiling').paint !== '#1c1c1c') throw new Error('B안 저장 실패'); window.__switchSlot('A');
+    if (document.querySelectorAll('#slotBar button').length !== 3) throw new Error('안 버튼 3개 아님');
     const json = s.exportJSON();
     return { items: e.items.length, chips: document.querySelectorAll('#itemChips button').length, overlays: e.overlays.children.length, windows: e.windows.children.length, props: e.props.children.length, labels: e.labels.children.length, jsonLen: json.length, inspector: document.querySelector('#inspector').textContent.slice(0, 40) };
   });

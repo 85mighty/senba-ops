@@ -21,6 +21,7 @@ export const PROP_TYPES = [
 ];
 
 export const STORAGE_KEY = 'kobe3d.design.v1';
+export const SLOTS = ['A', 'B', 'C'];
 
 export function emptyDesign() {
   return { version: 1, surfaces: {}, columns: {}, windows: null, landmarks: {}, props: [], global: DEFAULT_GLOBAL() };
@@ -33,15 +34,27 @@ export class DesignStore {
     // 창 기본값: 메타데이터가 갱신됐고 사용자가 창을 손대지 않았으면 새 기본값으로 교체
     if (!this.design.windows || (this.design.windows_src !== meta.generated && !this.design.windowsEdited)) { this.design.windows = this.defaultWindows(); this.design.windows_src = meta.generated; }
     this._last = this.snapshot();
+    // 현재 작업 중인 안 (처음이면 A안 = 지금 디자인)
+    try { this.active = localStorage.getItem(STORAGE_KEY + '.active') || 'A'; } catch { this.active = 'A'; }
+    if (!this.hasSlot(this.active)) this.saveSlot(this.active);
   }
+  // 다른 안으로 전환: 지금 안을 저장하고 대상 안을 연다. 비어 있으면 지금 디자인을 복사해 새로 만든다
+  switchSlot(name) {
+    if (name === this.active) return 'same';
+    this.saveSlot(this.active); let raw = null; try { raw = localStorage.getItem(STORAGE_KEY + '.slot.' + name); } catch {}
+    if (raw) { this.design = this.migrate(JSON.parse(raw)); if (!this.design.windows) this.design.windows = this.defaultWindows(); }
+    this.active = name; try { localStorage.setItem(STORAGE_KEY + '.active', name); } catch {}
+    this.undoStack = []; this.redoStack = []; this.dirty = false; this.commit('switch', false); return raw ? 'loaded' : 'new';
+  }
+  copyTo(name) { this.saveSlot(name); }
   snapshot() { return JSON.stringify(this.design); }
   undo() { if (!this.undoStack.length) return false; this.redoStack.push(this.snapshot()); this.design = this.migrate(JSON.parse(this.undoStack.pop())); this.commit('undo', false); return true; }
   redo() { if (!this.redoStack.length) return false; this.undoStack.push(this.snapshot()); this.design = this.migrate(JSON.parse(this.redoStack.pop())); this.commit('redo', false); return true; }
   canUndo() { return this.undoStack.length > 0; }
   canRedo() { return this.redoStack.length > 0; }
-  saveExplicit() { try { localStorage.setItem(STORAGE_KEY + '.saved', this.snapshot()); } catch {} this.dirty = false; }
-  hasExplicit() { try { return !!localStorage.getItem(STORAGE_KEY + '.saved'); } catch { return false; } }
-  revertToSaved() { try { const raw = localStorage.getItem(STORAGE_KEY + '.saved'); if (!raw) return false; this.undoStack.push(this.snapshot()); this.design = this.migrate(JSON.parse(raw)); this.commit('revert', false); this.dirty = false; return true; } catch { return false; } }
+  saveExplicit() { try { localStorage.setItem(STORAGE_KEY + '.saved.' + this.active, this.snapshot()); } catch {} this.dirty = false; }
+  hasExplicit() { try { return !!localStorage.getItem(STORAGE_KEY + '.saved.' + this.active); } catch { return false; } }
+  revertToSaved() { try { const raw = localStorage.getItem(STORAGE_KEY + '.saved.' + this.active); if (!raw) return false; this.undoStack.push(this.snapshot()); this.design = this.migrate(JSON.parse(raw)); this.commit('revert', false); this.dirty = false; return true; } catch { return false; } }
   resetWindows() { this.design.windows = this.defaultWindows(); this.design.windows_src = this.meta.generated; this.design.windowsEdited = false; this.commit('windows-reset'); }
   migrate(d) { const e = emptyDesign(); const g = DEFAULT_GLOBAL(); const dg = d.global || {}; if (d.surfaces) for (const k of Object.keys(d.surfaces)) if (k.startsWith('ceiling_t')) delete d.surfaces[k]; return { ...e, ...d, surfaces: d.surfaces || {}, columns: d.columns || {}, landmarks: d.landmarks || {}, props: d.props || [], global: { ...g, ...dg, rail: { ...g.rail, ...(dg.rail || {}) }, base: { ...g.base, ...(dg.base || {}) }, lower: { ...g.lower, ...(dg.lower || {}) } } }; }
   get global() { return this.design.global; }
@@ -74,7 +87,7 @@ export class DesignStore {
   commit(reason = '', track = true) {
     if (track) { if (this._last !== undefined) { this.undoStack.push(this._last); if (this.undoStack.length > 60) this.undoStack.shift(); this.redoStack = []; } this.dirty = true; }
     if (/window|curtain/.test(reason) && reason !== 'windows-reset') this.design.windowsEdited = true;
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(this.design)); } catch {}
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(this.design)); if (this.active) localStorage.setItem(STORAGE_KEY + '.slot.' + this.active, JSON.stringify(this.design)); } catch {}
     this._last = this.snapshot();
     for (const fn of this.listeners) fn(reason);
   }
