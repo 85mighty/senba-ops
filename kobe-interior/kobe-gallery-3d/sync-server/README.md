@@ -6,7 +6,7 @@
 | 항목 | 값 |
 |---|---|
 | 운영 위치 | `/opt/kobe3d-sync/` (pm2 `kobe3d-sync`) |
-| 포트 | `127.0.0.1:3018` (외부 직접 노출 없음, nginx 경유) |
+| 포트 | `127.0.0.1:<PORT>` — 기본 3018, 서버에서 빈 포트로 (외부 직접 노출 없음, nginx 경유) |
 | 공개 주소 | `https://blog.senbaartstudio.com/kobe3d-api/` |
 | 데이터 | `/opt/kobe3d-sync/data/{A,B,C}.json` + `data/history/` (안마다 최근 50개 이력) |
 | 시크릿 | `/opt/kobe3d-sync/.env` 의 `SYNC_TOKEN` (커밋 금지) |
@@ -14,6 +14,9 @@
 ## 설치 (서버에서, root)
 
 ```bash
+# 0) 빈 포트 고르기 — 3018 은 기본값일 뿐, 이미 쓰는 서비스가 있으면 다른 번호를 쓴다 (vultr 서버는 3018 사용 중이었음)
+for p in 3018 3028 3038 3048 3058; do ss -ltn | grep -q ":$p " || { PORT=$p; break; }; done; echo "사용할 포트: $PORT"
+
 # 1) 파일 복사 — 이 저장소를 서버에 받아 둔 위치에서
 mkdir -p /opt/kobe3d-sync && cp server.mjs package.json ecosystem.config.cjs /opt/kobe3d-sync/
 cd /opt/kobe3d-sync && mkdir -p data logs
@@ -23,7 +26,7 @@ TOKEN=$(openssl rand -hex 12); echo "동기화 비밀번호: $TOKEN"
 cat > .env <<ENV
 SYNC_TOKEN=$TOKEN
 ALLOW_ORIGIN=https://85mighty.github.io
-PORT=3018
+PORT=$PORT
 HOST=127.0.0.1
 PATH_PREFIX=/kobe3d-api
 DATA_DIR=/opt/kobe3d-sync/data
@@ -33,10 +36,11 @@ chmod 600 .env
 
 # 3) 실행 + 확인 (다른 pm2 프로세스는 건드리지 않는다 — pm2 restart all 금지)
 pm2 start ecosystem.config.cjs && pm2 save
-curl -s http://127.0.0.1:3018/kobe3d-api/health     # {"ok":true,...}
+curl -s http://127.0.0.1:$PORT/kobe3d-api/health    # {"ok":true,...} — 다른 문구가 나오면 그 포트를 다른 서비스가 쓰는 것
+#    시작 실패 원인: pm2 logs kobe3d-sync --lines 20 --nostream
 
 # 4) nginx — blog.senbaartstudio.com 의 443 server 블록 안, `include snippets/wordpress-common.conf;` 위에
-#    nginx-kobe3d-api.conf 내용을 붙여 넣은 뒤:
+#    nginx-kobe3d-api.conf 내용을 붙여 넣고 proxy_pass 포트를 위 $PORT 로 바꾼 뒤:
 nginx -t && systemctl reload nginx
 curl -s https://blog.senbaartstudio.com/kobe3d-api/health
 ```
