@@ -77,8 +77,22 @@ export function buildFixtures(meta) {
     // 안쪽: 벽걸이 세면대(왼쪽 벽) + 안쪽 칸막이 문(오른쪽 벽) — 사진 11
     const inner = (meta.elements || []).filter((e) => e.type === 'wall' && e.axis === 'x' && e.from <= wall.offset + 0.1 && e.to > wall.offset + 1.0 && e.offset > d.from - 0.3 && e.offset < d.to + 0.6);
     const right = inner.reduce((a, e) => (!a || e.offset < a.offset ? e : a), null), left = inner.reduce((a, e) => (!a || e.offset > a.offset ? e : a), null);
-    if (left && left !== right) { const bowl = new THREE.Mesh(new THREE.SphereGeometry(0.19, 20, 10, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), std(0xb8bbbd, { metalness: 0.5, roughness: 0.3, side: THREE.DoubleSide })); bowl.scale.y = 0.55; bowl.position.set(left.offset - 0.1 - 0.17, 0.82, wall.offset + 0.85); g.add(bowl); }
-    if (right) { const x = right.offset + 0.002; boxAt(g, [x, x + 0.03], [0, 1.88], [wall.offset + 1.0, wall.offset + 1.66], std(0x5a3d28, { roughness: 0.6 })); boxAt(g, [x + 0.005, x + 0.035], [0.02, 1.84], [wall.offset + 1.04, wall.offset + 1.62], std(0x9b968d, { roughness: 0.5 })); }
+    const st = meta.toilet_stall;
+    if (left && left !== right) { const bowl = new THREE.Mesh(new THREE.SphereGeometry(0.19, 20, 10, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), std(0xb8bbbd, { metalness: 0.5, roughness: 0.3, side: THREE.DoubleSide })); bowl.scale.y = 0.55; bowl.position.set(left.offset - 0.05 - 0.17, 0.82, st?.basin_z ?? wall.offset + 0.62); g.add(bowl); }
+    if (right) { const x = right.offset + 0.002, dz = st?.door_z || [wall.offset + 0.64, wall.offset + 1.29]; boxAt(g, [x, x + 0.03], [0, 1.88], dz, std(0x5a3d28, { roughness: 0.6 })); boxAt(g, [x + 0.005, x + 0.035], [0.02, 1.84], [dz[0] + 0.04, dz[1] - 0.04], std(0x9b968d, { roughness: 0.5 })); const kn = new THREE.Mesh(new THREE.SphereGeometry(0.025, 10, 8), steel); kn.position.set(x + 0.05, 0.95, dz[0] + 0.1); g.add(kn); }
+    // 양변기 칸(Polycam 스캔 확인 — Scaniverse 에는 비어 있던 곳): 베이지 벽·바닥 + 양변기(물탱크는 큰방 쪽 벽)
+    if (st) {
+      const beige = std(0xe4d6bb, { roughness: 0.85, polygonOffset: true, polygonOffsetFactor: -2 }), white = std(0xf3f1ec, { roughness: 0.25 });
+      boxAt(g, st.x, [0, 0.004], st.z, std(0xd8c6a2, { roughness: 0.9 }), 'toilet_stall_floor');
+      boxAt(g, st.x, [0, ceil], [st.z[1], st.z[1] + 0.1], beige, 'toilet_stall_back');
+      boxAt(g, [st.x[0], st.x[0] + 0.004], [0, ceil], st.z, beige); boxAt(g, [st.x[1] - 0.004, st.x[1]], [0, ceil], st.z, beige); boxAt(g, st.x, [0, ceil], [st.z[0], st.z[0] + 0.004], beige);
+      const cx = (st.x[0] + st.x[1]) / 2, z0 = st.z[0] + 0.005;
+      boxAt(g, [cx - 0.19, cx + 0.19], [0.42, 0.82], [z0, z0 + 0.19], white, 'toilet_wc_tank');
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.16, 0.36, 18), white); base.scale.z = 1.35; base.position.set(cx, 0.18, z0 + 0.42); g.add(base);
+      const seat = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.035, 8, 20), white); seat.rotation.x = Math.PI / 2; seat.scale.y = 1.35; seat.position.set(cx, 0.4, z0 + 0.45); g.add(seat);
+      const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.02, 20), std(0xeceae4, { roughness: 0.3 })); lid.scale.z = 1.3; lid.position.set(cx, 0.43, z0 + 0.45); g.add(lid);
+      boxAt(g, [st.x[0] + 0.004, st.x[0] + 0.03], [0.68, 0.74], [z0 + 0.5, z0 + 0.64], steel);   // 휴지걸이
+    }
   }
   root.traverse((m) => { if (m.isMesh) m.userData.surface = m.parent?.userData.surface || 'fixture'; });
   return root;
