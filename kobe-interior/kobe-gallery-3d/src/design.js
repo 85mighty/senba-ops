@@ -48,9 +48,9 @@ export class DesignStore {
     this.undoStack = []; this.redoStack = []; this.dirty = false; this.commit('switch', false); return raw ? 'loaded' : 'new';
   }
   copyTo(name) { this.saveSlot(name); }
-  putSlot(name, obj) {
+  putSlot(name, obj, fromSync = false) {
     const d = this.migrate(JSON.parse(JSON.stringify(obj)));
-    if (name === this.active) { this.design = d; if (!this.design.windows) this.design.windows = this.defaultWindows(); this.refreshWindowsVersion(); this.commit('import'); return; }
+    if (name === this.active) { this.design = d; if (!this.design.windows) this.design.windows = this.defaultWindows(); this.refreshWindowsVersion(); if (fromSync) { this.undoStack = []; this.redoStack = []; this.commit('sync', false); } else this.commit('import'); return; }
     try { localStorage.setItem(STORAGE_KEY + '.slot.' + name, JSON.stringify(d)); } catch {}
   }
   // 창 기본값 버전(사진 확인 등)이 올라가면 창을 새 기본값으로 바꾸고, 같은 벽에 달았던 커튼 설정은 이어받는다
@@ -100,6 +100,7 @@ export class DesignStore {
   onChange(fn) { this.listeners.push(fn); }
   // 변경 적용. 호출 측이 design 을 바꾼 뒤 commit — undo 스택에는 직전 commit 시점 스냅샷을 쌓는다
   commit(reason = '', track = true) {
+    if (reason !== 'sync' && (track || reason === 'undo' || reason === 'redo' || reason === 'revert')) this.design.editedAt = Date.now();
     if (track) { if (this._last !== undefined) { this.undoStack.push(this._last); if (this.undoStack.length > 60) this.undoStack.shift(); this.redoStack = []; } this.dirty = true; }
     if (/window|curtain/.test(reason) && reason !== 'windows-reset') this.design.windowsEdited = true;
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(this.design)); if (this.active) localStorage.setItem(STORAGE_KEY + '.slot.' + this.active, JSON.stringify(this.design)); } catch {}
@@ -129,6 +130,7 @@ export class DesignStore {
   // ---- 슬롯 / JSON
   saveSlot(name) { try { localStorage.setItem(STORAGE_KEY + '.slot.' + name, JSON.stringify(this.design)); } catch {} }
   loadSlot(name) { try { const raw = localStorage.getItem(STORAGE_KEY + '.slot.' + name); if (!raw) return false; this.design = this.migrate(JSON.parse(raw)); this.commit('load'); return true; } catch { return false; } }
+  getSlot(name) { if (name === this.active) return this.design; try { const raw = localStorage.getItem(STORAGE_KEY + '.slot.' + name); return raw ? JSON.parse(raw) : null; } catch { return null; } }
   hasSlot(name) { try { return !!localStorage.getItem(STORAGE_KEY + '.slot.' + name); } catch { return false; } }
   exportJSON() { return JSON.stringify(this.design, null, 1); }
   importJSON(text) { const d = JSON.parse(text); if (!d || typeof d !== 'object') throw new Error('JSON 형식이 아닙니다'); this.design = this.migrate(d); if (!this.design.windows) this.design.windows = this.defaultWindows(); this.commit('import'); }

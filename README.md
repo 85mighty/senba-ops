@@ -15,11 +15,13 @@
 | `nginx/` | 블로그 nginx 설정 | `/etc/nginx/sites-available/` |
 | `kr-jp-arbitrage/` | KR→JP 아비트라지 리서치 도구 (:3016, pm2 kr-jp-arbitrage, 매일 09:00 JST 수집→매칭→마진→Sheets/Telegram) — 이 저장소가 원본, 배포 절차는 폴더 README | `/root/kr-jp-arbitrage/` |
 | `kobe-interior/` | 고베 산노미야점 인테리어 상담·설계·견적 기록 + `kobe-gallery-3d/` LiDAR 스캔 복원·인테리어 A안 3D 뷰어 — 이 저장소가 원본 | — |
+| `kobe-interior/kobe-gallery-3d/sync-server/` | 고베 3D 뷰어 디자인 기기 간 동기화 서버 (:3018, pm2 kobe3d-sync, nginx blog.senbaartstudio.com/kobe3d-api/) — 설치는 폴더 README | `/opt/kobe3d-sync/` |
 
 ## 시크릿 위치 (커밋 금지, 서버에만)
 - `/opt/senba-square/.env` — Square 토큰·로케이션·웹훅 서명키·블록용 ID
 - `/opt/senba-blog-auto/.env` — WP 앱패스워드·Anthropic·Brave·텔레그램·시트
 - `/root/.senba-blog-dbpass`, `/root/.senba-blog-wppass`
+- `/opt/kobe3d-sync/.env` — 고베 3D 동기화 비밀번호(SYNC_TOKEN)
 - `/root/kr-jp-arbitrage/.env`, `/root/kr-jp-arbitrage/sa.json` — UI 토큰·네이버·라쿠텐·Yahoo·시트·텔레그램·Anthropic
 
 ## 주요 결정 기록
