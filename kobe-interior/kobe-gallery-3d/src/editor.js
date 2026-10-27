@@ -85,15 +85,25 @@ export class Editor {
     const add = (text, pos, color) => { const sp = this.v.textSprite(text, color); sp.scale.set(0.9, 0.22, 1); sp.position.copy(pos); this.labels.add(sp); };
     for (const w of this.walls()) { const p = new THREE.Vector3(); const t = (w.from + w.to) / 2; if (w.axis === 'x') p.set(w.offset + w.inward * 0.25, this.ceil - 0.25, t); else p.set(t, this.ceil - 0.25, w.offset + w.inward * 0.25); add(`벽 ${w.num}`, p, '#ffe08a'); }
     for (const col of this.columns()) { const fp = this.s.footprint(col); add(`기둥 ${col.num}`, new THREE.Vector3((fp.x[0] + fp.x[1]) / 2, this.ceil - 0.15, (fp.z[0] + fp.z[1]) / 2), '#ffb0b0'); }
-    for (const t of this.tiles) { const cx = (t.x[0] + t.x[1]) / 2, cz = (t.z[0] + t.z[1]) / 2; add(`천장 ${t.num}`, new THREE.Vector3(cx, this.ceil - 0.08, cz), '#c9d7ff'); add(`바닥 ${t.num}`, new THREE.Vector3(cx, 0.08, cz), '#d2ffc9'); }
+    if (!this.tileLabels) { this.tileLabels = new THREE.Group(); this.tileLabels.visible = false; this.root.add(this.tileLabels); }
+    this.tileLabels.clear();
+    const addT = (text, pos, color) => { const sp = this.v.textSprite(text, color); sp.scale.set(0.6, 0.15, 1); sp.position.copy(pos); this.tileLabels.add(sp); };
+    for (const t of this.tiles) { const cx = (t.x[0] + t.x[1]) / 2, cz = (t.z[0] + t.z[1]) / 2; addT(`천장 ${t.num}`, new THREE.Vector3(cx, this.ceil - 0.08, cz), '#c9d7ff'); addT(`바닥 ${t.num}`, new THREE.Vector3(cx, 0.08, cz), '#d2ffc9'); }
   }
   setLabels(on) { this.labels.visible = on; }
+  setTileLabels(on) { if (this.tileLabels) this.tileLabels.visible = on; }
 
   // ---------------- 디자인 적용 (오버레이·창·커튼·소품·랜드마크)
   rebuildAll() {
+    const keep = this.selected; this.tc.detach();           // 다시 그리기 전에 기즈모를 떼야 사라진 객체를 붙잡지 않는다
     this.buildOverlays(); this.buildWindows(); this.buildProps(); this.buildMarks(); this.buildPicks();
     this.i.rebuild('molding'); this.i.rebuild('gallery_art'); this.i.rebuild('mirror_4_sides'); this.applyColumnSizes(); this.buildLabels();
     this.v.updateHighlight(); this.refreshHighlight();
+    if (keep?.kind === 'prop' || keep?.kind === 'landmark') this.reattach(keep);
+  }
+  reattach(sel) {
+    const list = sel.kind === 'prop' ? this.props.children : this.marks.children; const g = list.find((c) => c.userData.pick?.id === sel.id);
+    if (g) { this.tc.attach(g); this.tc.setMode('translate'); }
   }
   paintMat(hex) { return new THREE.MeshStandardMaterial({ color: hex, roughness: 0.85, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1 }); }
   buildOverlays() {
@@ -173,8 +183,7 @@ export class Editor {
   hitPoint(ev) { const h = this.v.pick(ev, (o) => o.userData.model === 'reconstructed' || o.userData.model === 'cleaned' || o.userData.model === 'original'); return h ? h.point.clone() : this.floorPoint(ev); }
   select(sel) {
     this.selected = sel; this.tc.detach();
-    if (sel?.kind === 'prop') { const g = this.props.children.find((c) => c.userData.pick?.id === sel.id); if (g) { this.tc.attach(g); this.tc.setMode('translate'); } }
-    if (sel?.kind === 'landmark') { const g = this.marks.children.find((c) => c.userData.pick?.id === sel.id); if (g) { this.tc.attach(g); this.tc.setMode('translate'); } }
+    if (sel?.kind === 'prop' || sel?.kind === 'landmark') this.reattach(sel);
     this.refreshHighlight(); this.renderInspector();
     document.querySelectorAll('#itemChips button').forEach((b) => b.classList.toggle('active', !!sel && b.dataset.id === (sel.seg || sel.id)));
   }

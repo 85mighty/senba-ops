@@ -117,6 +117,7 @@ function setupEditorUI() {
   editor.onLandmarks = refreshBookmarks; editor.renderChips(); editor.renderInspector();
   $('#editMode').addEventListener('change', (e) => { editor.setEnabled(e.target.checked); if (e.target.checked && viewer.mode !== 'interior' && viewer.mode !== 'reconstructed') setMode('interior'); });
   $('#showLabels').addEventListener('change', (e) => editor.setLabels(e.target.checked));
+  $('#showTileLabels').addEventListener('change', (e) => editor.setTileLabels(e.target.checked));
   const bar = $('#propBar'); for (const [name, type] of PROP_TYPES) { const b = document.createElement('button'); b.textContent = name; b.addEventListener('click', () => { if (!editor.enabled) { $('#editMode').checked = true; editor.setEnabled(true); } editor.startPlacing(type); }); bar.appendChild(b); }
   $('#measureBtn').addEventListener('click', () => { if (!editor.enabled) { $('#editMode').checked = true; editor.setEnabled(true); } editor.startMeasure(); });
   $('#measureClear').addEventListener('click', () => editor.clearMeasures());
