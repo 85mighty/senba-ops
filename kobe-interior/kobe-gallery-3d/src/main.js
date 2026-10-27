@@ -4,6 +4,8 @@ import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { Viewer } from './viewer.js';
 import { InteriorA, LAYERS } from './interior.js';
+import { DesignStore, PROP_TYPES } from './design.js';
+import { Editor } from './editor.js';
 import meta from './geometry_metadata.json';
 
 const $ = (s) => document.querySelector(s);
@@ -18,7 +20,9 @@ if (!meta.elements) showError('geometry_metadata.json 에 elements 가 없습니
 
 const viewer = new Viewer($('#c'), meta, { onError: showError, onProgress: (p) => { $('#loading .bar i').style.width = `${Math.round(p * 100)}%`; } });
 window.__viewer = viewer;
-const interior = new InteriorA(viewer); window.__interior = interior;
+const store = new DesignStore(meta); window.__store = store;
+const interior = new InteriorA(viewer, store); window.__interior = interior;
+let editor = null; // 모델 로드 후 생성 (바닥 타일 판정에 복원 바닥 메쉬 필요)
 
 // ---- 모드
 const modeBtns = [...document.querySelectorAll('#modes button')];
@@ -59,6 +63,7 @@ const canvas = $('#c'); let downAt = null;
 canvas.addEventListener('pointerdown', (e) => { downAt = [e.clientX, e.clientY]; });
 canvas.addEventListener('pointerup', (e) => {
   if (!downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 6) return; downAt = null;
+  if (editor && editor.enabled && (viewer.mode === 'reconstructed' || viewer.mode === 'interior')) { editor.onClick(e); return; }
   if ($('#pickColumn').checked) {
     const hit = viewer.pick(e, (o) => o.userData.model === 'reconstructed' && /^(wide_column|thin_column|partition)_\d+$/.test(o.name));
     if (hit) { setCentral(hit.object.name, '(사용자 선택 — 메타데이터 반영: reconstruct_room.py --central-column ' + hit.object.name + ')'); toast(`거울 대상: ${hit.object.name}`); }
@@ -102,5 +107,32 @@ viewer.loadAll().then((loaded) => {
   $('#loading').classList.add('hidden');
   const ok = Object.keys(loaded); if (!ok.length) showError('불러온 모델이 없습니다. 위 오류를 확인하세요.');
   else if (!loaded.reconstructed) showError('reconstructed_room.glb 가 없어 ③④ 모드가 비어 있습니다.');
+  editor = new Editor(viewer, interior, store, toast); window.__editor = editor; setupEditorUI();
   window.__viewerReady = true; window.__loadedModels = ok;
 });
+
+// ---- 편집기 UI
+function refreshBookmarks() { viewer.bookmarks = viewer.computeBookmarks(); const box = $('#bookmarks'); box.innerHTML = ''; for (const b of viewer.bookmarks) { const btn = document.createElement('button'); btn.textContent = b.name; btn.addEventListener('click', () => viewer.goBookmark(b)); box.appendChild(btn); } }
+function setupEditorUI() {
+  editor.onLandmarks = refreshBookmarks; editor.renderChips(); editor.renderInspector();
+  $('#editMode').addEventListener('change', (e) => { editor.setEnabled(e.target.checked); if (e.target.checked && viewer.mode !== 'interior' && viewer.mode !== 'reconstructed') setMode('interior'); });
+  $('#showLabels').addEventListener('change', (e) => editor.setLabels(e.target.checked));
+  $('#showTileLabels').addEventListener('change', (e) => editor.setTileLabels(e.target.checked));
+  const bar = $('#propBar'); for (const [name, type] of PROP_TYPES) { const b = document.createElement('button'); b.textContent = name; b.addEventListener('click', () => { if (!editor.enabled) { $('#editMode').checked = true; editor.setEnabled(true); } editor.startPlacing(type); }); bar.appendChild(b); }
+  $('#measureBtn').addEventListener('click', () => { if (!editor.enabled) { $('#editMode').checked = true; editor.setEnabled(true); } editor.startMeasure(); });
+  $('#measureClear').addEventListener('click', () => editor.clearMeasures());
+  $('#shotBtn').addEventListener('click', () => editor.screenshot());
+  for (const slot of ['A', 'B', 'C']) {
+    $(`#save${slot}`).addEventListener('click', () => { store.saveSlot(slot); toast(`디자인 ${slot} 저장됨`); updateSlots(); });
+    $(`#load${slot}`).addEventListener('click', () => { if (store.loadSlot(slot)) { toast(`디자인 ${slot} 불러옴`); editor.renderChips(); } else toast(`저장된 ${slot} 가 없습니다`); });
+  }
+  function updateSlots() { for (const slot of ['A', 'B', 'C']) $(`#load${slot}`).disabled = !store.hasSlot(slot); }
+  updateSlots();
+  $('#exportDesign').addEventListener('click', async () => { const j = store.exportJSON(); $('#designJson').value = j; try { await navigator.clipboard.writeText(j); toast('디자인 JSON 복사됨 (아래 칸에도 표시)'); } catch { toast('아래 칸의 JSON 을 복사하세요'); } });
+  $('#importDesign').addEventListener('click', () => { try { store.importJSON($('#designJson').value); editor.renderChips(); refreshBookmarks(); toast('디자인 불러옴'); } catch (e) { toast('불러오기 실패: ' + e.message); } });
+  $('#resetDesign').addEventListener('click', () => { if ($('#resetDesign').dataset.arm) { store.reset(); editor.renderChips(); refreshBookmarks(); toast('초기화됨'); delete $('#resetDesign').dataset.arm; $('#resetDesign').textContent = '디자인 초기화'; } else { $('#resetDesign').dataset.arm = '1'; $('#resetDesign').textContent = '정말 초기화? (다시 클릭)'; setTimeout(() => { delete $('#resetDesign').dataset.arm; $('#resetDesign').textContent = '디자인 초기화'; }, 4000); } });
+  window.addEventListener('keydown', (e) => { if (!editor.enabled) return; if (e.key === 'Delete' || e.key === 'Backspace') { const s = editor.selected; if (s?.kind === 'prop' && document.activeElement.tagName !== 'INPUT') { store.removeProp(s.id); store.commit('prop'); editor.select(null); } } if (e.key === 'Escape') { editor.placing = null; $('#placingHint').textContent = ''; editor.select(null); } });
+  // 레이어 토글에 창/소품 추가
+  $('#toggleWindows').addEventListener('change', (e) => { editor.windows.visible = e.target.checked; });
+  $('#toggleProps').addEventListener('change', (e) => { editor.props.visible = e.target.checked; });
+}

@@ -55,6 +55,26 @@ try {
   await page.selectOption('#mirrorMode', 'env'); await wait(800);
   await page.check('[data-layer=furniture]'); await page.check('[data-layer=wine_accent_optional]'); await wait(300);
   await page.screenshot({ path: path.join(root, 'screenshots', 'interior_options_on.png') });
+  // 편집기: 번호 선택 → 칠하기/분할/몰딩·액자 끄기, 기둥 실측, 창+커튼, 소품, JSON 내보내기
+  await page.check('#editMode'); await page.check('#showLabels'); await wait(300);
+  const ed = await page.evaluate(() => {
+    const e = window.__editor, s = window.__store; const walls = e.walls(); const w = walls.find((x) => x.length > 4) || walls[0]; const col = e.columns()[0];
+    e.select({ kind: 'wall', id: w.id }); s.surface(w.id).splits = 3; s.commit('split'); e.renderChips();
+    const seg = e.segmentsOf(w)[1]; e.select({ kind: 'wall', id: w.id, seg: seg.key }); const sf = s.surface(seg.key); sf.paint = '#7a2e2e'; sf.zone = 'upper'; s.commit('paint');
+    const other = walls.find((x) => x.id !== w.id); if (other) { const so = s.surface(other.id); so.art = false; so.molding = false; s.commit('art'); }
+    e.select({ kind: 'column', id: col.id }); const c = s.column(col.id); c.w = 0.4; c.mirror = true; s.commit('size');
+    const wallWithWin = Object.keys(s.design.windows)[0]; const win = s.windowsOf(wallWithWin)[0]; if (win) { win.curtain.on = true; win.curtain.color = '#5a3a22'; s.commit('curtain'); e.select({ kind: 'window', id: win.id, wall: wallWithWin }); }
+    s.surface('floor_t1').paint = '#5c3d26'; s.surface('ceiling').paint = '#f2efe9'; s.commit('paint');
+    const p = s.addProp({ type: 'easel_canvas', x: 0, z: -2, rot: 0.5, scale: 1, color: null }); s.addProp({ type: 'plant', x: 1, z: -3, rot: 0, scale: 1, color: null }); s.commit('prop'); e.select({ kind: 'prop', id: p.id });
+    const json = s.exportJSON();
+    return { items: e.items.length, chips: document.querySelectorAll('#itemChips button').length, overlays: e.overlays.children.length, windows: e.windows.children.length, props: e.props.children.length, labels: e.labels.children.length, jsonLen: json.length, inspector: document.querySelector('#inspector').textContent.slice(0, 40) };
+  });
+  console.log('편집기:', JSON.stringify(ed));
+  if (!ed.overlays || !ed.props || !ed.windows || ed.chips < 10) problems.push('편집기 기능 검증 실패: ' + JSON.stringify(ed));
+  await page.click('button[data-mode=interior]', { force: true }); await wait(800);
+  await page.evaluate(() => window.__viewer.goBookmark(window.__viewer.bookmarks[0])); await wait(1200);
+  await page.screenshot({ path: path.join(root, 'screenshots', 'editor_demo.png') });
+  await page.evaluate(() => { window.__store.reset(); });   // 테스트 디자인은 남기지 않음
   const counts = await page.evaluate(() => { const i = window.__interior; const o = {}; for (const k in i.layers) o[k] = i.layers[k].children.length; return o; });
   console.log('인테리어 레이어 객체 수:', counts);
   if (!counts.molding) problems.push('몰딩 프레임이 생성되지 않음'); if (!counts.mirror_4_sides) problems.push('거울이 생성되지 않음 (central_wide_column 확인)');

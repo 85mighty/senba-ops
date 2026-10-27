@@ -4,8 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>Kobe Gallery Studio 3D</title>
-  <script type="module" crossorigin src="./assets/index-CfitEY0t.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-cDI1LmaQ.css">
+  <script type="module" crossorigin src="./assets/index-Bj4kybdi.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-CY3nWakQ.css">
 </head>
 <body>
   <canvas id="c"></canvas>
@@ -66,6 +66,34 @@
         <button id="exportGlb">interior_A.glb 내보내기</button>
         <button id="copyLayout" class="ghost">가구 배치 JSON 복사</button>
       </div>
+    </section>
+
+    <section id="editorPanel">
+      <h3>인테리어 편집</h3>
+      <label><input type="checkbox" id="editMode" /> <b>편집 모드</b> (③/④에서 면·소품 클릭 선택)</label>
+      <label><input type="checkbox" id="showLabels" /> 번호 라벨 표시 (벽 1, 기둥 1…)</label>
+      <label><input type="checkbox" id="showTileLabels" /> 천장·바닥 타일 번호 표시</label>
+      <label><input type="checkbox" id="toggleWindows" checked /> 창·커튼 보이기</label>
+      <label><input type="checkbox" id="toggleProps" checked /> 소품 보이기</label>
+      <div class="hint">번호로 선택:</div>
+      <div id="itemChips" class="chips"></div>
+      <div id="inspector" class="inspector"></div>
+      <h3>소품 놓기</h3>
+      <div id="propBar" class="row wrap"></div>
+      <div id="placingHint" class="hint"></div>
+      <h3>도구</h3>
+      <div class="row wrap">
+        <button id="measureBtn">거리 재기</button><button id="measureClear" class="ghost">측정 지우기</button><button id="shotBtn">화면 캡처 저장</button>
+      </div>
+      <h3>디자인 저장</h3>
+      <div class="row wrap">
+        <button id="saveA">A 저장</button><button id="loadA" class="ghost">A 열기</button>
+        <button id="saveB">B 저장</button><button id="loadB" class="ghost">B 열기</button>
+        <button id="saveC">C 저장</button><button id="loadC" class="ghost">C 열기</button>
+      </div>
+      <div class="hint">이 브라우저에 자동 저장됩니다. 다른 기기로 옮기려면 JSON 을 복사해 붙여 넣으세요.</div>
+      <div class="row wrap"><button id="exportDesign">JSON 내보내기</button><button id="importDesign" class="ghost">JSON 불러오기</button><button id="resetDesign" class="ghost">디자인 초기화</button></div>
+      <textarea id="designJson" rows="3" placeholder="디자인 JSON"></textarea>
     </section>
 
     <section>
