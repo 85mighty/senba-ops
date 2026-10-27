@@ -11,10 +11,41 @@ export function buildProp(p) {
   const c = p.color ? new THREE.Color(p.color) : null; const wood = std(c || WOOD); const dark = std(c || DARK);
   switch (p.type) {
     case 'easel': case 'easel_canvas': {
-      const legMat = std(c || WOOD); const h = 1.7;
-      for (const [x, z, tilt] of [[-0.22, 0.05, 0.12], [0.22, 0.05, -0.12], [0, -0.32, 0]]) { const l = cyl(0.015, 0.02, h, legMat, x, h / 2, z); l.rotation.z = tilt; l.rotation.x = z < 0 ? -0.35 : 0.1; g.add(l); }
-      g.add(box(0.5, 0.03, 0.06, legMat, 0, 0.75, 0.1)); g.add(box(0.45, 0.025, 0.05, legMat, 0, 1.35, 0.05));
-      if (p.type === 'easel_canvas') { const cv = box(0.5, 0.65, 0.03, std(CANVAS), 0, 1.1, 0.12); cv.rotation.x = 0.1; g.add(cv); const fr = box(0.54, 0.69, 0.02, std(0xd9c7a3), 0, 1.1, 0.105); fr.rotation.x = 0.1; g.add(fr); }
+      // 삼각 이젤: 다리는 위(꼭지점)에서 모이고 아래에서 벌어진다. 앞다리 2 + 뒷다리 1, 캔버스는 앞다리에 기대 살짝 뒤로 눕는다.
+      const legMat = std(c || WOOD); const h = 1.75; const spread = 0.26;
+      for (const [x, z, rz, rx] of [[-spread / 2, 0.06, -0.15, -0.06], [spread / 2, 0.06, 0.15, -0.06], [0, -0.3, 0, 0.36]]) {
+        const l = cyl(0.014, 0.018, h, legMat, 0, h / 2, 0); l.rotation.set(rx, 0, rz); l.position.set(x, h / 2, z); g.add(l);
+      }
+      g.add(box(0.5, 0.03, 0.06, legMat, 0, 0.72, 0.1)); g.add(box(0.44, 0.025, 0.05, legMat, 0, 1.3, 0.03));
+      if (p.type === 'easel_canvas') { const cv = box(0.5, 0.65, 0.03, std(CANVAS), 0, 1.07, 0.13); cv.rotation.x = -0.1; g.add(cv); const fr = box(0.54, 0.69, 0.02, std(0xd9c7a3), 0, 1.07, 0.12); fr.rotation.x = -0.1; g.add(fr); }
+      break;
+    }
+    case 'chair': {   // 검은 철제 의자 (센바 세팅)
+      const m = std(c || 0x1e1e1e, { metalness: 0.3, roughness: 0.6 });
+      g.add(box(0.42, 0.02, 0.42, m, 0, 0.45, 0)); g.add(box(0.42, 0.4, 0.02, m, 0, 0.75, -0.2));
+      for (const [dx, dz] of [[-0.19, -0.19], [0.19, -0.19], [-0.19, 0.19], [0.19, 0.19]]) g.add(cyl(0.012, 0.012, 0.45, m, dx, 0.225, dz, 8));
+      break;
+    }
+    case 'cart': {    // 3단 물감 카트
+      const m = std(c || 0x1e1e1e, { metalness: 0.3, roughness: 0.6 });
+      for (const y of [0.12, 0.42, 0.72]) g.add(box(0.45, 0.08, 0.35, m, 0, y, 0));
+      for (const [dx, dz] of [[-0.2, -0.15], [0.2, -0.15], [-0.2, 0.15], [0.2, 0.15]]) g.add(cyl(0.008, 0.008, 0.8, m, dx, 0.4, dz, 8));
+      for (let i = 0; i < 5; i++) g.add(cyl(0.025, 0.025, 0.12, std([0xffffff, 0xd94040, 0x3a6fd9, 0xf2c330, 0x3fa34d][i]), -0.15 + i * 0.075, 0.82, 0, 8));
+      break;
+    }
+    case 'board': case 'couple_set': {
+      // 센바 작업 보드: 약 90×130 cm 합판 보드(크라프트색)에 물감 묻은 짙은 틀, 낮은 받침에 기대어 벽에 비스듬히 세움
+      const mkBoard = (x) => { const b = new THREE.Group(); const fr = box(0.9, 1.3, 0.035, std(0x3a4654, { roughness: 0.9 })); const face = box(0.74, 1.14, 0.01, std(0xc9a06a, { roughness: 0.95 }), 0, 0, 0.02);
+        b.add(fr, face); b.add(box(0.74, 0.02, 0.012, std(0x5a6a7a), 0, 0.2, 0.025)); b.add(box(0.74, 0.02, 0.012, std(0x5a6a7a), 0, -0.25, 0.025));
+        b.position.set(x, 0.72, 0); b.rotation.x = -0.14;                                    // 뒤로 8° 기댐
+        const stand = box(0.6, 0.05, 0.5, std(c || 0x5a3e28), x, 0.025, 0.2); g.add(stand); g.add(box(0.06, 0.5, 0.05, std(c || 0x5a3e28), x - 0.25, 0.25, 0.15)); g.add(box(0.06, 0.5, 0.05, std(c || 0x5a3e28), x + 0.25, 0.25, 0.15));
+        return b; };
+      if (p.type === 'board') g.add(mkBoard(0));
+      else {
+        g.add(mkBoard(-0.75)); g.add(mkBoard(0.75));
+        for (const [x, z, r] of [[-0.75, 0.75, 0.15], [0.75, 0.75, -0.15]]) { const ch = buildProp({ id: p.id, type: 'chair', x, z, rot: Math.PI + r, scale: 1, color: null }); ch.name = 'sub'; g.add(ch); }
+        const cart = buildProp({ id: p.id, type: 'cart', x: 0, z: 0.55, rot: 0, scale: 1, color: null }); cart.name = 'sub'; g.add(cart);
+      }
       break;
     }
     case 'table': { g.add(box(1.2, 0.04, 0.75, std(c || 0xdccbb0), 0, 0.72, 0)); for (const [dx, dz] of [[-0.55, -0.32], [0.55, -0.32], [-0.55, 0.32], [0.55, 0.32]]) g.add(cyl(0.02, 0.02, 0.7, dark, dx, 0.35, dz)); break; }

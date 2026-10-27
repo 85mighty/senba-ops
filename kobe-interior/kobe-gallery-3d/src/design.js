@@ -11,6 +11,7 @@ export const PALETTE_CEIL = [['현재(스캔)', null], ['화이트', '#f2efe9'],
 export const PALETTE_CURTAIN = [['밤색', '#5a3a22'], ['다크 브라운', '#3e2a1a'], ['베이지', '#c9b89a'], ['아이보리', '#ece4d4'], ['와인', '#6e2a2e'], ['차콜', '#3b3b3b'], ['네이비', '#2d3650']];
 export const FRAME_STYLES = [['골드', 'gold'], ['블랙', 'black'], ['화이트', 'white'], ['내추럴 우드', 'natural']];
 export const PROP_TYPES = [
+  ['센바 커플 세팅(보드2+의자2+카트)', 'couple_set'], ['센바 작업 보드', 'board'], ['검은 의자', 'chair'], ['물감 카트', 'cart'],
   ['이젤', 'easel'], ['이젤+캔버스', 'easel_canvas'], ['작업 테이블', 'table'], ['스툴', 'stool'], ['벤치', 'bench'], ['전시 좌대', 'pedestal'],
   ['화분', 'plant'], ['파티션', 'partition'], ['러그', 'rug'], ['접수 카운터', 'counter'], ['안내판', 'sign'], ['펜던트 조명', 'pendant'],
 ];
