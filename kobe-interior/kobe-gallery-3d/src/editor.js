@@ -273,7 +273,7 @@ export class Editor {
     const rec = this.v.loaded?.reconstructed; if (rec) rec.traverse((o) => {
       if (!o.isMesh) return; const base = o.name.replace(/_tex(_.*)?$/, '');
       if (o.name.includes('_tex')) { const sf = this.s.getSurface(base); const on = sf.texture !== false && !(base === 'floor' && sf.paint); o.userData.keepVisible = on; o.visible = on; }
-      if (/_window_\d+$/.test(o.name)) o.visible = false;   // 창은 편집기가 그린다
+      if (/_window_\d+$/.test(o.name)) { o.userData.keepVisible = false; o.visible = false; }   // 창은 편집기가 그린다 (숨김 처리에 덮이지 않게)
     });
   }
   buildWindows() {
@@ -415,7 +415,7 @@ export class Editor {
       this.renderTrimControls(box, w.id, '벽');
       box.appendChild(btn(this.hidden.has(w.id) ? '👁 이 벽 보이기' : '🙈 이 벽 숨기기', () => this.setHidden(w.id, !this.hidden.has(w.id)), 'ghost'));
       const wins = this.s.windowsOf(w.id); h(`<h4>창 (${wins.length})</h4>`);
-      box.appendChild(btn('+ 이 벽에 창 추가', () => { const L = w.to - w.from; this.s.addWindow(w.id, { id: `${w.id}_w${Date.now() % 100000}`, from: +(w.from + L * 0.3).toFixed(2), to: +(w.from + L * 0.7).toFixed(2), y0: 0.95, y1: 2.0, frame: '#8a8f94', curtain: { on: false, color: '#5a3a22', style: 'open' } }); commit('window'); this.renderChips(); }));
+      box.appendChild(btn('+ 이 벽에 창 추가', () => { const L = w.to - w.from; this.s.addWindow(w.id, { id: `${w.id}_w${Date.now() % 100000}`, from: +(w.from + L * 0.3).toFixed(2), to: +(w.from + L * 0.7).toFixed(2), y0: 0.55, y1: 1.78, frame: '#9a9da0', style: 'jp_sliding', panes: 4, transom: 0.93, valance: true, curtain: { on: false, color: '#5a3a22', style: 'open' } }); commit('window'); this.renderChips(); }));
       for (const win of wins) box.appendChild(btn(`창 ${win.from.toFixed(2)}~${win.to.toFixed(2)} m 편집`, () => this.select({ kind: 'window', id: win.id, wall: w.id }), 'ghost'));
     }
     if (sel.kind === 'column') {
@@ -452,7 +452,13 @@ export class Editor {
       row('폭', num(Math.round((win.to - win.from) * 100), 1, (v) => { win.to = +(win.from + v / 100).toFixed(2); commit('window'); }));
       row('하단 높이', num(Math.round(win.y0 * 100), 1, (v) => { win.y0 = v / 100; commit('window'); }));
       row('상단 높이', num(Math.round(win.y1 * 100), 1, (v) => { win.y1 = v / 100; commit('window'); }));
-      row('프레임 색', this.palette([['실버', '#8a8f94'], ['블랙', '#1c1c1c'], ['화이트', '#f1f1f1'], ['브론즈', '#6b4b2a']], win.frame, (hex) => { win.frame = hex; commit('window'); }));
+      row('창 형태', selectEl([['알루미늄 미닫이(일본식)', 'jp_sliding'], ['단순 창', 'simple']], win.style || 'simple', (v) => { win.style = v; if (v === 'jp_sliding') { win.panes = win.panes || 4; win.transom = win.transom ?? +(win.y0 + (win.y1 - win.y0) * 0.3).toFixed(2); } commit('window'); }));
+      if (win.style === 'jp_sliding') {
+        row('짝 수', selectEl([['2짝', 2], ['4짝', 4], ['6짝', 6]], win.panes || 4, (v) => { win.panes = +v; commit('window'); }));
+        row('가로살 높이', num(Math.round((win.transom ?? win.y0 + 0.4) * 100), 1, (v) => { win.transom = v / 100; commit('window'); }));
+        row('커튼박스', check(!!win.valance, (v) => { win.valance = v; commit('window'); }, '창 위 박스'));
+      }
+      row('프레임 색', this.palette([['알루미늄', '#9a9da0'], ['실버', '#8a8f94'], ['블랙', '#1c1c1c'], ['화이트', '#f1f1f1'], ['브론즈', '#6b4b2a']], win.frame, (hex) => { win.frame = hex; commit('window'); }));
       h('<h4>커튼</h4>');
       row('커튼', check(win.curtain.on, (v) => { win.curtain.on = v; commit('curtain'); }, '달기'));
       row('커튼 색', this.palette(PALETTE_CURTAIN, win.curtain.color, (hex) => { win.curtain.color = hex; commit('curtain'); }));
