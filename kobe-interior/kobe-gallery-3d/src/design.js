@@ -33,6 +33,7 @@ export class DesignStore {
     try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) this.design = this.migrate(JSON.parse(raw)); } catch {}
     // 창 기본값: 메타데이터가 갱신됐고 사용자가 창을 손대지 않았으면 새 기본값으로 교체
     if (!this.design.windows || (this.design.windows_src !== meta.generated && !this.design.windowsEdited)) { this.design.windows = this.defaultWindows(); this.design.windows_src = meta.generated; }
+    this.refreshWindowsVersion();
     this._last = this.snapshot();
     // 현재 작업 중인 안 (처음이면 A안 = 지금 디자인)
     try { this.active = localStorage.getItem(STORAGE_KEY + '.active') || 'A'; } catch { this.active = 'A'; }
@@ -42,11 +43,19 @@ export class DesignStore {
   switchSlot(name) {
     if (name === this.active) return 'same';
     this.saveSlot(this.active); let raw = null; try { raw = localStorage.getItem(STORAGE_KEY + '.slot.' + name); } catch {}
-    if (raw) { this.design = this.migrate(JSON.parse(raw)); if (!this.design.windows) this.design.windows = this.defaultWindows(); }
+    if (raw) { this.design = this.migrate(JSON.parse(raw)); if (!this.design.windows) this.design.windows = this.defaultWindows(); this.refreshWindowsVersion(); }
     this.active = name; try { localStorage.setItem(STORAGE_KEY + '.active', name); } catch {}
     this.undoStack = []; this.redoStack = []; this.dirty = false; this.commit('switch', false); return raw ? 'loaded' : 'new';
   }
   copyTo(name) { this.saveSlot(name); }
+  // 창 기본값 버전(사진 확인 등)이 올라가면 창을 새 기본값으로 바꾸고, 같은 벽에 달았던 커튼 설정은 이어받는다
+  refreshWindowsVersion() {
+    const ver = this.meta.windows_version || 1; if ((this.design.windows_ver || 1) >= ver) return;
+    const old = this.design.windows || {}; const fresh = this.defaultWindows();
+    for (const [wid, list] of Object.entries(fresh)) { const c = (old[wid] || []).find((x) => x.curtain?.on)?.curtain; if (c) for (const x of list) x.curtain = { ...c }; }
+    for (const [wid, list] of Object.entries(old)) if (!fresh[wid] && list.some((x) => String(x.id).match(/_w\d{3,}$/))) fresh[wid] = list.filter((x) => String(x.id).match(/_w\d{3,}$/));   // 사용자가 직접 추가한 창은 유지
+    this.design.windows = fresh; this.design.windows_ver = ver; this.design.windows_src = this.meta.generated;
+  }
   snapshot() { return JSON.stringify(this.design); }
   undo() { if (!this.undoStack.length) return false; this.redoStack.push(this.snapshot()); this.design = this.migrate(JSON.parse(this.undoStack.pop())); this.commit('undo', false); return true; }
   redo() { if (!this.redoStack.length) return false; this.undoStack.push(this.snapshot()); this.design = this.migrate(JSON.parse(this.redoStack.pop())); this.commit('redo', false); return true; }
@@ -55,7 +64,7 @@ export class DesignStore {
   saveExplicit() { try { localStorage.setItem(STORAGE_KEY + '.saved.' + this.active, this.snapshot()); } catch {} this.dirty = false; }
   hasExplicit() { try { return !!localStorage.getItem(STORAGE_KEY + '.saved.' + this.active); } catch { return false; } }
   revertToSaved() { try { const raw = localStorage.getItem(STORAGE_KEY + '.saved.' + this.active); if (!raw) return false; this.undoStack.push(this.snapshot()); this.design = this.migrate(JSON.parse(raw)); this.commit('revert', false); this.dirty = false; return true; } catch { return false; } }
-  resetWindows() { this.design.windows = this.defaultWindows(); this.design.windows_src = this.meta.generated; this.design.windowsEdited = false; this.commit('windows-reset'); }
+  resetWindows() { this.design.windows = this.defaultWindows(); this.design.windows_src = this.meta.generated; this.design.windows_ver = this.meta.windows_version || 1; this.design.windowsEdited = false; this.commit('windows-reset'); }
   migrate(d) { const e = emptyDesign(); const g = DEFAULT_GLOBAL(); const dg = d.global || {}; if (d.surfaces) for (const k of Object.keys(d.surfaces)) if (k.startsWith('ceiling_t')) delete d.surfaces[k]; return { ...e, ...d, surfaces: d.surfaces || {}, columns: d.columns || {}, landmarks: d.landmarks || {}, props: d.props || [], global: { ...g, ...dg, rail: { ...g.rail, ...(dg.rail || {}) }, base: { ...g.base, ...(dg.base || {}) }, lower: { ...g.lower, ...(dg.lower || {}) } } }; }
   get global() { return this.design.global; }
   // 띠·걸레받이·흰 몰딩·하부 벽: 벽/기둥별 설정(surfaces[id].trim)이 있으면 그것, 없으면 기본값(global)
@@ -76,7 +85,8 @@ export class DesignStore {
       if (e.type !== 'wall') continue;
       const ws = (e.openings || []).filter((o) => o.kind === 'window').map((o, i) => ({
         id: `${e.id}_w${i}`, from: +o.from.toFixed(2), to: +o.to.toFixed(2), y0: +(o.y?.[0] ?? 0.95).toFixed(2), y1: +(o.y?.[1] ?? 2.0).toFixed(2),
-        frame: '#8a8f94', curtain: { on: false, color: '#5a3a22', style: 'open' },
+        frame: o.frame || '#8a8f94', style: o.style || 'simple', panes: o.panes || 2, transom: o.transom ?? null, valance: o.valance ?? false,
+        curtain: { on: false, color: '#5a3a22', style: 'open' },
       }));
       if (ws.length) out[e.id] = ws;
     }

@@ -223,47 +223,35 @@
       "openings": [
         {
           "kind": "window",
-          "from": -3.215513463417689,
-          "to": -2.465513463417689,
+          "from": -3.6,
+          "to": -0.9,
           "y": [
-            0.95,
-            2.0
+            0.55,
+            1.78
           ],
           "status": "observed",
-          "note": "텍스처 밝은 영역(유리/창) — 사진으로 확인"
+          "note": "사진 + 스캔 텍스처: 알루미늄 4짝 미닫이, 간유리, 커튼박스",
+          "style": "jp_sliding",
+          "panes": 4,
+          "transom": 0.93,
+          "valance": true,
+          "frame": "#9a9da0"
         },
         {
           "kind": "window",
-          "from": -1.9655134634176892,
-          "to": -1.4655134634176892,
+          "from": -0.72,
+          "to": 2.24,
           "y": [
-            0.64,
-            1.76
+            0.55,
+            1.78
           ],
-          "status": "measured(gap)",
-          "note": "전개도 형상 공백(유리) — 창. 상하단은 공백 행 범위"
-        },
-        {
-          "kind": "window",
-          "from": -0.21551346341768918,
-          "to": 0.2844865365823108,
-          "y": [
-            0.88,
-            1.76
-          ],
-          "status": "measured(gap)",
-          "note": "전개도 형상 공백(유리) — 창. 상하단은 공백 행 범위"
-        },
-        {
-          "kind": "window",
-          "from": 1.7844865365823108,
-          "to": 2.284486536582311,
-          "y": [
-            0.8200000000000001,
-            1.6400000000000001
-          ],
-          "status": "measured(gap)",
-          "note": "전개도 형상 공백(유리) — 창. 상하단은 공백 행 범위"
+          "status": "observed",
+          "note": "사진 + 스캔 텍스처: 알루미늄 4짝 미닫이, 간유리, 커튼박스",
+          "style": "jp_sliding",
+          "panes": 4,
+          "transom": 0.93,
+          "valance": true,
+          "frame": "#9a9da0"
         }
       ]
     },
@@ -757,5 +745,46 @@
   "no_window_walls": [
     "wall_x_0",
     "wall_x_1"
-  ]
+  ],
+  "window_overrides": [
+    {
+      "axis": "z",
+      "offset": -4.804,
+      "windows": [
+        {
+          "kind": "window",
+          "from": -3.6,
+          "to": -0.9,
+          "y": [
+            0.55,
+            1.78
+          ],
+          "status": "observed",
+          "note": "사진 + 스캔 텍스처: 알루미늄 4짝 미닫이, 간유리, 커튼박스",
+          "style": "jp_sliding",
+          "panes": 4,
+          "transom": 0.93,
+          "valance": true,
+          "frame": "#9a9da0"
+        },
+        {
+          "kind": "window",
+          "from": -0.72,
+          "to": 2.24,
+          "y": [
+            0.55,
+            1.78
+          ],
+          "status": "observed",
+          "note": "사진 + 스캔 텍스처: 알루미늄 4짝 미닫이, 간유리, 커튼박스",
+          "style": "jp_sliding",
+          "panes": 4,
+          "transom": 0.93,
+          "valance": true,
+          "frame": "#9a9da0"
+        }
+      ]
+    }
+  ],
+  "windows_version": 2
 }

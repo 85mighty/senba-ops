@@ -66,7 +66,42 @@ export function buildProp(p) {
 }
 
 /** 창: 프레임 + 유리 + 중간 멀리언. placeFn(obj, t, y, off) 으로 벽 좌표계에 놓는다. */
+// 간유리(망입 유리) 무늬 — 작은 캔버스 격자를 반복
+let _frosted = null;
+function frostedTexture() {
+  if (_frosted) return _frosted;
+  const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
+  g.fillStyle = '#eef2f4'; g.fillRect(0, 0, 64, 64); g.strokeStyle = 'rgba(150,160,168,0.55)'; g.lineWidth = 1;
+  for (let i = 0; i <= 64; i += 16) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i, 64); g.stroke(); g.beginPath(); g.moveTo(0, i); g.lineTo(64, i); g.stroke(); }
+  _frosted = new THREE.CanvasTexture(c); _frosted.wrapS = _frosted.wrapT = THREE.RepeatWrapping; _frosted.colorSpace = THREE.SRGBColorSpace; return _frosted;
+}
+// 일본식 알루미늄 미닫이창: 바깥 틀 + N짝(앞뒤 레일 번갈아) + 가로살 + 간유리 + 크레센트 잠금 + 커튼박스
+function buildJpSliding(win, placeOnWall) {
+  const g = new THREE.Group(); g.name = 'window'; g.userData.windowId = win.id;
+  const W = win.to - win.from, H = win.y1 - win.y0; const n = Math.max(2, win.panes || 4); const fr = std(win.frame || '#9a9da0', { metalness: 0.55, roughness: 0.45 });
+  const tex = frostedTexture().clone(); tex.needsUpdate = true; tex.repeat.set(W / 0.12, H / 0.12);
+  const glassMat = new THREE.MeshStandardMaterial({ color: 0xffffff, map: tex, emissive: 0xdde5ea, emissiveIntensity: 0.55, roughness: 0.9, transparent: true, opacity: 0.94, side: THREE.DoubleSide });
+  const t = 0.045;                                                                                     // 바깥 틀
+  g.add(box(W + t, t, 0.07, fr, 0, H / 2, 0)); g.add(box(W + t, t * 1.3, 0.09, fr, 0, -H / 2, 0.01)); g.add(box(t, H, 0.07, fr, -W / 2, 0, 0)); g.add(box(t, H, 0.07, fr, W / 2, 0, 0));
+  const pw = (W - t) / n; const tr = win.transom ? (win.transom - win.y0) - H / 2 : null;           // 가로살 높이(창 중심 기준)
+  for (let i = 0; i < n; i++) {
+    const cx = -W / 2 + t / 2 + pw * (i + 0.5); const z = (i % 2 === 0 ? 0.0 : 0.028) + 0.005;        // 앞뒤 레일 번갈아
+    const sash = new THREE.Group(); sash.position.set(cx, 0, z);
+    const glass = new THREE.Mesh(new THREE.PlaneGeometry(pw - 0.04, H - t * 1.6), glassMat); sash.add(glass);
+    sash.add(box(0.03, H - t, 0.03, fr, -pw / 2 + 0.015, 0, 0)); sash.add(box(0.03, H - t, 0.03, fr, pw / 2 - 0.015, 0, 0));   // 세로 틀
+    sash.add(box(pw, 0.03, 0.03, fr, 0, H / 2 - t / 2 - 0.015, 0)); sash.add(box(pw, 0.03, 0.03, fr, 0, -H / 2 + t / 2 + 0.015, 0));
+    if (tr !== null) sash.add(box(pw - 0.03, 0.028, 0.026, fr, 0, tr, 0));                              // 가로살
+    g.add(sash);
+  }
+  for (let k = 1; k < n; k += 2) { const lx = -W / 2 + t / 2 + pw * (k + 0.5) - pw / 2; g.add(box(0.025, 0.06, 0.03, std(0x8d9195, { metalness: 0.6 }), lx, -0.05, 0.05)); }   // 크레센트
+  if (win.valance) { const vb = std('#aeb0b2', { roughness: 0.7 }); g.add(box(W + 0.18, 0.16, 0.14, vb, 0, H / 2 + 0.1, 0.06)); }   // 커튼박스
+  g.add(box(W + 0.06, 0.025, 0.07, std('#b7b8b9'), 0, -H / 2 - 0.02, 0.03));                          // 창턱
+  placeOnWall(g, (win.from + win.to) / 2, (win.y0 + win.y1) / 2, 0.012);
+  return g;
+}
+
 export function buildWindow(win, placeOnWall) {
+  if (win.style === 'jp_sliding') return buildJpSliding(win, placeOnWall);
   const g = new THREE.Group(); g.name = 'window'; g.userData.windowId = win.id;
   const W = win.to - win.from, H = win.y1 - win.y0; const frame = std(win.frame || '#8a8f94', { metalness: 0.4, roughness: 0.5 });
   const glass = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.MeshPhysicalMaterial({ color: 0xdfe9f2, transparent: true, opacity: 0.55, roughness: 0.35, transmission: 0, side: THREE.DoubleSide }));

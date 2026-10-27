@@ -98,6 +98,9 @@ try {
     if (s.active !== 'A' || s.getSurface('ceiling').paint !== ceilA) throw new Error('안 전환 실패');
     window.__switchSlot('B'); if (s.getSurface('ceiling').paint !== '#1c1c1c') throw new Error('B안 저장 실패'); window.__switchSlot('A');
     if (document.querySelectorAll('#slotBar button').length !== 3) throw new Error('안 버튼 3개 아님');
+    // 북쪽 창: 사진대로 큰 미닫이창 2세트
+    const nw = Object.entries(s.design.windows).find(([k]) => k === e.walls().find((x) => x.axis === 'z' && Math.abs(x.offset + 4.8) < 0.15)?.id)?.[1] || [];
+    if (nw.length !== 2 || !nw.every((x) => x.style === 'jp_sliding' && x.valance)) throw new Error('북쪽 창 2세트 아님 ' + JSON.stringify(nw.map((x) => [x.from, x.to, x.style])));
     const json = s.exportJSON();
     return { items: e.items.length, chips: document.querySelectorAll('#itemChips button').length, overlays: e.overlays.children.length, windows: e.windows.children.length, props: e.props.children.length, labels: e.labels.children.length, jsonLen: json.length, inspector: document.querySelector('#inspector').textContent.slice(0, 40) };
   });

@@ -393,6 +393,13 @@ def main():
                 if end == "from" and target < w["from"]: w["from"] = float(target)
         w["length"] = w["to"] - w["from"]
 
+    # 사진으로 확인한 창(window_overrides) — 같은 축·오프셋(±0.15 m)의 벽에서 검출 창을 대체
+    for ov in meta.get("window_overrides", []):
+        for w in walls:
+            if w["axis"] == ov["axis"] and abs(w["offset"] - ov["offset"]) < 0.15:
+                w["openings"] = [o for o in w["openings"] if o["kind"] != "window"] + [dict(o) for o in ov["windows"]]
+                w["bridge"] = []
+
     # 창 없는 벽 (사용자 확인) — 메타데이터에 기억
     no_win = set(args.no_window if args.no_window is not None else meta.get("no_window_walls", []))
     for w in walls:
