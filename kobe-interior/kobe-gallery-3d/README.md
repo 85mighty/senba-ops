@@ -60,12 +60,28 @@ npm run dev                               # 터미널에 뜨는 http://localhost
 
 로딩 실패 시 왼쪽 아래에 **원인별 메시지**(404·경로 불일치 / GLB 파싱 / JS 예외)가 뜬다. 검은 화면으로 멈추지 않는다.
 
+## 인테리어 편집 (편집 모드)
+패널 아래 **인테리어 편집 → 편집 모드**를 켜면 ③/④ 화면에서 면과 소품을 클릭해 바꿀 수 있다. 모든 변경은 이 브라우저에 자동 저장된다.
+
+| 대상 | 선택 | 할 수 있는 것 |
+|---|---|---|
+| 벽 (벽 1, 벽 2…) | 클릭 또는 번호 칩 | 분할(1~8등분 → 벽 3-2 처럼 세그먼트별 색), 칠할 영역(전체/띠 위/띠 아래), 색(팔레트·직접 선택), 스캔 텍스처 끄기, 몰딩 on/off, 액자 on/off·개수·틀(골드/블랙/화이트/우드), 창 추가 |
+| 기둥 (기둥 1…) | 클릭/칩 | **실측 가로·세로 입력(cm)** 과 위치 보정 → 모델·거울·몰딩이 따라감, 거울 on/off·면 선택(동서남북), 색, 몰딩 |
+| 천장/바닥 (천장 1…, 바닥 1…) | 칩 또는 클릭 | 1.5 m 타일 단위 색, '전체' 기본값. 바닥 팔레트는 스캔 우드 중간색 기준 밝게/어둡게 프리셋 |
+| 창 | 창 클릭/칩 | 시작 위치·폭·상하단 높이(cm), 프레임 색, **커튼**(밤색 등 7색, 양쪽 걷음/전체 닫음), 삭제 |
+| 소품 | '소품 놓기' 버튼 → 바닥 클릭 | 이젤(+캔버스), 작업 테이블, 스툴, 벤치, 전시 좌대, 화분, 파티션, 러그, 접수 카운터, 안내판, 펜던트 조명. 드래그 이동, 회전·크기·색, 복제/삭제(Delete) |
+| 📍 랜드마크 | 핀 클릭 | 입구·주방·화장실·창가·메인 핀을 드래그해 실제 위치로 → 북마크가 따라감 |
+| 도구 | | 거리 재기(두 점 클릭), 화면 캡처 PNG 저장, 번호 라벨 표시 |
+| 저장 | | 슬롯 A/B/C 저장·열기, JSON 내보내기/불러오기(다른 기기로 옮길 때), 초기화 |
+
+디자인 파일은 `src/design.js` 의 스키마(JSON)로, 면 설정 `surfaces`, 기둥 `columns`, 창 `windows`, 소품 `props`, 랜드마크 `landmarks` 를 담는다.
+
 ## 파일 구조
 ```
 assets/original/     Scaniverse ZIP (수정 금지) — 풀린 폴더는 .gitignore
 assets/photos/       실내 사진 (사용자가 복사)
 assets/models/       scan_original.glb · scan_cleaned.glb · reconstructed_room.glb  (같은 월드 좌표)
-src/                 main.js(UI) · viewer.js(씬/로더/모드) · interior.js(A안 절차 생성) · geometry_metadata.json
+src/                 main.js(UI) · viewer.js(씬/로더/모드) · interior.js(A안 절차 생성) · editor.js(편집기) · design.js(디자인 상태) · props.js(소품·창·커튼) · geometry_metadata.json
 scripts/             inspect_scan.py · clean_scan.py · reconstruct_room.py · make_synthetic_scan.py(테스트용) · browser_test.mjs
 reports/             scan_analysis.md · clean_log.md/json · geometry_assumptions.md · construction_checklist.md
 screenshots/         진단 그림 + 브라우저 캡처

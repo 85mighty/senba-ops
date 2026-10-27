@@ -9,8 +9,8 @@ const FRAME_BAR = 0.045, FRAME_DEPTH = 0.018, FRAME_W_TARGET = 0.9, FRAME_GAP = 
 export const LAYERS = ['molding', 'mirror_4_sides', 'gallery_art', 'track_lights', 'furniture', 'panel_white_optional', 'wine_accent_optional'];
 
 export class InteriorA {
-  constructor(viewer) {
-    this.v = viewer; this.meta = viewer.meta; this.root = viewer.interior;
+  constructor(viewer, store = null) {
+    this.v = viewer; this.meta = viewer.meta; this.root = viewer.interior; this.store = store;
     this.opts = { mirrorH: 2.2, mirrorInset: 0.05, mirrorMode: 'env', lightI: 1.5, lightK: 3000, central: this.meta.central_wide_column };
     this.layers = {}; for (const k of LAYERS) { this.layers[k] = new THREE.Group(); this.layers[k].name = k; this.root.add(this.layers[k]); }
     this.layers.furniture.visible = false; this.layers.panel_white_optional.visible = false; this.layers.wine_accent_optional.visible = false;
@@ -24,6 +24,10 @@ export class InteriorA {
   columns() { return (this.meta.elements || []).filter((e) => ['wide_column', 'thin_column'].includes(e.type)); }
   blockers() { return (this.meta.elements || []).filter((e) => e.footprint); }
   central() { return (this.meta.elements || []).find((e) => e.id === this.opts.central); }
+  sf(id) { return this.store ? this.store.getSurface(id) : {}; }
+  fp(col) { return this.store ? this.store.footprint(col) : col.footprint; }
+  // 거울 대상 기둥 목록 (편집기 설정 > 기본: 중앙 넓은 기둥)
+  mirrorColumns() { return this.columns().filter((c) => { const cs = this.store ? this.store.getColumn(c.id) : {}; return cs.mirror ?? (c.id === this.opts.central); }); }
 
   buildAll() { for (const k of LAYERS) this['build_' + k](); }
   rebuild(layer) { this.layers[layer].clear(); this['build_' + layer](); this.v.setCeilingHidden(this.v.clipping); }
@@ -43,6 +47,12 @@ export class InteriorA {
     }
     return runs.filter(([a, b]) => b - a > 0.3);
   }
+  // 편집기에서 바꾼 창 목록을 벽 openings 로 반영한 복사본 (문 후보는 유지)
+  withEditedWindows(w) {
+    if (!this.store) return w; const wins = this.store.windowsOf(w.id);
+    const doors = (w.openings || []).filter((o) => o.kind !== 'window');
+    return { ...w, openings: doors.concat(wins.map((x) => ({ kind: 'window', from: x.from, to: x.to, y: [x.y0, x.y1] }))) };
+  }
   // 벽면 좌표계: 길이방향 t, 높이 y → 월드. 벽 안쪽에 off 만큼 띄움.
   placeOnWall(obj, w, t, y, off) {
     if (w.axis === 'x') { obj.position.set(w.offset + w.inward * off, y, t); obj.rotation.y = w.inward > 0 ? Math.PI / 2 : -Math.PI / 2; }
@@ -50,12 +60,12 @@ export class InteriorA {
   }
   // 기둥 4면 → 가상의 "벽" 객체 배열 (안쪽 법선 = 바깥 방향)
   columnFaces(col) {
-    const fx = col.footprint.x, fz = col.footprint.z;
+    const f = col.id ? this.fp(col) : col.footprint; const fx = f.x, fz = f.z;
     return [
-      { axis: 'x', offset: fx[0], inward: -1, from: fz[0], to: fz[1], openings: [] },
-      { axis: 'x', offset: fx[1], inward: 1, from: fz[0], to: fz[1], openings: [] },
-      { axis: 'z', offset: fz[0], inward: -1, from: fx[0], to: fx[1], openings: [] },
-      { axis: 'z', offset: fz[1], inward: 1, from: fx[0], to: fx[1], openings: [] },
+      { key: 'xn', axis: 'x', offset: fx[0], inward: -1, from: fz[0], to: fz[1], openings: [] },
+      { key: 'xp', axis: 'x', offset: fx[1], inward: 1, from: fz[0], to: fz[1], openings: [] },
+      { key: 'zn', axis: 'z', offset: fz[0], inward: -1, from: fx[0], to: fx[1], openings: [] },
+      { key: 'zp', axis: 'z', offset: fz[1], inward: 1, from: fx[0], to: fx[1], openings: [] },
     ];
   }
 
@@ -69,9 +79,11 @@ export class InteriorA {
   build_molding() {
     const g = this.layers.molding; const mat = new THREE.MeshStandardMaterial({ color: WHITE, roughness: 0.55 });
     const yBottom = this.base + 0.08, yTop = this.chair - 0.06 - 0.08; const ht = yTop - yBottom; if (ht < 0.25) return;
-    const targets = [...this.walls()]; for (const c of this.columns()) if (c.id !== this.opts.central) targets.push(...this.columnFaces(c));
+    const mirrored = new Set(this.mirrorColumns().map((c) => c.id));
+    const targets = this.walls().filter((w) => this.sf(w.id).molding !== false).map((w) => this.withEditedWindows(w));
+    for (const c of this.columns()) if (!mirrored.has(c.id) && this.sf(c.id).molding !== false) targets.push(...this.columnFaces(c));
     let count = 0;
-    for (const w of targets) for (const [a, b] of this.wallRuns(w, w.openings ? CORNER_MARGIN : 0.08)) {
+    for (const w of targets) for (const [a, b] of this.wallRuns(w, w.key ? 0.08 : CORNER_MARGIN)) {
       const L = b - a; const n = Math.max(1, Math.floor((L + FRAME_GAP) / (FRAME_W_TARGET + FRAME_GAP))); const wd = (L - FRAME_GAP * (n - 1)) / n;
       if (wd < 0.3) continue;
       for (let i = 0; i < n; i++) {
@@ -83,9 +95,10 @@ export class InteriorA {
   }
   // ---- 중앙 넓은 기둥 4면 거울
   build_mirror_4_sides() {
-    const g = this.layers.mirror_4_sides; const col = this.central(); if (!col) return;
+    const g = this.layers.mirror_4_sides;
     const y0 = this.base + 0.02, y1 = Math.min(this.opts.mirrorH, this.ceil - 0.05); const h = y1 - y0;
-    for (const f of this.columnFaces(col)) {
+    for (const col of this.mirrorColumns()) for (const f of this.columnFaces(col)) {
+      const cs = this.store ? this.store.getColumn(col.id) : null; if (cs && cs.mirrorFaces && !cs.mirrorFaces.includes(f.key)) continue;
       const wd = (f.to - f.from) - 2 * this.opts.mirrorInset; if (wd < 0.2 || h < 0.3) continue;
       let m;
       if (this.opts.mirrorMode === 'reflector') {
@@ -107,17 +120,25 @@ export class InteriorA {
     c.fillStyle = gr; c.fillRect(0, 0, 256, 320); c.fillStyle = `hsla(${h + 180},40%,60%,0.35)`; c.beginPath(); c.ellipse(128 + (seed % 3) * 20, 170, 70, 95, 0.3, 0, Math.PI * 2); c.fill();
     const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; return t;
   }
+  frameMaterial(style) {
+    const m = { gold: [GOLD, 0.8, 0.35], black: [0x1c1c1c, 0.2, 0.5], white: [0xf3f1ec, 0.0, 0.6], natural: [0xb08a5a, 0.0, 0.7] }[style || 'gold'] || [GOLD, 0.8, 0.35];
+    return new THREE.MeshStandardMaterial({ color: m[0], metalness: m[1], roughness: m[2] });
+  }
   build_gallery_art() {
-    const g = this.layers.gallery_art; const gold = new THREE.MeshStandardMaterial({ color: GOLD, metalness: 0.8, roughness: 0.35 });
+    const g = this.layers.gallery_art;
     const yC = this.chair + (this.ceil - this.chair) * 0.42; let i = 0;
-    for (const w of this.walls()) for (const [a, b] of this.wallRuns(w, 0.5)) {
-      const L = b - a; const n = Math.floor(L / 1.3); if (n < 1) continue; const step = L / n;
+    for (const w0 of this.walls()) {
+      const sfw = this.sf(w0.id); if (sfw.art === false) continue; const w = this.withEditedWindows(w0); const mat = this.frameMaterial(sfw.frame);
+      const runs = this.wallRuns(w, 0.5); const total = runs.reduce((s, [a, b]) => s + (b - a), 0); let want = sfw.artCount ?? null;
+      for (const [a, b] of runs) {
+      const L = b - a; let n = want != null ? Math.round(want * (L / Math.max(total, 0.01))) : Math.floor(L / 1.3); if (want != null && n < 1 && want > 0 && L > 0.8) n = 1; if (n < 1) continue; const step = L / n;
       for (let k = 0; k < n; k++) {
-        const t = a + step * (k + 0.5); const big = i % 2 === 0; const wd = big ? 0.72 : 0.56, ht = big ? 0.92 : 0.72;
+        const t = a + step * (k + 0.5); const big = i % 2 === 0; const wd = Math.min(big ? 0.72 : 0.56, step - 0.2), ht = big ? 0.92 : 0.72; if (wd < 0.3) continue;
         const grp = new THREE.Group(); grp.name = 'artwork';
-        const frame = new THREE.Mesh(this.frameGeometry(wd + 0.12, ht + 0.12), gold); frame.geometry.scale(1, 1, 2.2); frame.position.z = 0; grp.add(frame);
+        const frame = new THREE.Mesh(this.frameGeometry(wd + 0.12, ht + 0.12), mat); frame.geometry.scale(1, 1, 2.2); frame.position.z = 0; grp.add(frame);
         const canvas = new THREE.Mesh(new THREE.PlaneGeometry(wd, ht), new THREE.MeshStandardMaterial({ map: this.artTexture(i), roughness: 0.9 })); canvas.position.z = 0.01; grp.add(canvas);
         this.placeOnWall(grp, w, t, yC, 0.02); g.add(grp); i++;
+      }
       }
     }
   }
@@ -145,7 +166,7 @@ export class InteriorA {
   build_furniture() {
     const g = this.layers.furniture; const box = this.v.roomBox(); const m = box.min, M = box.max;
     const wood = new THREE.MeshStandardMaterial({ color: 0xdccbb0, roughness: 0.7 }); const leg = new THREE.MeshStandardMaterial({ color: BLACK, roughness: 0.5 });
-    const blocks = this.blockers().map((c) => c.footprint);
+    const blocks = this.blockers().map((c) => (c.id && this.store && c.footprint && ['wide_column', 'thin_column'].includes(c.type)) ? this.fp(c) : c.footprint);
     const clear = (x, z, r) => blocks.every((f) => x + r < f.x[0] || x - r > f.x[1] || z + r < f.z[0] || z - r > f.z[1]);
     let placements = this.furniturePlacements;
     if (!placements) {
