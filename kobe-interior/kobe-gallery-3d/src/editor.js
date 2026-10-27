@@ -1,4 +1,4 @@
-// 편집기 — 번호 매긴 면(벽 세그먼트·기둥·천장/바닥 타일) 선택, 마감/몰딩/액자/거울/실측, 창·커튼, 소품, 랜드마크, 측정, 저장.
+// 편집기 — 번호 매긴 면(벽 세그먼트·기둥·천장·바닥 타일) 선택, 마감/몰딩/액자/거울/실측, 창·커튼, 소품, 랜드마크, 측정, 저장.
 import * as THREE from 'three';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { PALETTE_WALL, PALETTE_FLOOR, PALETTE_CEIL, PALETTE_CURTAIN, PALETTE_TRIM, PALETTE_LOWER, FRAME_STYLES, PROP_TYPES } from './design.js';
@@ -17,9 +17,9 @@ export class Editor {
     this.windows = new THREE.Group(); this.windows.name = 'windows'; this.props = new THREE.Group(); this.props.name = 'props'; this.marks = new THREE.Group(); this.measures = new THREE.Group();
     for (const g of [this.overlays, this.picks, this.labels, this.hl, this.windows, this.props, this.marks, this.measures]) this.root.add(g);
     this.labels.visible = false; this.picks.visible = false;
-    this.ceilTiles = new THREE.Group(); this.ceilTiles.name = 'ceilTiles'; this.root.add(this.ceilTiles);
+    this.intCeil = null;   // 내부 천장(단일). 위에서 볼 때는 뷰어 자동 클리핑으로 사라진다
     this.bands = new THREE.Group(); this.bands.name = 'bands'; this.root.add(this.bands);
-    this.hidden = new Set(); try { const h = JSON.parse(localStorage.getItem('kobe3d.hidden') || '[]'); for (const x of h) this.hidden.add(x); } catch {}
+    this.hidden = new Set(); try { const h = JSON.parse(localStorage.getItem('kobe3d.hidden') || '[]'); for (const x of h) if (!String(x).startsWith('ceiling_t')) this.hidden.add(x); } catch {}
     this.autoHide = false; this._autoHidden = new Set();
     viewer.controls.addEventListener('change', () => { if (this.autoHide) this.scheduleAutoHide(); });
     this.tc = new TransformControls(viewer.camera, viewer.renderer.domElement); this.tc.setSize(0.7); this.tc.showY = false;
@@ -47,7 +47,7 @@ export class Editor {
     for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
       const tile = { i, j, x: [x0 + i * TILE, Math.min(x0 + (i + 1) * TILE, b.max[0])], z: [z0 + j * TILE, Math.min(z0 + (j + 1) * TILE, b.max[2])] };
       if (!this.tileOnFloor(tile)) continue; t++; tile.num = t; this.tiles.push(tile);
-      this.items.push({ kind: 'ceiling', id: `ceiling_t${t}`, label: `천장 ${t}`, tile }); this.items.push({ kind: 'floor', id: `floor_t${t}`, label: `바닥 ${t}`, tile });
+      this.items.push({ kind: 'floor', id: `floor_t${t}`, label: `바닥 ${t}`, tile });
     }
     this.items.push({ kind: 'ceiling', id: 'ceiling', label: '천장 전체' }); this.items.push({ kind: 'floor', id: 'floor', label: '바닥 전체' });
   }
@@ -82,7 +82,7 @@ export class Editor {
     }
     for (const col of this.columns()) { const fp = this.s.footprint(col); const m = new THREE.Mesh(new THREE.BoxGeometry(fp.x[1] - fp.x[0] + 0.06, this.ceil, fp.z[1] - fp.z[0] + 0.06), mat); m.position.set((fp.x[0] + fp.x[1]) / 2, this.ceil / 2, (fp.z[0] + fp.z[1]) / 2); m.userData.pick = { kind: 'column', id: col.id }; this.picks.add(m); }
     for (const tile of this.tiles) for (const [kind, y] of [['ceiling', this.ceil - 0.03], ['floor', 0.03]]) {
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(tile.x[1] - tile.x[0], tile.z[1] - tile.z[0]), mat); m.rotation.x = -Math.PI / 2; m.position.set((tile.x[0] + tile.x[1]) / 2, y, (tile.z[0] + tile.z[1]) / 2); m.userData.pick = { kind, id: `${kind}_t${tile.num}` }; this.picks.add(m);
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(tile.x[1] - tile.x[0], tile.z[1] - tile.z[0]), mat); m.rotation.x = -Math.PI / 2; m.position.set((tile.x[0] + tile.x[1]) / 2, y, (tile.z[0] + tile.z[1]) / 2); m.userData.pick = { kind, id: kind === 'ceiling' ? 'ceiling' : `${kind}_t${tile.num}` }; this.picks.add(m);
     }
   }
   buildLabels() {
@@ -93,7 +93,7 @@ export class Editor {
     if (!this.tileLabels) { this.tileLabels = new THREE.Group(); this.tileLabels.visible = false; this.root.add(this.tileLabels); }
     this.tileLabels.clear();
     const addT = (text, pos, color) => { const sp = this.v.textSprite(text, color); sp.scale.set(0.6, 0.15, 1); sp.position.copy(pos); this.tileLabels.add(sp); };
-    for (const t of this.tiles) { const cx = (t.x[0] + t.x[1]) / 2, cz = (t.z[0] + t.z[1]) / 2; addT(`천장 ${t.num}`, new THREE.Vector3(cx, this.ceil - 0.08, cz), '#c9d7ff'); addT(`바닥 ${t.num}`, new THREE.Vector3(cx, 0.08, cz), '#d2ffc9'); }
+    for (const t of this.tiles) { const cx = (t.x[0] + t.x[1]) / 2, cz = (t.z[0] + t.z[1]) / 2; addT(`바닥 ${t.num}`, new THREE.Vector3(cx, 0.08, cz), '#d2ffc9'); }
   }
   setLabels(on) { this.labels.visible = on; }
   setTileLabels(on) { if (this.tileLabels) this.tileLabels.visible = on; }
@@ -105,7 +105,7 @@ export class Editor {
     this.i.rebuild('molding'); this.i.rebuild('gallery_art'); this.i.rebuild('mirror_4_sides'); this.applyColumnSizes(); this.buildLabels();
     this.v.updateHighlight(); this.refreshHighlight();
     if (keep?.kind === 'prop' || keep?.kind === 'landmark') this.reattach(keep);
-    this.buildBands(); this.buildCeilingTiles(); this.applyHidden();
+    this.buildBands(); this.buildInteriorCeiling(); this.applyHidden();
   }
   // ---------------- 띠(체어레일)·걸레받이 커스텀: 색/형태가 기본(검정·평면)과 다르면 GLB 띠를 숨기고 직접 그린다
   bandsCustom() { const g = this.s.global; return g.rail.color !== '#1c1c1c' || g.rail.style !== 'flat' || g.base.color !== '#1c1c1c' || g.base.style !== 'flat'; }
@@ -141,31 +141,35 @@ export class Editor {
   }
   isHidden(id) { return this.hidden.has(id) || this._autoHidden.has(id); }
   applyHidden() {
-    const anyCeilTile = [...this.hidden, ...this._autoHidden].some((x) => x.startsWith('ceiling_t')); const ceilHidden = this.isHidden('ceiling');
+    const ceilHidden = this.isHidden('ceiling'); const scan = this.ceilPaint() === 'scan';
     const rec = this.v.loaded?.reconstructed;
     const visit = (o) => {
       if (!o.isMesh) return; const sid = this.surfaceOfMesh(o); if (!sid) return;
-      if (sid === 'ceiling') { o.visible = !(ceilHidden || anyCeilTile) && !this.v.clipping; return; }     // 타일 단위 숨김이면 GLB 천장 대신 타일 그룹
+      // 천장: 기본은 편집기 내부 천장(단색). '스캔 원본'을 고르면 구운 천장 텍스처. 복원 회색 격자 천장은 항상 숨김
+      if (sid === 'ceiling') { o.visible = o.name === 'ceiling_tex' ? (scan && !ceilHidden && !this.v.clipping) : false; return; }
       if (o.userData.windowOf) { o.visible = !this.isHidden(o.userData.windowOf); return; }
       o.visible = !this.isHidden(sid) && (o.userData.keepVisible ?? true);
     };
     if (rec) rec.traverse(visit); this.i.root.traverse(visit); this.overlays.traverse(visit); this.windows.traverse((o) => { if (o.isMesh) { const w = o.userData.windowOf; o.visible = !(w && this.isHidden(w)); } });
-    this.ceilTiles.visible = (anyCeilTile && !ceilHidden) && !this.v.clipping;
-    for (const t of this.ceilTiles.children) t.visible = !this.isHidden(`ceiling_t${t.userData.tile}`);
+    if (this.intCeil) this.intCeil.visible = !scan && !ceilHidden && !this.v.clipping;
     this.renderHiddenChips?.();
   }
-  buildCeilingTiles() {
-    this.ceilTiles.clear(); const rec = this.v.loaded?.reconstructed; if (!rec) return;
-    let texMesh = null, gridMat = null; rec.traverse((o) => { if (o.isMesh && o.name === 'ceiling_tex') texMesh = o; if (o.isMesh && o.name === 'ceiling') gridMat = o.material; });
-    const b = this.meta.bounds_world_m; const x0 = b.min[0], z0 = b.min[2]; const W = b.max[0] - x0, D = b.max[2] - z0;
-    for (const t of this.tiles) {
-      const w = t.x[1] - t.x[0], d = t.z[1] - t.z[0]; const geo = new THREE.PlaneGeometry(w, d);
-      if (texMesh) { // 구운 천장 텍스처의 해당 영역만 UV 로 잘라 쓴다 (텍스처 사각형: x0..x1 → u 0..1, z0..z1 → v 1..0)
-        const uv = geo.attributes.uv; const u0 = (t.x[0] - x0) / W, u1 = (t.x[1] - x0) / W, v0 = 1 - (t.z[0] - z0) / D, v1 = 1 - (t.z[1] - z0) / D;
-        uv.setXY(0, u0, v0); uv.setXY(1, u1, v0); uv.setXY(2, u0, v1); uv.setXY(3, u1, v1); uv.needsUpdate = true;
-      }
-      const m = new THREE.Mesh(geo, texMesh ? texMesh.material : (gridMat || new THREE.MeshStandardMaterial({ color: 0xeceae4 }))); m.rotation.x = Math.PI / 2; m.position.set((t.x[0] + t.x[1]) / 2, this.ceil - 0.001, (t.z[0] + t.z[1]) / 2); m.userData.tile = t.num; m.userData.keepVisible = true; this.ceilTiles.add(m);
-    }
+  ceilPaint() { const p = this.s.getSurface('ceiling').paint; return p === 'scan' ? 'scan' : (p || '#f2efe9'); }
+  // 내부 천장: 복원 바닥 점유와 같은 모양(천장 높이)의 단일 면. 실내에서 올려다볼 때만 보이고, 카메라가 천장 위로 가면 뷰어가 잘라낸다
+  buildInteriorCeiling() {
+    if (this.intCeil) { this.intCeil.removeFromParent(); this.intCeil.geometry.dispose(); this.intCeil.material.dispose(); this.intCeil = null; }
+    const rec = this.v.loaded?.reconstructed; if (!rec) return;
+    let src = null; rec.traverse((o) => { if (o.isMesh && o.name === 'ceiling') src = o; }); if (!src) return;
+    src.updateWorldMatrix(true, false);
+    const geo = src.geometry.clone().applyMatrix4(src.matrixWorld);
+    // 복원 GLB 에는 법선이 없다(로더가 원본에만 flatShading 을 켜 준다) → 복제본은 직접 계산하지 않으면 조명이 NaN 이 되어 검게 나온다
+    if (!geo.attributes.normal) geo.computeVertexNormals();
+    const paint = this.ceilPaint();
+    // 천장 아랫면은 위에서 오는 조명(반구광·직사광)을 받지 못해 검게 나온다 → 자기 색으로 은은하게 발광시켜 실제 천장 밝기에 가깝게
+    const col = paint === 'scan' ? '#f2efe9' : paint;
+    const mat = new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.45, roughness: 0.92, side: THREE.DoubleSide, clippingPlanes: [this.v.clipPlane] });
+    const m = new THREE.Mesh(geo, mat); m.name = 'interior_ceiling'; m.position.y -= 0.006; m.userData.surface = 'ceiling';
+    this.root.add(m); this.intCeil = m;
   }
   setHidden(id, on) { if (on) this.hidden.add(id); else this.hidden.delete(id); try { localStorage.setItem('kobe3d.hidden', JSON.stringify([...this.hidden])); } catch {} this.applyHidden(); this.renderInspector(); }
   showAll() { this.hidden.clear(); this._autoHidden.clear(); try { localStorage.removeItem('kobe3d.hidden'); } catch {} this.applyHidden(); this.renderInspector(); }
@@ -181,7 +185,6 @@ export class Editor {
       // 카메라가 벽 바깥(안쪽 반대)이고 주시점이 안쪽이면 이 벽이 시야를 막는다
       if (sideCam < 0.05 && sideTgt > 0 && (inSpan(c) || inSpan(t))) next.add(w.id);
     }
-    if (cam.y > this.ceil - 0.25) next.add('ceiling');
     const changed = next.size !== this._autoHidden.size || [...next].some((x) => !this._autoHidden.has(x));
     if (changed) { this._autoHidden = next; this.applyHidden(); }
   }
@@ -214,9 +217,9 @@ export class Editor {
       const sf = this.s.getSurface(col.id); if (!sf.paint) continue; const [y0, y1] = this.zoneRange(sf.zone || 'all'); const fp = this.s.footprint(col);
       for (const f of this.i.columnFaces({ footprint: fp })) { const q = this.wallQuad(f, f.from, f.to, y0, y1, 0.0015, this.paintMat(sf.paint)); q.userData.surface = col.id; this.overlays.add(q); }
     }
-    for (const t of this.tiles) for (const [kind, y, rot] of [['ceiling', this.ceil - 0.002, Math.PI / 2], ['floor', 0.002, -Math.PI / 2]]) {
+    for (const t of this.tiles) for (const [kind, y, rot] of [['floor', 0.002, -Math.PI / 2]]) {
       const sf = this.s.getSurface(`${kind}_t${t.num}`); const sfa = this.s.getSurface(kind); const paint = sf.paint || sfa.paint; if (!paint) continue;
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(t.x[1] - t.x[0], t.z[1] - t.z[0]), this.paintMat(paint)); m.rotation.x = rot; m.position.set((t.x[0] + t.x[1]) / 2, y, (t.z[0] + t.z[1]) / 2); m.userData.surface = kind === 'ceiling' ? `ceiling_t${t.num}` : 'floor'; this.overlays.add(m);
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(t.x[1] - t.x[0], t.z[1] - t.z[0]), this.paintMat(paint)); m.rotation.x = rot; m.position.set((t.x[0] + t.x[1]) / 2, y, (t.z[0] + t.z[1]) / 2); m.userData.surface = 'floor'; this.overlays.add(m);
     }
     // 스캔 텍스처 끄기(단색 보기) — 면별 texture=false 면 해당 _tex 숨김
     const rec = this.v.loaded?.reconstructed; if (rec) rec.traverse((o) => {
@@ -291,7 +294,8 @@ export class Editor {
     const mat = new THREE.LineBasicMaterial({ color: 0x4fd8ff, depthTest: false }); const add = (geo, pos, rot) => { const e = new THREE.LineSegments(new THREE.EdgesGeometry(geo), mat); e.position.copy(pos); if (rot) e.rotation.copy(rot); e.renderOrder = 999; this.hl.add(e); };
     if (sel.kind === 'wall') { const w = this.walls().find((x) => x.id === sel.id); const seg = sel.seg ? this.segmentsOf(w).find((s) => s.key === sel.seg) : { from: w.from, to: w.to }; const q = this.wallQuad(w, seg.from, seg.to, 0.02, this.ceil - 0.02, 0.05, mat); add(q.geometry, q.position, q.rotation); }
     if (sel.kind === 'column') { const col = this.columns().find((x) => x.id === sel.id); const fp = this.s.footprint(col); add(new THREE.BoxGeometry(fp.x[1] - fp.x[0] + 0.08, this.ceil, fp.z[1] - fp.z[0] + 0.08), new THREE.Vector3((fp.x[0] + fp.x[1]) / 2, this.ceil / 2, (fp.z[0] + fp.z[1]) / 2)); }
-    if (sel.kind === 'ceiling' || sel.kind === 'floor') { const t = this.tiles.find((x) => `${sel.kind}_t${x.num}` === sel.id); if (t) add(new THREE.BoxGeometry(t.x[1] - t.x[0], 0.02, t.z[1] - t.z[0]), new THREE.Vector3((t.x[0] + t.x[1]) / 2, sel.kind === 'ceiling' ? this.ceil - 0.02 : 0.02, (t.z[0] + t.z[1]) / 2)); }
+    if (sel.kind === 'ceiling' && this.intCeil) { const b = new THREE.Box3().setFromObject(this.intCeil); const sz = b.getSize(new THREE.Vector3()); add(new THREE.BoxGeometry(sz.x, 0.02, sz.z), b.getCenter(new THREE.Vector3())); }
+    if (sel.kind === 'floor') { const t = this.tiles.find((x) => `${sel.kind}_t${x.num}` === sel.id); if (t) add(new THREE.BoxGeometry(t.x[1] - t.x[0], 0.02, t.z[1] - t.z[0]), new THREE.Vector3((t.x[0] + t.x[1]) / 2, sel.kind === 'ceiling' ? this.ceil - 0.02 : 0.02, (t.z[0] + t.z[1]) / 2)); }
     if (sel.kind === 'window') { const g = this.windows.children.find((c) => c.userData.pick?.id === sel.id); if (g) { const b = new THREE.Box3().setFromObject(g); const s = b.getSize(new THREE.Vector3()); add(new THREE.BoxGeometry(s.x + 0.05, s.y + 0.05, s.z + 0.05), b.getCenter(new THREE.Vector3())); } }
   }
 
@@ -301,7 +305,7 @@ export class Editor {
     const mk = (label, sel, cls = '') => { const b = document.createElement('button'); b.textContent = label; b.className = 'chip ' + cls; b.dataset.id = sel.seg || sel.id; b.addEventListener('click', () => this.select(sel)); box.appendChild(b); };
     for (const w of this.walls()) { const segs = this.segmentsOf(w); if (segs.length === 1) mk(`벽 ${w.num}`, { kind: 'wall', id: w.id }); else segs.forEach((s) => mk(`벽 ${w.num}-${s.idx + 1}`, { kind: 'wall', id: w.id, seg: s.key })); }
     for (const c of this.columns()) mk(`기둥 ${c.num}`, { kind: 'column', id: c.id }, 'col');
-    for (const t of this.tiles) mk(`천장 ${t.num}`, { kind: 'ceiling', id: `ceiling_t${t.num}` }, 'ceil'); mk('천장 전체', { kind: 'ceiling', id: 'ceiling' }, 'ceil');
+    mk('천장', { kind: 'ceiling', id: 'ceiling' }, 'ceil');
     for (const t of this.tiles) mk(`바닥 ${t.num}`, { kind: 'floor', id: `floor_t${t.num}` }, 'floor'); mk('바닥 전체', { kind: 'floor', id: 'floor' }, 'floor');
     for (const w of this.walls()) for (const win of this.s.windowsOf(w.id)) mk(`창 (벽 ${w.num})`, { kind: 'window', id: win.id, wall: w.id }, 'win');
   }
@@ -327,8 +331,8 @@ export class Editor {
   }
   palette(list, cur, onPick) {
     const d = document.createElement('div'); d.className = 'swatches';
-    for (const [name, hex] of list) { const b = document.createElement('button'); b.className = 'sw' + ((cur || null) === hex ? ' active' : ''); b.title = name; b.style.background = hex || 'linear-gradient(135deg,#9a9892,#6a4f35)'; b.addEventListener('click', () => onPick(hex)); d.appendChild(b); }
-    const inp = document.createElement('input'); inp.type = 'color'; inp.value = cur || '#c9c7c1'; inp.title = '직접 선택'; inp.addEventListener('input', () => onPick(inp.value)); d.appendChild(inp);
+    for (const [name, hex, swatch] of list) { const b = document.createElement('button'); b.className = 'sw' + ((cur || null) === hex ? ' active' : ''); b.title = name; b.style.background = swatch || (hex && hex.startsWith('#') ? hex : 'linear-gradient(135deg,#9a9892,#6a4f35)'); b.addEventListener('click', () => onPick(hex)); d.appendChild(b); }
+    const inp = document.createElement('input'); inp.type = 'color'; inp.value = (cur && /^#[0-9a-f]{6}$/i.test(cur)) ? cur : '#c9c7c1'; inp.title = '직접 선택'; inp.addEventListener('input', () => onPick(inp.value)); d.appendChild(inp);
     return d;
   }
   renderInspector() {
@@ -376,12 +380,12 @@ export class Editor {
     }
     if (sel.kind === 'ceiling' || sel.kind === 'floor') {
       const sf = this.s.surface(sel.id); const isFloor = sel.kind === 'floor'; const t = this.tiles.find((x) => `${sel.kind}_t${x.num}` === sel.id);
-      h(`<h4>${isFloor ? '바닥' : '천장'} ${t ? t.num : '전체'} <small>${t ? `x ${t.x[0].toFixed(1)}~${t.x[1].toFixed(1)} · z ${t.z[0].toFixed(1)}~${t.z[1].toFixed(1)}` : '모든 타일 기본값'}</small></h4>`);
+      h(isFloor ? `<h4>바닥 ${t ? t.num : '전체'} <small>${t ? `x ${t.x[0].toFixed(1)}~${t.x[1].toFixed(1)} · z ${t.z[0].toFixed(1)}~${t.z[1].toFixed(1)}` : '모든 타일 기본값'}</small></h4>` : `<h4>천장 <small>내부 천장 전체 · 기본 흰색 · 위에서 볼 때는 투명</small></h4>`);
       row('색', this.palette(isFloor ? PALETTE_FLOOR : PALETTE_CEIL, sf.paint, (hex) => { if (t) sf.paint = hex; else this.s.paintAll(sel.kind, hex); commit('paint'); }));
-      if (!t) h(`<div class="hint">전체 색을 고르면 타일별 색은 지워지고 한 번에 바뀝니다. 타일별로 다르게 하려면 ${isFloor ? '바닥' : '천장'} N 번호를 고르세요.</div>`);
-      if (!t) row('스캔 텍스처', check(sf.texture !== false, (v) => { sf.texture = v; commit('tex'); }, '보이기 (끄면 복원 단색)'));
+      if (!t && isFloor) h(`<div class="hint">전체 색을 고르면 타일별 색은 지워지고 한 번에 바뀝니다. 타일별로 다르게 하려면 바닥 N 번호를 고르세요.</div>`);
+      if (!t && isFloor) row('스캔 텍스처', check(sf.texture !== false, (v) => { sf.texture = v; commit('tex'); }, '보이기 (끄면 복원 단색)'));
       if (t) box.appendChild(btn('이 타일 색 지우기(전체 설정 따름)', () => { sf.paint = null; commit('paint'); }, 'ghost'));
-      if (!isFloor) box.appendChild(btn(this.hidden.has(sel.id) ? `👁 ${t ? '이 타일' : '천장'} 보이기` : `🙈 ${t ? '이 타일' : '천장 전체'} 숨기기`, () => this.setHidden(sel.id, !this.hidden.has(sel.id)), 'ghost'));
+      if (!isFloor) box.appendChild(btn(this.hidden.has('ceiling') ? '👁 천장 보이기' : '🙈 천장 숨기기', () => this.setHidden('ceiling', !this.hidden.has('ceiling')), 'ghost'));
       if (isFloor) h(`<div class="hint">스캔 바닥 중간색 #${(this.meta.sampled_colors?.floor_wood?.median || [106, 79, 53]).map((v) => v.toString(16).padStart(2, '0')).join('')} 기준 밝게/어둡게 프리셋 제공</div>`);
     }
     if (sel.kind === 'window') {

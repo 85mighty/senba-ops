@@ -71,7 +71,10 @@ try {
     s.saveExplicit(); s.surface('ceiling').paint = '#333333'; s.commit('paint'); s.revertToSaved(); if (s.getSurface('ceiling').paint !== '#f2efe9') throw new Error('저장본 복원 실패');
     // 숨기기/자동 숨김
     e.setHidden(w.id, true); const hiddenOk = (() => { let anyVisible = false; window.__viewer.loaded.reconstructed.traverse((o) => { if (o.isMesh && o.name.startsWith(w.id) && o.visible) anyVisible = true; }); return !anyVisible; })();
-    e.setHidden('ceiling_t1', true); const tileOk = e.ceilTiles.visible && e.ceilTiles.children.some((t) => !t.visible); e.showAll();
+    e.setHidden('ceiling', true); const tileOk = !!e.intCeil && !e.intCeil.visible; e.showAll(); if (!e.intCeil.visible) throw new Error('천장 다시 보이기 실패');
+    const v = window.__viewer; const ch = window.__viewer.meta.ceiling_height_m; v.camera.position.y = ch + 4; v.updateAutoCeiling(); const clipAbove = v.clipPlane.constant < ch; v.camera.position.y = 1.6; v.updateAutoCeiling(); const clipInside = v.clipPlane.constant > ch + 1;
+    if (!clipAbove || !clipInside) throw new Error('위에서 천장 투명 실패 ' + JSON.stringify({ clipAbove, clipInside }));
+    if (document.querySelectorAll('#itemChips .chip.ceil').length !== 1) throw new Error('천장 칩은 하나여야 함');
     e.setAutoHide(true); e.runAutoHide(); const auto = e._autoHidden.size; e.setAutoHide(false);
     if (!hiddenOk || !tileOk) throw new Error('숨기기 검증 실패 ' + JSON.stringify({ hiddenOk, tileOk, auto }));
     // 띠/하부 벽/몰딩 전역 옵션 + 전체 바닥 덮어쓰기 + 소품 삭제
@@ -87,6 +90,9 @@ try {
   await page.click('button[data-mode=interior]', { force: true }); await wait(800);
   await page.evaluate(() => { const v = window.__viewer; v.camera.position.set(0.2, 1.5, 0.8); v.controls.target.set(-0.6, 1.0, -3.2); v.controls.update(); }); await wait(1200);
   await page.screenshot({ path: path.join(root, 'screenshots', 'editor_demo.png') });
+  // 위에서 내려다보기: 천장이 투명해야 실내가 보인다
+  await page.evaluate(() => { const v = window.__viewer; v.camera.position.set(3.5, 7.5, 5.5); v.controls.target.set(-0.8, 0.5, -1.2); v.controls.update(); }); await wait(1200);
+  await page.screenshot({ path: path.join(root, 'screenshots', 'overview_above.png') });
   await page.evaluate(() => { window.__store.reset(); });   // 테스트 디자인은 남기지 않음
   const counts = await page.evaluate(() => { const i = window.__interior; const o = {}; for (const k in i.layers) o[k] = i.layers[k].children.length; return o; });
   console.log('인테리어 레이어 객체 수:', counts);

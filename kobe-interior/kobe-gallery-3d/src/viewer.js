@@ -38,6 +38,7 @@ export class Viewer {
     this.camera = new THREE.PerspectiveCamera(55, 1, 0.05, 200);
     this.controls = new OrbitControls(this.camera, canvas);
     this.controls.enableDamping = true; this.controls.dampingFactor = 0.08; this.controls.maxPolarAngle = Math.PI * 0.95;
+    this.controls.addEventListener('change', () => this.updateAutoCeiling());
 
     this.scene.add(new THREE.HemisphereLight(0xffffff, 0x50483f, 0.35));
     const sun = new THREE.DirectionalLight(0xffffff, 0.35); sun.position.set(5, 8, 3); this.scene.add(sun);
@@ -46,7 +47,7 @@ export class Viewer {
     this.interior = new THREE.Group(); this.interior.name = 'interior'; this.scene.add(this.interior);
     this.dims = new THREE.Group(); this.dims.visible = false; this.scene.add(this.dims);
     this.loaded = {}; this.mode = 'original'; this.ghost = false;
-    this.clipPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 2.6); this.clipping = false;
+    this.clipPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 2.6); this.clipping = false; this.autoCeil = false;
     this.highlight = new THREE.Group(); this.scene.add(this.highlight);
 
     this.fitCamera();
@@ -109,10 +110,18 @@ export class Viewer {
     this.clipping = on; if (y !== undefined) this.clipPlane.constant = y;
     const ceil = this.meta.ceiling_height_m || 3.0;
     this.clipPlane.constant = on ? this.clipPlane.constant : ceil + 10;
+    if (!on) this.updateAutoCeiling(true);
     for (const k of Object.keys(this.groups)) this.groups[k].traverse((o) => { if (o.isMesh && o.name.startsWith('ceiling')) o.visible = !on; });
     this.interior.traverse((o) => { if (o.isMesh && o.material) { const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach((m) => (m.clippingPlanes = [this.clipPlane])); } });
   }
 
+  // 위에서 볼 때 천장 투명: 카메라가 천장보다 높으면 천장 바로 아래에서 잘라낸다 (수동 단면이 켜져 있으면 그쪽 우선)
+  updateAutoCeiling(force = false) {
+    const ceil = this.meta.ceiling_height_m || 3.0; const above = this.camera.position.y > ceil + 0.02;
+    if (!force && above === this.autoCeil) return; this.autoCeil = above;
+    if (this.clipping) return;
+    this.clipPlane.constant = above ? ceil - 0.035 : ceil + 10;
+  }
   // ---------------- 카메라
   roomBox() {
     const b = this.meta.bounds_world_m; if (!b) return new THREE.Box3(new THREE.Vector3(-4, 0, -5), new THREE.Vector3(4, 3, 5));
@@ -187,7 +196,7 @@ export class Viewer {
     const g = new THREE.BoxGeometry(fx[1] - fx[0] + 0.06, h + 0.02, fz[1] - fz[0] + 0.06);
     const edges = new THREE.LineSegments(new THREE.EdgesGeometry(g), new THREE.LineBasicMaterial({ color: 0xff4fd8 }));
     edges.position.set((fx[0] + fx[1]) / 2, h / 2, (fz[0] + fz[1]) / 2); this.highlight.add(edges);
-    const t = this.textSprite(`중앙 넓은 기둥 (${this.meta.central_wide_column}) — 확인 필요`, '#ff9be8'); t.scale.set(2.6, 0.5, 1); t.position.set((fx[0] + fx[1]) / 2, h + 0.4, (fz[0] + fz[1]) / 2); this.highlight.add(t);
+    const t = this.textSprite('거울 기둥', '#ff9be8'); t.scale.set(0.9, 0.22, 1); t.position.set((fx[0] + fx[1]) / 2, h + 0.4, (fz[0] + fz[1]) / 2); this.highlight.add(t);
   }
 
   // ---------------- 피킹

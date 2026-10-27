@@ -26,7 +26,7 @@ let editor = null; // 모델 로드 후 생성 (바닥 타일 판정에 복원 �
 
 // ---- 모드
 const modeBtns = [...document.querySelectorAll('#modes button')];
-function setMode(m) { viewer.setMode(m); modeBtns.forEach((b) => b.classList.toggle('active', b.dataset.mode === m)); $('#interiorPanel').style.opacity = m === 'interior' ? 1 : 0.45; }
+function setMode(m) { viewer.setMode(m); editor?.applyHidden(); modeBtns.forEach((b) => b.classList.toggle('active', b.dataset.mode === m)); $('#interiorPanel').style.opacity = m === 'interior' ? 1 : 0.45; }
 modeBtns.forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
 window.__setMode = setMode;
 
