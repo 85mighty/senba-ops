@@ -4,8 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>Kobe Gallery Studio 3D</title>
-  <script type="module" crossorigin src="./assets/index-C3ftO6Ew.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-CTOPHe5P.css">
+  <script type="module" crossorigin src="./assets/index-Byf7K5K1.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-B2EyFJ_G.css">
 </head>
 <body>
   <canvas id="c"></canvas>
@@ -81,6 +81,8 @@
       <div class="hint">번호로 선택 (선택 후 아래 '숨기기' 버튼):</div>
       <div id="itemChips" class="chips"></div>
       <div id="inspector" class="inspector"></div>
+      <h3>띠 · 몰딩 · 하부 벽 (전체 적용)</h3>
+      <div id="trimPanel" class="inspector"></div>
       <h3>소품 놓기</h3>
       <div id="propBar" class="row wrap"></div>
       <div id="placingHint" class="hint"></div>
@@ -111,6 +113,10 @@
     </section>
   </aside>
 
+  <div id="propFab" hidden>
+    <span id="fabName">소품</span>
+    <button id="fabRotL" title="왼쪽으로 15°">↺</button><button id="fabRotR" title="오른쪽으로 15°">↻</button><button id="fabDup">복제</button><button id="fabDel" class="danger">🗑 삭제</button><button id="fabClose" class="ghost">✕</button>
+  </div>
   <div id="loading"><div class="bar"><i></i></div><span>모델 불러오는 중…</span></div>
   <div id="errors"></div>
   <div id="toast"></div>

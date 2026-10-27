@@ -1,8 +1,12 @@
 // 디자인 상태 — 면별 마감/몰딩/액자, 기둥 실측·거울, 창·커튼, 랜드마크, 소품. localStorage 자동 저장 + 슬롯 + JSON.
 export const PALETTE_WALL = [
   ['현재 회색(스캔)', null], ['화이트', '#f3f1ec'], ['웜 화이트', '#efe6d6'], ['라이트 그레이', '#c9c7c1'], ['그레이지', '#b8ae9f'],
-  ['세이지', '#9aa58d'], ['더스티 블루', '#8a9bab'], ['네이비', '#2f3a4f'], ['와인', '#7a2e2e'], ['테라코타', '#b8623f'], ['차콜', '#3a3a3a'], ['블랙', '#1c1c1c'],
+  ['세이지', '#9aa58d'], ['딥 그린(경성미술관)', '#3f5a52'], ['포레스트 그린', '#2f4a3f'], ['다크 틸', '#2b4a4c'], ['올리브', '#5a6240'],
+  ['더스티 블루', '#8a9bab'], ['네이비', '#2f3a4f'], ['와인', '#7a2e2e'], ['테라코타', '#b8623f'], ['차콜', '#3a3a3a'], ['블랙', '#1c1c1c'],
 ];
+export const PALETTE_TRIM = [['블랙(현재)', '#1c1c1c'], ['원목(오크)', '#a98457'], ['원목(월넛)', '#6b4a2e'], ['다크 월넛', '#4a3220'], ['화이트', '#f3f1ec'], ['웜 화이트', '#efe6d6'], ['차콜', '#3a3a3a'], ['골드', '#c9a24a']];
+export const PALETTE_LOWER = [['벽지 그대로', null], ['원목 패널(오크)', '#a98457'], ['원목 패널(월넛)', '#6b4a2e'], ['화이트 패널', '#f3f1ec'], ['딥 그린', '#3f5a52'], ['네이비', '#2f3a4f'], ['와인', '#7a2e2e'], ['차콜', '#3a3a3a'], ['블랙', '#1c1c1c']];
+export const DEFAULT_GLOBAL = () => ({ rail: { color: '#1c1c1c', style: 'flat' }, base: { color: '#1c1c1c', style: 'flat' }, moldingColor: '#f4f1ea', lower: { paint: null, style: 'flat' } });
 export const PALETTE_FLOOR = [
   ['현재 우드(스캔)', null], ['현재 톤 · 밝게', '#866752'], ['현재 톤 · 어둡게', '#4f351d'], ['라이트 오크', '#c9a97a'], ['내추럴 오크', '#a98457'],
   ['월넛', '#5c3d26'], ['다크 월넛', '#3b2616'], ['그레이 우드', '#8a8178'], ['화이트 워시', '#d9cfc0'], ['블랙', '#222222'],
@@ -19,7 +23,7 @@ export const PROP_TYPES = [
 export const STORAGE_KEY = 'kobe3d.design.v1';
 
 export function emptyDesign() {
-  return { version: 1, surfaces: {}, columns: {}, windows: null, landmarks: {}, props: [], global: {} };
+  return { version: 1, surfaces: {}, columns: {}, windows: null, landmarks: {}, props: [], global: DEFAULT_GLOBAL() };
 }
 
 export class DesignStore {
@@ -39,7 +43,10 @@ export class DesignStore {
   hasExplicit() { try { return !!localStorage.getItem(STORAGE_KEY + '.saved'); } catch { return false; } }
   revertToSaved() { try { const raw = localStorage.getItem(STORAGE_KEY + '.saved'); if (!raw) return false; this.undoStack.push(this.snapshot()); this.design = this.migrate(JSON.parse(raw)); this.commit('revert', false); this.dirty = false; return true; } catch { return false; } }
   resetWindows() { this.design.windows = this.defaultWindows(); this.design.windows_src = this.meta.generated; this.design.windowsEdited = false; this.commit('windows-reset'); }
-  migrate(d) { const e = emptyDesign(); return { ...e, ...d, surfaces: d.surfaces || {}, columns: d.columns || {}, landmarks: d.landmarks || {}, props: d.props || [], global: d.global || {} }; }
+  migrate(d) { const e = emptyDesign(); const g = DEFAULT_GLOBAL(); const dg = d.global || {}; return { ...e, ...d, surfaces: d.surfaces || {}, columns: d.columns || {}, landmarks: d.landmarks || {}, props: d.props || [], global: { ...g, ...dg, rail: { ...g.rail, ...(dg.rail || {}) }, base: { ...g.base, ...(dg.base || {}) }, lower: { ...g.lower, ...(dg.lower || {}) } } }; }
+  get global() { return this.design.global; }
+  // 전체 바닥/천장 색: 타일별 설정을 지우고 전체에 적용
+  paintAll(kind, hex) { for (const k of Object.keys(this.design.surfaces)) if (k.startsWith(kind + '_t')) this.design.surfaces[k].paint = null; this.surface(kind).paint = hex; }
   // 창 기본값: 메타데이터의 벽 개구부(window) → 편집 가능한 레코드
   defaultWindows() {
     const out = {};

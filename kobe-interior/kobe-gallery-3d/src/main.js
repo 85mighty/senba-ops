@@ -114,7 +114,13 @@ viewer.loadAll().then((loaded) => {
 // ---- 편집기 UI
 function refreshBookmarks() { viewer.bookmarks = viewer.computeBookmarks(); const box = $('#bookmarks'); box.innerHTML = ''; for (const b of viewer.bookmarks) { const btn = document.createElement('button'); btn.textContent = b.name; btn.addEventListener('click', () => viewer.goBookmark(b)); box.appendChild(btn); } }
 function setupEditorUI() {
-  editor.onLandmarks = refreshBookmarks; editor.renderChips(); editor.renderInspector();
+  editor.onLandmarks = refreshBookmarks; editor.renderChips(); editor.renderInspector(); editor.renderTrimPanel();
+  const curProp = () => { const sel = editor.selected; return sel?.kind === 'prop' ? store.design.props.find((x) => x.id === sel.id) : null; };
+  $('#fabRotL').addEventListener('click', () => { const p = curProp(); if (p) editor.rotateProp(p, -15); });
+  $('#fabRotR').addEventListener('click', () => { const p = curProp(); if (p) editor.rotateProp(p, 15); });
+  $('#fabDup').addEventListener('click', () => { const p = curProp(); if (p) editor.duplicateProp(p); });
+  $('#fabDel').addEventListener('click', () => { const sel = editor.selected; if (sel?.kind === 'prop') editor.deleteProp(sel.id); else if (sel?.kind === 'window') { store.removeWindow(sel.wall, sel.id); store.commit('window'); editor.renderChips(); editor.select(null); toast('창 삭제됨'); } });
+  $('#fabClose').addEventListener('click', () => editor.select(null));
   $('#editMode').addEventListener('change', (e) => { editor.setEnabled(e.target.checked); if (e.target.checked && viewer.mode !== 'interior' && viewer.mode !== 'reconstructed') setMode('interior'); });
   $('#showLabels').addEventListener('change', (e) => editor.setLabels(e.target.checked));
   $('#showTileLabels').addEventListener('change', (e) => editor.setTileLabels(e.target.checked));

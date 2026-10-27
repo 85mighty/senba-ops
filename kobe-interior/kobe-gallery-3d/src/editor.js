@@ -1,7 +1,7 @@
 // 편집기 — 번호 매긴 면(벽 세그먼트·기둥·천장/바닥 타일) 선택, 마감/몰딩/액자/거울/실측, 창·커튼, 소품, 랜드마크, 측정, 저장.
 import * as THREE from 'three';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
-import { PALETTE_WALL, PALETTE_FLOOR, PALETTE_CEIL, PALETTE_CURTAIN, FRAME_STYLES, PROP_TYPES } from './design.js';
+import { PALETTE_WALL, PALETTE_FLOOR, PALETTE_CEIL, PALETTE_CURTAIN, PALETTE_TRIM, PALETTE_LOWER, FRAME_STYLES, PROP_TYPES } from './design.js';
 import { buildProp, buildWindow, buildCurtain, measureLine } from './props.js';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -18,6 +18,7 @@ export class Editor {
     for (const g of [this.overlays, this.picks, this.labels, this.hl, this.windows, this.props, this.marks, this.measures]) this.root.add(g);
     this.labels.visible = false; this.picks.visible = false;
     this.ceilTiles = new THREE.Group(); this.ceilTiles.name = 'ceilTiles'; this.root.add(this.ceilTiles);
+    this.bands = new THREE.Group(); this.bands.name = 'bands'; this.root.add(this.bands);
     this.hidden = new Set(); try { const h = JSON.parse(localStorage.getItem('kobe3d.hidden') || '[]'); for (const x of h) this.hidden.add(x); } catch {}
     this.autoHide = false; this._autoHidden = new Set();
     viewer.controls.addEventListener('change', () => { if (this.autoHide) this.scheduleAutoHide(); });
@@ -27,7 +28,7 @@ export class Editor {
     this.tc.addEventListener('objectChange', () => { const o = this.tc.object; if (o) o.position.y = 0; });
     this.buildItems(); this.buildPicks(); this.buildLabels();
     this.rebuildAll();
-    store.onChange(() => { this.rebuildAll(); this.renderInspector(); });
+    store.onChange(() => { this.rebuildAll(); this.renderInspector(); this.renderTrimPanel(); });
   }
   get ceil() { return this.meta.ceiling_height_m || 2.4; }
   get chair() { return this.meta.chair_rail_height_m || 0.9; }
@@ -104,7 +105,33 @@ export class Editor {
     this.i.rebuild('molding'); this.i.rebuild('gallery_art'); this.i.rebuild('mirror_4_sides'); this.applyColumnSizes(); this.buildLabels();
     this.v.updateHighlight(); this.refreshHighlight();
     if (keep?.kind === 'prop' || keep?.kind === 'landmark') this.reattach(keep);
-    this.buildCeilingTiles(); this.applyHidden();
+    this.buildBands(); this.buildCeilingTiles(); this.applyHidden();
+  }
+  // ---------------- 띠(체어레일)·걸레받이 커스텀: 색/형태가 기본(검정·평면)과 다르면 GLB 띠를 숨기고 직접 그린다
+  bandsCustom() { const g = this.s.global; return g.rail.color !== '#1c1c1c' || g.rail.style !== 'flat' || g.base.color !== '#1c1c1c' || g.base.style !== 'flat'; }
+  buildBands() {
+    this.bands.clear(); const custom = this.bandsCustom();
+    const rec = this.v.loaded?.reconstructed; if (rec) rec.traverse((o) => { if (o.isMesh && /_(chairrail|baseboard)(_b)?$/.test(o.name)) o.userData.keepVisible = !custom; });
+    if (!custom) return;
+    const g = this.s.global; const railT = this.meta.chair_rail_thickness_m || 0.08; const base = this.base, chair = this.chair;
+    const mk = (color) => new THREE.MeshStandardMaterial({ color, roughness: 0.6, metalness: color === '#c9a24a' ? 0.6 : 0.0 });
+    const strip = (w, y0, y1, depth, mat, sd, sid) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w.to - w.from, y1 - y0, depth), mat); const ww = { ...w, inward: sd, sid: sid || w.sid || w.id }; this.placeOnWall(m, ww, (w.from + w.to) / 2, (y0 + y1) / 2, depth / 2 + 0.002); return m; };
+    const addBands = (faces, sid) => {
+      for (const f of faces) {
+        const sides = f.two_sided ? [f.inward, -f.inward] : [f.inward];
+        for (const sd of sides) {
+          // 걸레받이
+          if (g.base.style === 'molding') { this.bands.add(strip(f, 0, base, 0.014, mk(g.base.color), sd, sid)); this.bands.add(strip(f, base - 0.02, base, 0.022, mk(g.base.color), sd, sid)); }
+          else this.bands.add(strip(f, 0, base, 0.012, mk(g.base.color), sd, sid));
+          // 체어레일: flat = 평면 띠, molding = 단이 있는 몰드(가운데 돌출 + 위아래 얇은 선)
+          if (g.rail.style === 'molding') { this.bands.add(strip(f, chair - railT, chair, 0.012, mk(g.rail.color), sd, sid)); this.bands.add(strip(f, chair - railT * 0.65, chair - railT * 0.35, 0.03, mk(g.rail.color), sd, sid)); this.bands.add(strip(f, chair - 0.006, chair, 0.02, mk(g.rail.color), sd, sid)); }
+          else this.bands.add(strip(f, chair - railT, chair, 0.012, mk(g.rail.color), sd, sid));
+        }
+      }
+    };
+    addBands(this.walls().map((w) => ({ ...w, sid: w.id })), null);
+    for (const col of this.columns()) addBands(this.i.columnFaces(col).map((f) => ({ ...f, two_sided: false })), col.id);
+    this.bands.traverse((o) => { if (o.isMesh && !o.userData.surface) o.userData.surface = 'bands'; });
   }
   // ---------------- 숨기기 / 보이기
   surfaceOfMesh(o) {
@@ -162,6 +189,7 @@ export class Editor {
     const list = sel.kind === 'prop' ? this.props.children : this.marks.children; const g = list.find((c) => c.userData.pick?.id === sel.id);
     if (g) { this.tc.attach(g); this.tc.setMode('translate'); }
   }
+  shade(hex, k) { const c = new THREE.Color(hex); c.multiplyScalar(k); return '#' + c.getHexString(); }
   paintMat(hex) { return new THREE.MeshStandardMaterial({ color: hex, roughness: 0.85, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1 }); }
   buildOverlays() {
     this.overlays.clear();
@@ -170,6 +198,14 @@ export class Editor {
       for (const seg of this.segmentsOf(w)) {
         const sf = this.s.getSurface(seg.key); if (!sf.paint) continue; const [y0, y1] = this.zoneRange(sf.zone || 'all');
         for (const sd of sides) { const q = this.wallQuad(w, seg.from, seg.to, y0, y1, 0.0015, this.paintMat(sf.paint), sd); q.userData.surface = w.id; this.overlays.add(q); }
+      }
+      // 전역 하부 벽(띠 사이) 마감 — 세그먼트/벽에 직접 칠한 색이 없을 때
+      const lower = this.s.global.lower; const sfw0 = this.s.getSurface(w.id);
+      if (lower.paint && !sfw0.paint && !this.segmentsOf(w).some((sg) => this.s.getSurface(sg.key).paint && (this.s.getSurface(sg.key).zone || 'all') !== 'upper')) {
+        for (const sd of sides) {
+          const q = this.wallQuad(w, w.from, w.to, this.base, this.chair - (this.meta.chair_rail_thickness_m || 0.08), 0.0012, this.paintMat(lower.paint), sd); q.userData.surface = w.id; this.overlays.add(q);
+          if (lower.style === 'wood_panel') { const dark = this.paintMat(this.shade(lower.paint, 0.7)); for (let t = w.from + 0.1; t < w.to - 0.02; t += 0.1) { const line = this.wallQuad(w, t, t + 0.006, this.base, this.chair - (this.meta.chair_rail_thickness_m || 0.08), 0.0014, dark, sd); line.userData.surface = w.id; this.overlays.add(line); } }
+        }
       }
       // 벽 전체 설정(세그먼트 없이 칠한 경우)
       const sfw = this.s.getSurface(w.id); if (sfw.paint) { const [y0, y1] = this.zoneRange(sfw.zone || 'all'); for (const sd of sides) { const q = this.wallQuad(w, w.from, w.to, y0, y1, 0.001, this.paintMat(sfw.paint), sd); q.userData.surface = w.id; this.overlays.add(q); } }
@@ -243,6 +279,7 @@ export class Editor {
     if (sel?.kind === 'prop' || sel?.kind === 'landmark') this.reattach(sel);
     this.refreshHighlight(); this.renderInspector();
     document.querySelectorAll('#itemChips button').forEach((b) => b.classList.toggle('active', !!sel && b.dataset.id === (sel.seg || sel.id)));
+    const fab = $('#propFab'); if (fab) { fab.hidden = !(sel && (sel.kind === 'prop' || sel.kind === 'window')); if (sel?.kind === 'prop') { const p = this.s.design.props.find((x) => x.id === sel.id); $('#fabName').textContent = (PROP_TYPES.find((x) => x[1] === p?.type) || ['소품'])[0]; } if (sel?.kind === 'window') $('#fabName').textContent = '창'; }
   }
   onDragEnd() {
     const o = this.tc.object; if (!o) return; const pk = o.userData.pick;
@@ -267,6 +304,19 @@ export class Editor {
     for (const t of this.tiles) mk(`천장 ${t.num}`, { kind: 'ceiling', id: `ceiling_t${t.num}` }, 'ceil'); mk('천장 전체', { kind: 'ceiling', id: 'ceiling' }, 'ceil');
     for (const t of this.tiles) mk(`바닥 ${t.num}`, { kind: 'floor', id: `floor_t${t.num}` }, 'floor'); mk('바닥 전체', { kind: 'floor', id: 'floor' }, 'floor');
     for (const w of this.walls()) for (const win of this.s.windowsOf(w.id)) mk(`창 (벽 ${w.num})`, { kind: 'window', id: win.id, wall: w.id }, 'win');
+  }
+  renderTrimPanel() {
+    const box = $('#trimPanel'); if (!box) return; box.innerHTML = ''; const g = this.s.global; const commit = () => this.s.commit('trim');
+    const row = (label, node) => { const d = document.createElement('div'); d.className = 'irow'; const l = document.createElement('span'); l.textContent = label; d.append(l, node); box.appendChild(d); };
+    const selectEl = (opts, val, onChange) => { const sEl = document.createElement('select'); for (const [t, v] of opts) { const o = document.createElement('option'); o.value = v; o.textContent = t; if (v === val) o.selected = true; sEl.appendChild(o); } sEl.addEventListener('change', () => onChange(sEl.value)); return sEl; };
+    row('검은 띠 색', this.palette(PALETTE_TRIM, g.rail.color, (hex) => { g.rail.color = hex; commit(); }));
+    row('띠 형태', selectEl([['평면 띠(현재)', 'flat'], ['액자 몰드(단 있음)', 'molding']], g.rail.style, (v) => { g.rail.style = v; commit(); }));
+    row('걸레받이 색', this.palette(PALETTE_TRIM, g.base.color, (hex) => { g.base.color = hex; commit(); }));
+    row('걸레받이 형태', selectEl([['평면', 'flat'], ['몰드', 'molding']], g.base.style, (v) => { g.base.style = v; commit(); }));
+    row('흰 몰딩 색', this.palette([['화이트', '#f4f1ea'], ['웜 화이트', '#efe6d6'], ['원목', '#a98457'], ['월넛', '#6b4a2e'], ['골드', '#c9a24a'], ['블랙', '#1c1c1c']], g.moldingColor, (hex) => { g.moldingColor = hex; commit(); }));
+    row('띠 사이(하부 벽)', this.palette(PALETTE_LOWER, g.lower.paint, (hex) => { g.lower.paint = hex; if (hex && /#a98457|#6b4a2e/.test(hex)) g.lower.style = 'wood_panel'; commit(); }));
+    row('하부 형태', selectEl([['단색', 'flat'], ['원목 패널(세로 홈)', 'wood_panel']], g.lower.style, (v) => { g.lower.style = v; commit(); }));
+    const b = document.createElement('button'); b.className = 'ghost'; b.textContent = '띠·몰딩 기본값(검정 띠·흰 몰딩)으로'; b.addEventListener('click', () => { Object.assign(g, { rail: { color: '#1c1c1c', style: 'flat' }, base: { color: '#1c1c1c', style: 'flat' }, moldingColor: '#f4f1ea', lower: { paint: null, style: 'flat' } }); commit(); }); box.appendChild(b);
   }
   renderHiddenChips() {
     const box = $('#hiddenChips'); if (!box) return; box.innerHTML = '';
@@ -327,7 +377,8 @@ export class Editor {
     if (sel.kind === 'ceiling' || sel.kind === 'floor') {
       const sf = this.s.surface(sel.id); const isFloor = sel.kind === 'floor'; const t = this.tiles.find((x) => `${sel.kind}_t${x.num}` === sel.id);
       h(`<h4>${isFloor ? '바닥' : '천장'} ${t ? t.num : '전체'} <small>${t ? `x ${t.x[0].toFixed(1)}~${t.x[1].toFixed(1)} · z ${t.z[0].toFixed(1)}~${t.z[1].toFixed(1)}` : '모든 타일 기본값'}</small></h4>`);
-      row('색', this.palette(isFloor ? PALETTE_FLOOR : PALETTE_CEIL, sf.paint, (hex) => { sf.paint = hex; commit('paint'); }));
+      row('색', this.palette(isFloor ? PALETTE_FLOOR : PALETTE_CEIL, sf.paint, (hex) => { if (t) sf.paint = hex; else this.s.paintAll(sel.kind, hex); commit('paint'); }));
+      if (!t) h(`<div class="hint">전체 색을 고르면 타일별 색은 지워지고 한 번에 바뀝니다. 타일별로 다르게 하려면 ${isFloor ? '바닥' : '천장'} N 번호를 고르세요.</div>`);
       if (!t) row('스캔 텍스처', check(sf.texture !== false, (v) => { sf.texture = v; commit('tex'); }, '보이기 (끄면 복원 단색)'));
       if (t) box.appendChild(btn('이 타일 색 지우기(전체 설정 따름)', () => { sf.paint = null; commit('paint'); }, 'ghost'));
       if (!isFloor) box.appendChild(btn(this.hidden.has(sel.id) ? `👁 ${t ? '이 타일' : '천장'} 보이기` : `🙈 ${t ? '이 타일' : '천장 전체'} 숨기기`, () => this.setHidden(sel.id, !this.hidden.has(sel.id)), 'ghost'));
@@ -350,6 +401,7 @@ export class Editor {
     if (sel.kind === 'prop') {
       const p = this.s.design.props.find((x) => x.id === sel.id); if (!p) return; const name = (PROP_TYPES.find((x) => x[1] === p.type) || ['소품'])[0];
       h(`<h4>${esc(name)} <small>드래그로 이동 · ${esc(p.id)}</small></h4>`);
+      const quick = document.createElement('div'); quick.className = 'row wrap'; quick.append(btn('↺ 15°', () => this.rotateProp(p, -15)), btn('↻ 15°', () => this.rotateProp(p, 15)), btn('복제', () => this.duplicateProp(p)), btn('🗑 삭제', () => this.deleteProp(p.id), 'danger')); box.appendChild(quick);
       const rot = document.createElement('input'); rot.type = 'range'; rot.min = -180; rot.max = 180; rot.step = 5; rot.value = Math.round((p.rot || 0) * 180 / Math.PI); rot.addEventListener('input', () => { p.rot = rot.value * Math.PI / 180; const g = this.props.children.find((c) => c.userData.pick?.id === p.id); if (g) g.rotation.y = p.rot; }); rot.addEventListener('change', () => commit('prop')); row('회전', rot);
       row('크기', num(Math.round((p.scale || 1) * 100), 5, (v) => { p.scale = v / 100; commit('prop'); }, '%'));
       row('위치 X', num(Math.round(p.x * 100), 1, (v) => { p.x = v / 100; commit('prop'); })); row('위치 Z', num(Math.round(p.z * 100), 1, (v) => { p.z = v / 100; commit('prop'); }));
@@ -358,6 +410,9 @@ export class Editor {
     }
     if (sel.kind === 'landmark') { const names = { entrance: '입구', kitchen: '주방', toilet: '화장실', windows: '창가', main: '메인' }; h(`<h4>📍 ${names[sel.id] || sel.id}</h4><div class="hint">핀을 드래그해 실제 위치로 옮기세요. 북마크와 라벨이 따라갑니다.</div>`); }
   }
+  rotateProp(p, deg) { p.rot = (p.rot || 0) + deg * Math.PI / 180; this.s.commit('prop'); }
+  duplicateProp(p) { const q = this.s.addProp({ ...p, id: undefined, x: p.x + 0.6 }); this.s.commit('prop'); this.select({ kind: 'prop', id: q.id }); }
+  deleteProp(id) { this.s.removeProp(id); this.s.commit('prop'); this.select(null); this.toast('소품 삭제됨'); }
   // 소품 배치 시작
   startPlacing(type) { this.placing = type; const name = (PROP_TYPES.find((x) => x[1] === type) || [type])[0]; $('#placingHint').textContent = `${name}: 바닥을 클릭해 놓으세요`; }
   startMeasure() { this.measuring = []; this.toast('두 점을 클릭하면 거리를 잽니다'); }
