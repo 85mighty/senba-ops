@@ -88,4 +88,9 @@ const server = http.createServer(async (req, res) => {
     console.error('[kobe3d-sync]', e); return send(res, 500, { error: '서버 오류' }, cors);
   }
 });
+server.on('error', (e) => {
+  if (e.code === 'EADDRINUSE') console.error(`[kobe3d-sync] 포트 ${PORT} 를 이미 다른 프로그램이 쓰고 있습니다. .env 의 PORT 를 빈 포트로 바꾸고 nginx proxy_pass 도 같은 포트로 맞추세요. (확인: ss -ltnp | grep ':${PORT} ')`);
+  else console.error('[kobe3d-sync] 시작 실패', e);
+  process.exit(1);
+});
 server.listen(PORT, HOST, () => console.log(`[kobe3d-sync] http://${HOST}:${PORT}${PREFIX}  data=${DATA_DIR}  origins=${ORIGINS.join(',')}`));
