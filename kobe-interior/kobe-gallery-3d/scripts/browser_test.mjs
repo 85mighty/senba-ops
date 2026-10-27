@@ -58,7 +58,7 @@ try {
   // 편집기: 번호 선택 → 칠하기/분할/몰딩·액자 끄기, 기둥 실측, 창+커튼, 소품, JSON 내보내기
   await page.check('#editMode'); await page.check('#showLabels'); await wait(300);
   const ed = await page.evaluate(() => {
-    const e = window.__editor, s = window.__store; const walls = e.walls(); const w = walls.find((x) => x.length > 4) || walls[0]; const col = e.columns()[0];
+    const e = window.__editor, s = window.__store; const autoDefault = e.autoHide && document.querySelector('#autoHide').checked; const walls = e.walls(); const w = walls.find((x) => x.length > 4) || walls[0]; const col = e.columns()[0];
     e.select({ kind: 'wall', id: w.id }); s.surface(w.id).splits = 3; s.commit('split'); e.renderChips();
     const seg = e.segmentsOf(w)[1]; e.select({ kind: 'wall', id: w.id, seg: seg.key }); const sf = s.surface(seg.key); sf.paint = '#7a2e2e'; sf.zone = 'upper'; s.commit('paint');
     const other = walls.find((x) => x.id !== w.id); if (other) { const so = s.surface(other.id); so.art = false; so.molding = false; s.commit('art'); }
@@ -75,13 +75,14 @@ try {
     const v = window.__viewer; const ch = window.__viewer.meta.ceiling_height_m; v.camera.position.y = ch + 4; v.updateAutoCeiling(); const clipAbove = v.clipPlane.constant < ch; v.camera.position.y = 1.6; v.updateAutoCeiling(); const clipInside = v.clipPlane.constant > ch + 1;
     if (!clipAbove || !clipInside) throw new Error('위에서 천장 투명 실패 ' + JSON.stringify({ clipAbove, clipInside }));
     if (document.querySelectorAll('#itemChips .chip.ceil').length !== 1) throw new Error('천장 칩은 하나여야 함');
-    e.setAutoHide(true); e.runAutoHide(); const auto = e._autoHidden.size; e.setAutoHide(false);
+    e.setAutoHide(true); e.runAutoHide(); const auto = e._autoHidden.size; e.setAutoHide(false); e.setAutoHide(true);
     if (!hiddenOk || !tileOk) throw new Error('숨기기 검증 실패 ' + JSON.stringify({ hiddenOk, tileOk, auto }));
     // 띠/하부 벽/몰딩 전역 옵션 + 전체 바닥 덮어쓰기 + 소품 삭제
     // 벽별 띠·하부 벽: 한 벽만 원목 몰드 → 그 벽만 커스텀 띠, 다른 벽은 GLB 검정 띠 유지
     const tw = walls[0], other2 = walls[1]; const te = s.trimEdit(tw.id); te.rail = { color: '#a98457', style: 'molding' }; te.lower = { paint: '#a98457', style: 'wood_panel' }; te.moldingColor = '#efe6d6'; s.commit('trim');
     const bandSids = new Set(); e.bands.traverse((o) => { if (o.isMesh) bandSids.add(o.userData.surface); });
     let otherGlbBand = false; window.__viewer.loaded.reconstructed.traverse((o) => { if (o.isMesh && o.name === other2.id + '_chairrail' && o.userData.keepVisible !== false) otherGlbBand = true; });
+    for (const w of walls) if (e.holesOf(w).length) bandSids.delete(w.id);   // 창·문·입구 밖 구간이 있는 벽은 띠를 끊어야 해서 항상 직접 그림
     if (!bandSids.has(tw.id) || bandSids.size !== 1 || !otherGlbBand) throw new Error('벽별 띠 실패 ' + JSON.stringify({ sids: [...bandSids], otherGlbBand }));
     s.applyTrimToAll(tw.id); s.commit('trim'); if (s.hasOwnTrim(tw.id) || s.trimOf(other2.id).rail.color !== '#a98457') throw new Error('모든 벽 적용 실패');
     s.resetAllTrim(); s.commit('trim'); const te2 = s.trimEdit(tw.id); te2.rail = { color: '#a98457', style: 'molding' }; te2.lower = { paint: '#a98457', style: 'wood_panel' }; s.commit('trim');
@@ -101,6 +102,18 @@ try {
     // 북쪽 창: 사진대로 큰 미닫이창 2세트
     const nw = Object.entries(s.design.windows).find(([k]) => k === e.walls().find((x) => x.axis === 'z' && Math.abs(x.offset + 4.8) < 0.15)?.id)?.[1] || [];
     if (nw.length !== 2 || !nw.every((x) => x.style === 'jp_sliding' && x.valance)) throw new Error('북쪽 창 2세트 아님 ' + JSON.stringify(nw.map((x) => [x.from, x.to, x.style])));
+    // 범위·설비: 싱크대 앞면은 벽 목록에서 빠지고, 입구 밖 벽은 꾸미지 않으며, 주방·화장실 문이 있다
+    const ids = e.walls().map((w) => w.id); if (ids.includes('wall_z_15')) throw new Error('싱크대 앞면이 벽으로 남음'); if (ids.includes('wall_z_11')) throw new Error('입구 밖 벽이 꾸밈 대상에 포함');
+    const names = []; e.fixtures?.traverse((o) => { if (o.name) names.push(o.name); });
+    for (const n of ['kitchen_sink_cabinet', 'kitchen_counter', 'kitchen_gray_cabinet', 'toilet_door']) if (!names.includes(n)) throw new Error('설비 없음: ' + n);
+    let cut = false, blob = null; window.__viewer.loaded.reconstructed.traverse((o) => { if (o.name === 'wall_z_9_tex' && (o.userData.cut || []).includes('toilet_door')) cut = true; if (o.name === 'enclosure_8_w0') blob = o; });
+    if (!cut) throw new Error('화장실 문 구멍이 안 뚫림'); if (blob?.visible) throw new Error('주방 수납 상자(enclosure_8)가 보임');
+    // 창 뒤로 띠가 지나가지 않는다: 북쪽 창 벽 띠 조각이 창 구간과 겹치지 않음
+    const nwWall = e.walls().find((x) => x.axis === 'z' && Math.abs(x.offset + 4.8) < 0.15);
+    let through = 0; e.bands.traverse((o) => { if (!o.isMesh || o.userData.surface !== nwWall.id) return; o.geometry.computeBoundingBox(); const hw = (o.geometry.boundingBox.max.x - o.geometry.boundingBox.min.x) / 2; const x0 = o.position.x - hw, x1 = o.position.x + hw;
+      for (const w of s.windowsOf(nwWall.id)) if (o.position.y > w.y0 && o.position.y < w.y1 && x1 > w.from + 0.01 && x0 < w.to - 0.01) through++; });
+    if (through) throw new Error(`창 구간을 지나는 띠 ${through}개`);
+    if (!autoDefault) throw new Error('시야 자동 숨김 기본값이 꺼짐');
     // 공유 링크 왕복은 아래에서 비동기로 확인
     const json = s.exportJSON();
     return { items: e.items.length, chips: document.querySelectorAll('#itemChips button').length, overlays: e.overlays.children.length, windows: e.windows.children.length, props: e.props.children.length, labels: e.labels.children.length, jsonLen: json.length, inspector: document.querySelector('#inspector').textContent.slice(0, 40) };
@@ -116,6 +129,9 @@ try {
   await page.evaluate(() => { const v = window.__viewer; v.camera.position.set(3.5, 7.5, 5.5); v.controls.target.set(-0.8, 0.5, -1.2); v.controls.update(); }); await wait(1200);
   await page.screenshot({ path: path.join(root, 'screenshots', 'overview_above.png') });
   await page.evaluate(() => { window.__store.reset(); });   // 테스트 디자인은 남기지 않음
+  // ①②에서는 디자인·설비를 그리지 않는다
+  const scanOnly = await page.evaluate(() => { window.__setMode('original'); const e = window.__editor; const r = [e.overlays, e.bands, e.fixtures, e.windows].every((g) => !g.visible) && !(e.intCeil?.visible); window.__setMode('interior'); return r && e.fixtures.visible; });
+  if (!scanOnly) problems.push('① 원본 스캔에 디자인 오버레이가 겹쳐 보임');
   const counts = await page.evaluate(() => { const i = window.__interior; const o = {}; for (const k in i.layers) o[k] = i.layers[k].children.length; return o; });
   console.log('인테리어 레이어 객체 수:', counts);
   if (!counts.molding) problems.push('몰딩 프레임이 생성되지 않음'); if (!counts.mirror_4_sides) problems.push('거울이 생성되지 않음 (central_wide_column 확인)');

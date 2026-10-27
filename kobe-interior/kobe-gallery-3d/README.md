@@ -85,22 +85,35 @@ npm run dev                               # 터미널에 뜨는 http://localhost
 | 📍 랜드마크 | 핀 클릭 | 입구·주방·화장실·창가·메인 핀을 드래그해 실제 위치로 → 북마크가 따라감 |
 | 띠·몰딩·하부 벽 (벽·기둥별) | 벽 N / 기둥 N 선택 → 인스펙터 '띠 · 몰딩 · 하부 벽' | 그 벽만의 띠·걸레받이 색(원목·화이트·골드 등)과 형태(평면/액자 몰드), 흰 몰딩 색, 띠 사이 하부 벽 마감(원목 패널·단색). '기본값 따르기', '이 벽 설정을 모든 벽·기둥에', '모두 검정 띠·흰 몰딩으로' |
 | 소품 빠른 조작 | 소품 선택 시 화면 아래 떠 있는 바 | 회전 ±15°, 복제, 삭제, 선택 해제 (패널을 스크롤하지 않아도 됨) |
-| 숨기기 | 면 선택 후 '숨기기' 버튼 | 벽·기둥·천장 번호별 숨김/보이기, '숨긴 면' 칩으로 복원, 모두 보이기. **시야 가리는 벽·천장 자동 숨김**을 켜면 카메라 앞의 벽이 저절로 사라짐 (천장은 이 옵션과 무관하게 위에서 볼 때 항상 투명) |
+| 숨기기 | 면 선택 후 '숨기기' 버튼 | 벽·기둥·천장 번호별 숨김/보이기, '숨긴 면' 칩으로 복원, 모두 보이기. **시야 가리는 벽·천장 자동 숨김**은 기본으로 켜져 있고(끄면 그 상태를 기억) 카메라 앞의 벽이 저절로 사라짐 (천장은 이 옵션과 무관하게 위에서 볼 때 항상 투명) |
 | 도구 | | 거리 재기(두 점 클릭), 화면 캡처 PNG 저장, 번호 라벨 표시 |
 | **기기 간 자동 동기화** | ☰ 패널 '기기 간 자동 동기화' | 서버(`sync-server/`, blog.senbaartstudio.com/kobe3d-api)에 비밀번호로 연결하면 A안·B안·C안이 폰·아이패드·컴퓨터 사이에서 자동으로 맞춰짐. 위쪽 바 ☁ 표시. 설치는 `sync-server/README.md` |
 | 다른 기기로 보내기 | ☰ 패널 '공유 링크 만들기' | 지금 안이 담긴 링크(약 1 KB)를 복사. 다른 기기에서 열면 'A안/B안/C안에 넣기'를 고름. 서버 없이 URL 해시(#d=)로 전달 |
 | 저장소에 보관된 디자인 | ☰ 패널 아래 | `src/presets/*.json`. 폰에서 만든 C안(10/27)은 C안이 비어 있는 기기에서 처음 열 때 자동으로 C안에 들어감 |
 | 디자인 안 | 위쪽 바 A안·B안·C안 | 안마다 따로 자동 저장. 빈 안(+)을 누르면 지금 디자인을 복사해 새 안. 패널에서 '지금 안을 → B안으로 복사' |
-| 저장 | | **저장**(⌘/Ctrl+S)·**되돌리기**(⌘/Ctrl+Z)·다시 실행·저장본으로 복원(안마다), 창 기본값 재설정, JSON 내보내기/불러오기(다른 기기로 옮길 때), 초기화 |
+| 저장 | | 바꾸는 즉시 자동 저장·동기화(버튼 불필요). **📌 저장본 만들기**(⌘/Ctrl+S)는 돌아올 지점 표시용·**되돌리기**(⌘/Ctrl+Z)·다시 실행·저장본으로 복원(안마다), 창 기본값 재설정, JSON 내보내기/불러오기(다른 기기로 옮길 때), 초기화 |
 
 디자인 파일은 `src/design.js` 의 스키마(JSON)로, 면 설정 `surfaces`, 기둥 `columns`, 창 `windows`, 소품 `props`, 랜드마크 `landmarks` 를 담는다.
+
+## 인테리어 범위 · 주방 · 화장실 (사진 07·08·10·11 대조)
+`geometry_metadata.json` 에 기록 — 파이프라인을 다시 돌려도 유지된다.
+
+| 키 | 내용 |
+|---|---|
+| `exterior_zones` | 입구 자동문 바깥(계단참). 벽 칠·띠·몰딩·액자·바닥/천장 칠을 하지 않고 스캔 그대로 둔다 (벽 12 는 편집 목록에서 빠짐) |
+| `fixture_walls` / `hidden_scan_blobs` | 복원 때 벽·상자로 잘못 잡힌 싱크대 앞면(벽 16), 수납 코너 상자(enclosure_8), 배관 파편 → 숨기고 `src/fixtures.js` 의 주방 설비로 대체 |
+| `kitchen` | 싱크대 하부장(문 2·서랍 3, 금색 손잡이)·스테인리스 상판·수전, 흰 타일, 입구 위 하부 벽, 올리브색 보조 카운터·박스·회색 장·나무 선반 |
+| `door_openings` | 화장실 회색 철문 — 스캔 벽(벽 10)에 구멍을 내고 문틀·열린 문짝·레버·도어클로저, 안쪽 세면대·칸막이 문 |
+| `service_walls` / `service_floors` | 주방·화장실 안쪽 벽은 몰딩·액자·전체 띠 설정을 기본으로 적용하지 않음(그 벽만 따로 설정하면 표시), 바닥 전체 칠에서 제외 |
+
+창·문·입구 밖 구간에서는 띠·하부 벽·칠이 자동으로 끊긴다(창 유리 뒤로 띠가 비치지 않게). ①② 스캔 보기에는 디자인·설비를 그리지 않는다.
 
 ## 파일 구조
 ```
 assets/original/     Scaniverse ZIP (수정 금지) — 풀린 폴더는 .gitignore
 assets/photos/       실내 사진 (사용자가 복사)
 assets/models/       scan_original.glb · scan_cleaned.glb · reconstructed_room.glb  (같은 월드 좌표)
-src/                 main.js(UI) · viewer.js(씬/로더/모드) · interior.js(A안 절차 생성) · editor.js(편집기) · design.js(디자인 상태) · props.js(소품·창·커튼) · geometry_metadata.json
+src/                 main.js(UI) · viewer.js(씬/로더/모드) · interior.js(A안 절차 생성) · editor.js(편집기) · design.js(디자인 상태) · props.js(소품·창·커튼) · fixtures.js(주방·화장실 설비) · scope.js(인테리어 범위) · geometry_metadata.json
 scripts/             inspect_scan.py · clean_scan.py · reconstruct_room.py · make_synthetic_scan.py(테스트용) · browser_test.mjs
 reports/             scan_analysis.md · clean_log.md/json · geometry_assumptions.md · construction_checklist.md
 screenshots/         진단 그림 + 브라우저 캡처

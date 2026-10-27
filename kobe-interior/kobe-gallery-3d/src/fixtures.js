@@ -1,0 +1,121 @@
+// 주방·화장실 설비 — 복원 때 상자/벽으로 뭉개진 부분을 사진(07·08·10·11)과 원본 스캔 위치대로 다시 만든다.
+// 위치·치수는 geometry_metadata.json 의 kitchen / door_openings (observed: 사진 확인, 치수는 스캔 추정).
+import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+
+const std = (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.6, ...o });
+// 월드 범위로 상자 만들기
+function boxAt(g, x, y, z, mat, name) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(x[1] - x[0], y[1] - y[0], z[1] - z[0]), mat);
+  m.position.set((x[0] + x[1]) / 2, (y[0] + y[1]) / 2, (z[0] + z[1]) / 2); if (name) m.name = name; g.add(m); return m;
+}
+// 흰 타일(10 cm, 회색 줄눈) — UV 를 m 단위로 늘려 반복
+let tileTex = null;
+function tileMaterial() {
+  if (!tileTex) {
+    const cv = document.createElement('canvas'); cv.width = cv.height = 64; const c = cv.getContext('2d');
+    c.fillStyle = '#c9cdcf'; c.fillRect(0, 0, 64, 64); c.fillStyle = '#f1f3f2'; c.fillRect(2, 2, 61, 61);
+    const gr = c.createLinearGradient(0, 0, 64, 64); gr.addColorStop(0, 'rgba(255,255,255,0.35)'); gr.addColorStop(1, 'rgba(200,210,214,0.25)'); c.fillStyle = gr; c.fillRect(2, 2, 61, 61);
+    tileTex = new THREE.CanvasTexture(cv); tileTex.colorSpace = THREE.SRGBColorSpace; tileTex.wrapS = tileTex.wrapT = THREE.RepeatWrapping;
+  }
+  return new THREE.MeshStandardMaterial({ map: tileTex, roughness: 0.35, polygonOffset: true, polygonOffsetFactor: -2 });
+}
+function tilePlane(g, w, h, pos, rotY, mat) {
+  const geo = new THREE.PlaneGeometry(w, h); const uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w / 0.1, uv.getY(i) * h / 0.1);
+  const m = new THREE.Mesh(geo, mat); m.position.copy(pos); m.rotation.y = rotY; g.add(m); return m;
+}
+
+export function buildFixtures(meta) {
+  const root = new THREE.Group(); root.name = 'fixtures'; const ceil = meta.ceiling_height_m || 2.38;
+  const k = meta.kitchen;
+  if (k) {
+    const g = new THREE.Group(); g.name = 'kitchen'; root.add(g); g.userData.surface = 'kitchen';
+    const gray = std(0xa9a59f, { roughness: 0.9 }), black = std(0x1c1c1c), cream = std(0xece5d3, { roughness: 0.5 }), gold = std(0xc9a24a, { metalness: 0.7, roughness: 0.35 });
+    const steel = std(0xc3c6c8, { metalness: 0.65, roughness: 0.3 }), dark = std(0x55595c, { metalness: 0.5, roughness: 0.35 }), seam = std(0x6d6a63);
+    // 주방 입구 위 하부 벽(소핏) + 커튼 레일
+    const o = k.opening; boxAt(g, o.x, [o.soffit_y, ceil], [o.z - 0.07, o.z + 0.07], gray, 'kitchen_soffit'); boxAt(g, o.x, [o.soffit_y - 0.02, o.soffit_y], [o.z, o.z + 0.05], steel);
+    // 수납 코너 안쪽 벽(회색 벽지 + 걸레받이)
+    const nx = k.nook_x, nz = k.nook_back_z; boxAt(g, [nx[0], nx[1] - 0.05], [0, ceil], [nz, nz + 0.1], gray, 'kitchen_nook_wall'); boxAt(g, [nx[0], nx[1] - 0.05], [0, 0.08], [nz - 0.012, nz], black);
+    // 싱크대 하부장: 몸통·걸레받이·문 2짝(+X 쪽)·서랍 3단(−X 쪽)·금색 손잡이
+    const s = k.sink, top = s.h, fz = s.z[0];
+    boxAt(g, s.x, [0.08, top - 0.02], [fz + 0.02, s.z[1]], cream, 'kitchen_sink_cabinet'); boxAt(g, s.x, [0, 0.08], [fz + 0.07, s.z[1]], black);
+    const split = s.x[1] - (s.x[1] - s.x[0]) * 0.49, mid = (split + s.x[1]) / 2;
+    for (const x of [split, mid]) boxAt(g, [x - 0.003, x + 0.003], [0.08, top - 0.02], [fz + 0.012, fz + 0.022], seam);
+    for (const y of [0.34, 0.58]) boxAt(g, [s.x[0], split], [y - 0.003, y + 0.003], [fz + 0.012, fz + 0.022], seam);
+    for (const y of [0.31, 0.55, 0.78]) boxAt(g, [s.x[0] + 0.03, split - 0.03], [y - 0.008, y + 0.008], [fz + 0.002, fz + 0.022], gold);   // 서랍 금색 띠 손잡이
+    for (const x of [mid - 0.05, mid + 0.05]) boxAt(g, [x - 0.035, x + 0.035], [0.72, 0.74], [fz, fz + 0.022], gold);
+    // 스테인리스 상판 + 개수대 + 뒤턱 + 수전
+    boxAt(g, [s.x[0] - 0.02, s.x[1] + 0.02], [top - 0.02, top + 0.01], [fz - 0.02, s.z[1]], steel, 'kitchen_counter');
+    boxAt(g, [s.x[0] - 0.02, s.x[1] + 0.02], [top + 0.01, top + 0.06], [s.z[1] - 0.03, s.z[1]], steel);
+    boxAt(g, s.bowl_x, [top + 0.011, top + 0.013], [fz + 0.08, s.z[1] - 0.09], dark, 'kitchen_bowl');
+    for (const x of [(s.bowl_x[0] + s.bowl_x[1]) / 2, s.bowl_x[0] - 0.3]) {
+      const p = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.16, 10), steel); p.rotation.x = Math.PI / 2; p.position.set(x, top + 0.2, s.z[1] - 0.08); g.add(p);
+      const h = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.05, 10), steel); h.position.set(x, top + 0.24, s.z[1] - 0.03); g.add(h);
+    }
+    // 타일: 싱크대 뒤 벽(상판 위) + 오른쪽 타일 기둥 면(바닥부터)
+    const tm = tileMaterial(); const tt = k.tile_top;
+    tilePlane(g, s.x[1] - s.x[0] + 0.04, tt - top, new THREE.Vector3((s.x[0] + s.x[1]) / 2, (top + tt) / 2, s.z[1] - 0.004), Math.PI, tm);
+    const wx = s.x[0] - 0.018, zlen = s.z[1] - nz; tilePlane(g, zlen, tt, new THREE.Vector3(wx, tt / 2, nz + zlen / 2), Math.PI / 2, tm);
+    // 수납 코너: 올리브색 카운터(받침 없이 벽에 고정) · 박스 · 회색 장 · 나무 선반
+    const c = k.counter; boxAt(g, c.x, [c.h - 0.03, c.h], c.z, std(0x7b8064, { roughness: 0.5 }), 'kitchen_side_counter');
+    boxAt(g, [c.x[0] + 0.06, c.x[1] - 0.06], [0, 0.3], [c.z[0] + 0.08, c.z[1] - 0.03], std(0xa67c4e, { roughness: 0.95 }), 'kitchen_box');
+    const cb = k.cabinet; boxAt(g, cb.x, [0, cb.h], cb.z, std(0x8e9194, { roughness: 0.7 }), 'kitchen_gray_cabinet');
+    boxAt(g, [nx[0] + 0.05, nx[0] + 0.55], [1.93, 1.96], [nz - 0.2, nz], std(0xcfae7a, { roughness: 0.8 }), 'kitchen_shelf');
+  }
+  for (const d of meta.door_openings || []) {
+    const wall = (meta.elements || []).find((e) => e.id === d.wall); if (!wall || wall.axis !== 'z') continue;   // 현재는 X 방향 벽(z=상수)만
+    const g = new THREE.Group(); g.name = 'toilet_door'; root.add(g); g.userData.surface = 'toilet';
+    const frameM = std(0x8b8e90, { metalness: 0.3, roughness: 0.45 }), leafM = std(0x63666a, { metalness: 0.45, roughness: 0.38 }), steel = std(0xc3c6c8, { metalness: 0.7, roughness: 0.3 });
+    const z0 = wall.offset - 0.07, z1 = wall.offset + 0.07, jt = 0.035;
+    boxAt(g, [d.from, d.from + jt], [0, d.y1], [z0, z1], frameM); boxAt(g, [d.to - jt, d.to], [0, d.y1], [z0, z1], frameM); boxAt(g, [d.from, d.to], [d.y1 - jt, d.y1], [z0, z1], frameM);
+    // 문짝: 경첩 쪽(from)에서 방 쪽으로 열린 상태
+    const lw = d.to - d.from - 2 * jt - 0.006, lh = d.y1 - jt - 0.015, t = 0.04, side = d.room_side || -1;
+    const pivot = new THREE.Group(); pivot.position.set(d.from + jt, 0, side < 0 ? z0 : z1); pivot.rotation.y = side * -(d.swing_deg ?? 70) * Math.PI / 180; g.add(pivot);
+    const leaf = new THREE.Mesh(new THREE.BoxGeometry(lw, lh, t), leafM); leaf.position.set(lw / 2, 0.01 + lh / 2, side * t / 2); pivot.add(leaf);
+    for (const sz of [-1, 1]) { const lev = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.018, 0.018), steel); lev.position.set(lw - 0.1, 0.98, side * t / 2 + sz * (t / 2 + 0.03)); pivot.add(lev); const rose = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.012, 14), steel); rose.rotation.x = Math.PI / 2; rose.position.set(lw - 0.06, 0.98, side * t / 2 + sz * (t / 2 + 0.008)); pivot.add(rose); }
+    const closer = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.06, 0.06), std(0x2b2b2b)); closer.position.set(0.2, lh - 0.04, side * (t + 0.03)); pivot.add(closer);
+    // 안쪽: 벽걸이 세면대(왼쪽 벽) + 안쪽 칸막이 문(오른쪽 벽) — 사진 11
+    const inner = (meta.elements || []).filter((e) => e.type === 'wall' && e.axis === 'x' && e.from <= wall.offset + 0.1 && e.to > wall.offset + 1.0 && e.offset > d.from - 0.3 && e.offset < d.to + 0.6);
+    const right = inner.reduce((a, e) => (!a || e.offset < a.offset ? e : a), null), left = inner.reduce((a, e) => (!a || e.offset > a.offset ? e : a), null);
+    if (left && left !== right) { const bowl = new THREE.Mesh(new THREE.SphereGeometry(0.19, 20, 10, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), std(0xb8bbbd, { metalness: 0.5, roughness: 0.3, side: THREE.DoubleSide })); bowl.scale.y = 0.55; bowl.position.set(left.offset - 0.1 - 0.17, 0.82, wall.offset + 0.85); g.add(bowl); }
+    if (right) { const x = right.offset + 0.002; boxAt(g, [x, x + 0.03], [0, 1.88], [wall.offset + 1.0, wall.offset + 1.66], std(0x5a3d28, { roughness: 0.6 })); boxAt(g, [x + 0.005, x + 0.035], [0.02, 1.84], [wall.offset + 1.04, wall.offset + 1.62], std(0x9b968d, { roughness: 0.5 })); }
+  }
+  root.traverse((m) => { if (m.isMesh) m.userData.surface = m.parent?.userData.surface || 'fixture'; });
+  return root;
+}
+
+// 스캔 복원 벽(상자·텍스처 면·띠)에 문 구멍을 낸다. 축정렬 상자/사각면만 대상 — 조각(왼·오·위·아래)으로 나눠 다시 붙인다.
+// axis: 벽 축('z' = 벽이 X 방향으로 뻗음 → 길이방향 t = x). 텍스처 UV 는 (t, y) 의 1차식으로 다시 계산.
+export function cutWallOpening(mesh, axis, t0, t1, y0, y1) {
+  mesh.updateWorldMatrix(true, false); const mw = mesh.matrixWorld, inv = mw.clone().invert();
+  const src = mesh.geometry; const pos = src.attributes.position; const n = pos.count; const ti = axis === 'z' ? 0 : 2;
+  const P = []; const v = new THREE.Vector3(); let tmin = Infinity, tmax = -Infinity, ymin = Infinity, ymax = -Infinity;
+  for (let i = 0; i < n; i++) { v.fromBufferAttribute(pos, i).applyMatrix4(mw); P.push(v.clone()); const t = v.getComponent(ti); tmin = Math.min(tmin, t); tmax = Math.max(tmax, t); ymin = Math.min(ymin, v.y); ymax = Math.max(ymax, v.y); }
+  if (t1 <= tmin || t0 >= tmax || y1 <= ymin || y0 >= ymax) return false;
+  const a = Math.max(t0, tmin), b = Math.min(t1, tmax), c = Math.max(y0, ymin), d = Math.min(y1, ymax);
+  const pieces = [];
+  if (a > tmin + 1e-3) pieces.push([tmin, a, ymin, ymax]); if (b < tmax - 1e-3) pieces.push([b, tmax, ymin, ymax]);
+  if (d < ymax - 1e-3) pieces.push([a, b, d, ymax]); if (c > ymin + 1e-3) pieces.push([a, b, ymin, c]);
+  // UV = 1차식(t, y) 맞춤 (텍스처가 있을 때만)
+  const uvA = src.attributes.uv; const mat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material; let fit = null;
+  if (uvA && mat?.map) {
+    const A = [[0, 0, 0], [0, 0, 0], [0, 0, 0]], bu = [0, 0, 0], bv = [0, 0, 0];
+    for (let i = 0; i < n; i++) { const r = [1, P[i].getComponent(ti), P[i].y]; for (let p = 0; p < 3; p++) { for (let q = 0; q < 3; q++) A[p][q] += r[p] * r[q]; bu[p] += r[p] * uvA.getX(i); bv[p] += r[p] * uvA.getY(i); } }
+    const solve = (M, y) => { const m = M.map((row, i) => [...row, y[i]]); for (let i = 0; i < 3; i++) { let p = i; for (let r = i + 1; r < 3; r++) if (Math.abs(m[r][i]) > Math.abs(m[p][i])) p = r; [m[i], m[p]] = [m[p], m[i]]; if (Math.abs(m[i][i]) < 1e-12) return null; for (let r = 0; r < 3; r++) if (r !== i) { const f = m[r][i] / m[i][i]; for (let q = i; q < 4; q++) m[r][q] -= f * m[i][q]; } } return m.map((row, i) => row[3] / row[i]); };
+    const cu = solve(A, bu), cv = solve(A, bv); if (cu && cv) fit = (t, y) => [cu[0] + cu[1] * t + cu[2] * y, cv[0] + cv[1] * t + cv[2] * y];
+  }
+  const geos = pieces.map(([p0, p1, q0, q1]) => {
+    const g = src.clone(); const gp = g.attributes.position;
+    for (let i = 0; i < n; i++) {
+      const w = P[i].clone(); const t = w.getComponent(ti);
+      const nt = p0 + (tmax > tmin ? (t - tmin) / (tmax - tmin) : 0) * (p1 - p0), ny = q0 + (ymax > ymin ? (w.y - ymin) / (ymax - ymin) : 0) * (q1 - q0);
+      w.setComponent(ti, nt); w.y = ny; if (fit) g.attributes.uv.setXY(i, ...fit(nt, ny)); w.applyMatrix4(inv); gp.setXYZ(i, w.x, w.y, w.z);
+    }
+    return g;
+  });
+  const old = mesh.geometry;
+  if (!geos.length) { mesh.visible = false; mesh.userData.keepVisible = false; return true; }
+  const merged = geos.length === 1 ? geos[0] : mergeGeometries(geos); if (!merged) return false;
+  merged.computeBoundingBox(); merged.computeBoundingSphere(); mesh.geometry = merged; old.dispose(); if (geos.length > 1) geos.forEach((g) => g.dispose());
+  return true;
+}

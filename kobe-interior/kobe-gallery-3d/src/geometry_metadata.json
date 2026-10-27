@@ -640,14 +640,14 @@
       "status": "user"
     },
     "kitchen": {
-      "x": -0.5,
-      "z": 2.3,
-      "status": "user"
+      "x": -0.4,
+      "z": 3.0,
+      "status": "observed"
     },
     "toilet": {
-      "x": -1.4,
-      "z": 2.0,
-      "status": "user"
+      "x": 1.6,
+      "z": 2.9,
+      "status": "observed"
     },
     "windows": {
       "x": -1.0,
@@ -660,14 +660,14 @@
       "status": "user"
     },
     "kitchen_from": {
-      "x": -0.5,
-      "z": 0.3,
-      "status": "user"
+      "x": -0.2,
+      "z": 0.4,
+      "status": "observed"
     },
     "toilet_from": {
-      "x": -1.2,
-      "z": 0.2,
-      "status": "user"
+      "x": 1.1,
+      "z": 0.5,
+      "status": "observed"
     },
     "windows_from": {
       "x": -1.0,
@@ -786,5 +786,128 @@
       ]
     }
   ],
-  "windows_version": 2
+  "windows_version": 2,
+  "exterior_zones": [
+    {
+      "x": [
+        -3.4,
+        -1.5
+      ],
+      "z": [
+        3.06,
+        5.4
+      ],
+      "status": "observed",
+      "note": "입구 자동문 바깥(계단참·창) — 인테리어 범위 밖, 스캔 그대로"
+    }
+  ],
+  "fixture_walls": {
+    "wall_z_15": "싱크대 하부장 앞면 — 벽 아님(사진 10)"
+  },
+  "hidden_scan_blobs": {
+    "enclosure_8": "주방 수납 코너(회색 장·카운터)가 천장까지 막힌 상자로 복원됨 → 주방 설비로 대체",
+    "fixture_candidate_14": "싱크대 하부 파편",
+    "fixture_candidate_17": "수전 배관 파편"
+  },
+  "service_walls": {
+    "wall_x_6": "주방",
+    "wall_z_13": "주방",
+    "wall_x_3": "주방",
+    "wall_x_5": "화장실",
+    "wall_x_16": "화장실",
+    "wall_z_12": "화장실"
+  },
+  "service_floors": [
+    {
+      "x": [
+        -1.78,
+        0.3
+      ],
+      "z": [
+        1.86,
+        3.75
+      ],
+      "note": "주방 장판"
+    },
+    {
+      "x": [
+        1.13,
+        2.4
+      ],
+      "z": [
+        2.45,
+        4.75
+      ],
+      "note": "화장실 바닥"
+    }
+  ],
+  "door_openings": [
+    {
+      "id": "toilet_door",
+      "wall": "wall_z_9",
+      "from": 1.25,
+      "to": 1.95,
+      "y1": 1.92,
+      "hinge": "from",
+      "swing_deg": 72,
+      "room_side": -1,
+      "status": "observed",
+      "note": "원본 스캔·사진 08/11: 회색 철문(바깥여닫이, 오른쪽 경첩, 도어클로저)"
+    }
+  ],
+  "kitchen": {
+    "status": "observed",
+    "note": "사진 07/08/10 + 원본 스캔 위에서 본 위치",
+    "opening": {
+      "x": [
+        -0.86,
+        0.26
+      ],
+      "z": 1.84,
+      "soffit_y": 2.0
+    },
+    "sink": {
+      "x": [
+        -1.03,
+        0.24
+      ],
+      "z": [
+        3.2,
+        3.71
+      ],
+      "h": 0.85,
+      "bowl_x": [
+        -0.18,
+        0.2
+      ]
+    },
+    "nook_back_z": 2.8,
+    "nook_x": [
+      -1.76,
+      -1.05
+    ],
+    "counter": {
+      "x": [
+        -1.5,
+        -1.05
+      ],
+      "z": [
+        2.35,
+        2.8
+      ],
+      "h": 0.82
+    },
+    "cabinet": {
+      "x": [
+        -1.76,
+        -1.5
+      ],
+      "z": [
+        2.3,
+        2.8
+      ],
+      "h": 1.12
+    },
+    "tile_top": 2.05
+  }
 }

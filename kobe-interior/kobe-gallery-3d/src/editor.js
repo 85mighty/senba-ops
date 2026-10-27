@@ -4,6 +4,8 @@ import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { PALETTE_WALL, PALETTE_FLOOR, PALETTE_CEIL, PALETTE_CURTAIN, PALETTE_TRIM, PALETTE_LOWER, FRAME_STYLES, PROP_TYPES } from './design.js';
 import { buildProp, buildWindow, buildCurtain, measureLine } from './props.js';
 import { disposeTree } from './viewer.js';
+import { isFixtureWall, isExteriorWall, exteriorSpans, doorOpenings, serviceOf, subtractRects, floorKept, inExterior } from './scope.js';
+import { buildFixtures, cutWallOpening } from './fixtures.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -21,7 +23,8 @@ export class Editor {
     this.intCeil = null;   // 내부 천장(단일). 위에서 볼 때는 뷰어 자동 클리핑으로 사라진다
     this.bands = new THREE.Group(); this.bands.name = 'bands'; this.root.add(this.bands);
     this.hidden = new Set(); try { const h = JSON.parse(localStorage.getItem('kobe3d.hidden') || '[]'); for (const x of h) if (!String(x).startsWith('ceiling_t')) this.hidden.add(x); } catch {}
-    this.autoHide = false; this._autoHidden = new Set();
+    this.autoHide = true; try { this.autoHide = localStorage.getItem('kobe3d.autoHide') !== '0'; } catch {}   // 기본 켬, 끄면 기억
+    this._autoHidden = new Set();
     viewer.controls.addEventListener('change', () => { if (this.autoHide) this.scheduleAutoHide(); });
     this.tc = new TransformControls(viewer.camera, viewer.renderer.domElement); this.tc.setSize(0.7); this.tc.showY = false;
     viewer.scene.add(this.tc.getHelper ? this.tc.getHelper() : this.tc);
@@ -34,13 +37,16 @@ export class Editor {
   get ceil() { return this.meta.ceiling_height_m || 2.4; }
   get chair() { return this.meta.chair_rail_height_m || 0.9; }
   get base() { return this.meta.baseboard_height_m || 0.1; }
-  walls() { return (this.meta.elements || []).filter((e) => e.type === 'wall'); }
+  allWalls() { return (this.meta.elements || []).filter((e) => e.type === 'wall'); }
+  // 꾸밀 수 있는 벽 — 싱크대 앞면처럼 벽이 아닌 면, 입구 밖 벽은 뺀다(번호는 그대로 유지)
+  walls() { return this.allWalls().filter((e) => !isFixtureWall(this.meta, e.id) && !isExteriorWall(this.meta, e)); }
   columns() { return (this.meta.elements || []).filter((e) => ['wide_column', 'thin_column'].includes(e.type)); }
 
   // ---------------- 번호 매긴 항목
   buildItems() {
     this.items = []; let n = 0;
-    for (const w of this.walls()) { n++; w.num = n; this.items.push({ kind: 'wall', id: w.id, label: `벽 ${n}`, el: w }); }
+    const deco = new Set(this.walls().map((w) => w.id));
+    for (const w of this.allWalls()) { n++; w.num = n; if (deco.has(w.id)) this.items.push({ kind: 'wall', id: w.id, label: `벽 ${n}`, el: w }); }
     let c = 0; for (const col of this.columns()) { c++; col.num = c; this.items.push({ kind: 'column', id: col.id, label: `기둥 ${c}${col.id === this.meta.central_wide_column ? ' (넓은 가벽)' : ''}`, el: col }); }
     // 천장/바닥 타일: 바닥 bbox 를 TILE 격자로
     const b = this.meta.bounds_world_m; const x0 = b.min[0], z0 = b.min[2]; const nx = Math.ceil((b.max[0] - x0) / TILE), nz = Math.ceil((b.max[2] - z0) / TILE);
@@ -59,10 +65,11 @@ export class Editor {
     src.updateWorldMatrix(true, false); const g = src.geometry.index ? src.geometry.toNonIndexed() : src.geometry.clone(); g.applyMatrix4(src.matrixWorld);
     this._floorTris = g.attributes.position.array; return this._floorTris;
   }
-  tileGeometry(tile, last) {
+  tileGeometry(tile, last, paintOnly = false) {
     const pos = this.floorTris(); if (!pos) return null; const out = [];
     for (let i = 0; i < pos.length; i += 9) {
       const cx = (pos[i] + pos[i + 3] + pos[i + 6]) / 3, cz = (pos[i + 2] + pos[i + 5] + pos[i + 8]) / 3;
+      if (paintOnly) { const bx = (Math.min(pos[i], pos[i + 3], pos[i + 6]) + Math.max(pos[i], pos[i + 3], pos[i + 6])) / 2, bz = (Math.min(pos[i + 2], pos[i + 5], pos[i + 8]) + Math.max(pos[i + 2], pos[i + 5], pos[i + 8])) / 2; if (floorKept(this.meta, bx, bz)) continue; }   // 칠: 입구 밖·주방·화장실 바닥은 그대로
       if (cx >= tile.x[0] && (cx < tile.x[1] || (last.x && cx <= tile.x[1] + 0.2)) && cz >= tile.z[0] && (cz < tile.z[1] || (last.z && cz <= tile.z[1] + 0.2))) for (let k = 0; k < 9; k++) out.push(pos[i + k]);
     }
     if (!out.length) return null;
@@ -83,6 +90,17 @@ export class Editor {
     const m = new THREE.Mesh(new THREE.PlaneGeometry(t1 - t0, y1 - y0), mat); const sw = side ? { ...w, inward: side } : w;
     this.placeOnWall(m, sw, (t0 + t1) / 2, (y0 + y1) / 2, off); return m;
   }
+  // 꾸밈을 하지 않을 벽면 구멍 [t0,t1,y0,y1]: 창(틀 포함), 문 개구부, 입구 밖 구간
+  holesOf(w) {
+    if (!w || w.key) return [];   // 기둥 면
+    const H = [];
+    for (const win of this.s.windowsOf(w.id)) H.push([win.from - 0.04, win.to + 0.04, win.y0 - 0.04, win.y1 + 0.04]);
+    for (const d of doorOpenings(this.meta, w.id)) H.push([d.from - 0.03, d.to + 0.03, -1, d.y1 + 0.03]);
+    for (const [a, b] of exteriorSpans(this.meta, w)) H.push([a, b, -1, 99]);
+    return H;
+  }
+  // 벽면 사각형을 구멍을 피해 여러 장으로 — 각 조각마다 fn(t0, t1, y0, y1)
+  eachPiece(w, t0, t1, y0, y1, fn) { for (const r of subtractRects([t0, t1, y0, y1], this.holesOf(w))) fn(...r); }
   zoneRange(zone) { return zone === 'upper' ? [this.chair, this.ceil] : zone === 'lower' ? [this.base, this.chair] : [0, this.ceil]; }
 
   // ---------------- 픽 메쉬 (투명) & 라벨
@@ -108,6 +126,8 @@ export class Editor {
     for (const t of this.tiles) { const cx = (t.x[0] + t.x[1]) / 2, cz = (t.z[0] + t.z[1]) / 2; addT(`바닥 ${t.num}`, new THREE.Vector3(cx, 0.08, cz), '#d2ffc9'); }
   }
   setLabels(on) { this.labels.visible = on; }
+  // ①②(스캔 비교)에서는 디자인·설비 그림을 숨기고 스캔만 보인다
+  setModelVisible(on) { this.modelOn = on; for (const g of [this.overlays, this.bands, this.windows, this.doors, this.fixtures, this.props]) if (g) g.visible = on; this.applyHidden(); }
   setTileLabels(on) { if (this.tileLabels) this.tileLabels.visible = on; }
 
   // ---------------- 디자인 적용 (오버레이·창·커튼·소품·랜드마크)
@@ -117,39 +137,66 @@ export class Editor {
     this.i.rebuild('molding'); this.i.rebuild('gallery_art'); this.i.rebuild('mirror_4_sides'); this.applyColumnSizes(); this.buildLabels();
     this.v.updateHighlight(); this.refreshHighlight();
     if (keep?.kind === 'prop' || keep?.kind === 'landmark') this.reattach(keep);
-    this.buildBands(); this.buildInteriorCeiling(); this.buildDoors(); this.applyHidden();
+    this.buildBands(); this.buildInteriorCeiling(); this.buildDoors(); this.applyScanScope(); this.applyHidden();
+  }
+  // 스캔 복원 모델 정리(한 번): 싱크대 앞면·수납 상자처럼 잘못 잡힌 면은 숨기고 주방·화장실 설비로 대체, 화장실 문 구멍 내기.
+  // 입구 밖 벽은 스캔 그대로(텍스처·창·띠 보임)
+  applyScanScope() {
+    const rec = this.v.loaded?.reconstructed; if (!rec) return;
+    if (!this.fixtures) { this.fixtures = buildFixtures(this.meta); this.fixtures.visible = this.modelOn !== false; this.root.add(this.fixtures); }
+    const hideIds = [...Object.keys(this.meta.fixture_walls || {}), ...Object.keys(this.meta.hidden_scan_blobs || {})];
+    const ext = this.allWalls().filter((w) => isExteriorWall(this.meta, w)).map((w) => w.id);
+    const owner = (name, ids) => ids.find((id) => name === id || name.startsWith(id + '_'));
+    rec.traverse((o) => {
+      if (!o.isMesh) return;
+      if (owner(o.name, hideIds)) { o.userData.keepVisible = false; return; }
+      if (owner(o.name, ext) && (o.name.includes('_tex') || /_window_\d+$/.test(o.name))) o.userData.keepVisible = true;
+    });
+    for (const d of this.meta.door_openings || []) {
+      const w = this.allWalls().find((x) => x.id === d.wall); if (!w) continue; const meshes = [];
+      rec.traverse((o) => { if (o.isMesh && owner(o.name, [d.wall]) && !(o.userData.cut || []).includes(d.id)) meshes.push(o); });
+      for (const o of meshes) { cutWallOpening(o, w.axis, d.from, d.to, -1, d.y1); (o.userData.cut = o.userData.cut || []).push(d.id); }
+    }
   }
   // ---------------- 띠(체어레일)·걸레받이: 벽/기둥별. 기본(검정·평면)과 다른 면만 GLB 띠를 숨기고 직접 그린다
+  // 주방·화장실 안쪽 벽은 실제로 띠가 없다(타일·회색 벽) — 그 벽만의 띠 설정을 하지 않았으면 전체 설정(띠·하부 벽)을 적용하지 않는다
+  plainService(id) { return !!serviceOf(this.meta, id) && !this.s.hasOwnTrim(id); }
   isDefaultTrim(t) { return t.rail.color === '#1c1c1c' && t.rail.style === 'flat' && t.base.color === '#1c1c1c' && t.base.style === 'flat'; }
   buildBands() {
     disposeTree(this.bands);
     const rec = this.v.loaded?.reconstructed;
-    if (rec) rec.traverse((o) => { const m = o.isMesh && o.name.match(/^(.*)_(chairrail|baseboard)(_b)?$/); if (m) o.userData.keepVisible = this.isDefaultTrim(this.s.trimOf(m[1])); });
+    // 스캔 띠(GLB)는 기본(검정·평면) 띠이면서 창·문이 없는 벽에서만 쓴다. 창·문이 있으면 띠를 끊어야 해서 직접 그린다
+    const byId = new Map(this.allWalls().map((w) => [w.id, w]));
+    if (rec) rec.traverse((o) => { const m = o.isMesh && o.name.match(/^(.*)_(chairrail|baseboard)(_b)?$/); if (!m) return; const w = byId.get(m[1]);
+      if (w && (isFixtureWall(this.meta, w.id) || this.plainService(w.id))) o.userData.keepVisible = false; else if (w && isExteriorWall(this.meta, w)) o.userData.keepVisible = true;
+      else o.userData.keepVisible = this.isDefaultTrim(this.s.trimOf(m[1])) && !(w && this.holesOf(w).length); });
     const railT = this.meta.chair_rail_thickness_m || 0.08; const base = this.base, chair = this.chair;
     const mats = {}; const mk = (color) => mats[color] || (mats[color] = new THREE.MeshStandardMaterial({ color, roughness: 0.6, metalness: color === '#c9a24a' ? 0.6 : 0.0 }));
-    const strip = (w, y0, y1, depth, mat, sd, sid) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w.to - w.from, y1 - y0, depth), mat); const ww = { ...w, inward: sd, sid }; this.placeOnWall(m, ww, (w.from + w.to) / 2, (y0 + y1) / 2, depth / 2 + 0.002); return m; };
-    const addBands = (faces, sid) => {
-      const g = this.s.trimOf(sid); if (this.isDefaultTrim(g)) return;
+    // 창·문·입구 밖 구간은 띠를 끊는다(창 유리 뒤로 띠가 비치지 않게)
+    const strip = (w, y0, y1, depth, mat, sd, sid) => { const ww = { ...w, inward: sd, sid }; this.eachPiece(w, w.from, w.to, y0, y1, (a, b, c, d) => { const m = new THREE.Mesh(new THREE.BoxGeometry(b - a, d - c, depth), mat); this.placeOnWall(m, ww, (a + b) / 2, (c + d) / 2, depth / 2 + 0.002); this.bands.add(m); }); };
+    const addBands = (faces, sid, force = false) => {
+      const g = this.s.trimOf(sid); if ((this.isDefaultTrim(g) && !force) || this.plainService(sid)) return;
       for (const f of faces) {
         const sides = f.two_sided ? [f.inward, -f.inward] : [f.inward];
         for (const sd of sides) {
-          if (g.base.style === 'molding') { this.bands.add(strip(f, 0, base, 0.014, mk(g.base.color), sd, sid)); this.bands.add(strip(f, base - 0.02, base, 0.022, mk(g.base.color), sd, sid)); }
-          else this.bands.add(strip(f, 0, base, 0.012, mk(g.base.color), sd, sid));
-          if (g.rail.style === 'molding') { this.bands.add(strip(f, chair - railT, chair, 0.012, mk(g.rail.color), sd, sid)); this.bands.add(strip(f, chair - railT * 0.65, chair - railT * 0.35, 0.03, mk(g.rail.color), sd, sid)); this.bands.add(strip(f, chair - 0.006, chair, 0.02, mk(g.rail.color), sd, sid)); }
-          else this.bands.add(strip(f, chair - railT, chair, 0.012, mk(g.rail.color), sd, sid));
+          if (g.base.style === 'molding') { strip(f, 0, base, 0.014, mk(g.base.color), sd, sid); strip(f, base - 0.02, base, 0.022, mk(g.base.color), sd, sid); }
+          else strip(f, 0, base, 0.012, mk(g.base.color), sd, sid);
+          if (g.rail.style === 'molding') { strip(f, chair - railT, chair, 0.012, mk(g.rail.color), sd, sid); strip(f, chair - railT * 0.65, chair - railT * 0.35, 0.03, mk(g.rail.color), sd, sid); strip(f, chair - 0.006, chair, 0.02, mk(g.rail.color), sd, sid); }
+          else strip(f, chair - railT, chair, 0.012, mk(g.rail.color), sd, sid);
         }
       }
     };
-    for (const w of this.walls()) addBands([w], w.id);
+    for (const w of this.walls()) addBands([w], w.id, this.holesOf(w).length > 0);
     for (const col of this.columns()) addBands(this.i.columnFaces(col).map((f) => ({ ...f, two_sided: false })), col.id);
   }
   // 하부 벽(띠 사이) 마감 오버레이 — 벽/기둥별
   addLower(face, sid, sides) {
-    const lower = this.s.trimOf(sid).lower; if (!lower.paint) return;
+    const lower = this.s.trimOf(sid).lower; if (!lower.paint || this.plainService(sid)) return;
     const top = this.chair - (this.meta.chair_rail_thickness_m || 0.08);
+    const mat = this.paintMat(lower.paint), dark = lower.style === 'wood_panel' ? this.paintMat(this.shade(lower.paint, 0.7)) : null;
     for (const sd of sides) {
-      const q = this.wallQuad(face, face.from, face.to, this.base, top, 0.0012, this.paintMat(lower.paint), sd); q.userData.surface = sid; this.overlays.add(q);
-      if (lower.style === 'wood_panel') { const dark = this.paintMat(this.shade(lower.paint, 0.7)); for (let t = face.from + 0.1; t < face.to - 0.02; t += 0.1) { const line = this.wallQuad(face, t, t + 0.006, this.base, top, 0.0014, dark, sd); line.userData.surface = sid; this.overlays.add(line); } }
+      this.eachPiece(face, face.from, face.to, this.base, top, (a, b, c, d) => { const q = this.wallQuad(face, a, b, c, d, 0.0012, mat, sd); q.userData.surface = sid; this.overlays.add(q); });
+      if (dark) for (let t = face.from + 0.1; t < face.to - 0.02; t += 0.1) this.eachPiece(face, t, t + 0.006, this.base, top, (a, b, c, d) => { const line = this.wallQuad(face, a, b, c, d, 0.0014, dark, sd); line.userData.surface = sid; this.overlays.add(line); });
     }
   }
   // ---------------- 입구 자동문 (스캔의 문짝 블롭 → 문). 양옆 0.45 m 안의 벽까지 폭을 넓혀 복도를 막는다
@@ -201,7 +248,7 @@ export class Editor {
       o.visible = !this.isHidden(sid) && (o.userData.keepVisible ?? true);
     };
     if (rec) rec.traverse(visit); this.i.root.traverse(visit); this.overlays.traverse(visit); this.windows.traverse((o) => { if (o.isMesh) { const w = o.userData.windowOf; o.visible = !(w && this.isHidden(w)); } });
-    if (this.intCeil) this.intCeil.visible = !scan && !ceilHidden && !this.v.clipping;
+    if (this.intCeil) this.intCeil.visible = this.modelOn !== false && !scan && !ceilHidden && !this.v.clipping;
     this.renderHiddenChips?.();
   }
   ceilPaint() { const p = this.s.getSurface('ceiling').paint; return p === 'scan' ? 'scan' : (p || '#f2efe9'); }
@@ -211,7 +258,13 @@ export class Editor {
     const rec = this.v.loaded?.reconstructed; if (!rec) return;
     let src = null; rec.traverse((o) => { if (o.isMesh && o.name === 'ceiling') src = o; }); if (!src) return;
     src.updateWorldMatrix(true, false);
-    const geo = src.geometry.clone().applyMatrix4(src.matrixWorld);
+    let geo = src.geometry.clone().applyMatrix4(src.matrixWorld);
+    if (this.meta.exterior_zones?.length) {   // 입구 밖(계단참) 천장은 칠하지 않는다
+      const g = geo.index ? geo.toNonIndexed() : geo; const p = g.attributes.position.array; const keep = [];
+      for (let i = 0; i < p.length; i += 9) if (!inExterior(this.meta, (p[i] + p[i + 3] + p[i + 6]) / 3, (p[i + 2] + p[i + 5] + p[i + 8]) / 3)) keep.push(i);
+      const out = new Float32Array(keep.length * 9); keep.forEach((i, k) => out.set(p.subarray(i, i + 9), k * 9));
+      if (g !== geo) g.dispose(); geo.dispose(); geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(out, 3));
+    }
     // 복원 GLB 에는 법선이 없다(로더가 원본에만 flatShading 을 켜 준다) → 복제본은 직접 계산하지 않으면 조명이 NaN 이 되어 검게 나온다
     if (!geo.attributes.normal) geo.computeVertexNormals();
     const paint = this.ceilPaint();
@@ -224,7 +277,7 @@ export class Editor {
   setHidden(id, on) { if (on) this.hidden.add(id); else this.hidden.delete(id); try { localStorage.setItem('kobe3d.hidden', JSON.stringify([...this.hidden])); } catch {} this.applyHidden(); this.renderInspector(); }
   showAll() { this.hidden.clear(); this._autoHidden.clear(); try { localStorage.removeItem('kobe3d.hidden'); } catch {} this.applyHidden(); this.renderInspector(); }
   // 자동 숨김: 카메라가 벽의 바깥쪽에 있거나 벽이 카메라와 주시점 사이에 끼면 숨김. 카메라가 천장 가까이/위면 천장 숨김.
-  setAutoHide(on) { this.autoHide = on; if (!on) { this._autoHidden.clear(); this.applyHidden(); } else this.runAutoHide(); }
+  setAutoHide(on) { this.autoHide = on; try { localStorage.setItem('kobe3d.autoHide', on ? '1' : '0'); } catch {} if (!on) { this._autoHidden.clear(); this.applyHidden(); } else this.runAutoHide(); }
   scheduleAutoHide() { if (this._ah) return; this._ah = setTimeout(() => { this._ah = null; this.runAutoHide(); }, 120); }
   runAutoHide() {
     const cam = this.v.camera.position, tgt = this.v.controls.target; const next = new Set();
@@ -250,13 +303,13 @@ export class Editor {
       const sides = w.two_sided ? [w.inward, -w.inward] : [w.inward];
       for (const seg of this.segmentsOf(w)) {
         const sf = this.s.getSurface(seg.key); if (!sf.paint) continue; const [y0, y1] = this.zoneRange(sf.zone || 'all');
-        for (const sd of sides) { const q = this.wallQuad(w, seg.from, seg.to, y0, y1, 0.0015, this.paintMat(sf.paint), sd); q.userData.surface = w.id; this.overlays.add(q); }
+        const mat = this.paintMat(sf.paint); for (const sd of sides) this.eachPiece(w, seg.from, seg.to, y0, y1, (a, b, c, d) => { const q = this.wallQuad(w, a, b, c, d, 0.0015, mat, sd); q.userData.surface = w.id; this.overlays.add(q); });
       }
       // 하부 벽(띠 사이) 마감 — 이 벽 설정. 벽 '색'을 띠 아래(하부)로 칠했으면 그쪽 우선, 상부/전체 칠과는 함께 쓴다(하부가 위에 그려짐)
       const sfw0 = this.s.getSurface(w.id);
       if (!(sfw0.paint && sfw0.zone === 'lower')) this.addLower(w, w.id, sides);
       // 벽 전체 설정(세그먼트 없이 칠한 경우)
-      const sfw = this.s.getSurface(w.id); if (sfw.paint) { const [y0, y1] = this.zoneRange(sfw.zone || 'all'); for (const sd of sides) { const q = this.wallQuad(w, w.from, w.to, y0, y1, 0.001, this.paintMat(sfw.paint), sd); q.userData.surface = w.id; this.overlays.add(q); } }
+      const sfw = this.s.getSurface(w.id); if (sfw.paint) { const [y0, y1] = this.zoneRange(sfw.zone || 'all'); const mat = this.paintMat(sfw.paint); for (const sd of sides) this.eachPiece(w, w.from, w.to, y0, y1, (a, b, c, d) => { const q = this.wallQuad(w, a, b, c, d, 0.001, mat, sd); q.userData.surface = w.id; this.overlays.add(q); }); }
     }
     for (const col of this.columns()) {
       const sf = this.s.getSurface(col.id);
@@ -267,7 +320,9 @@ export class Editor {
     // 바닥 칠: 칸마다 복원 바닥 모양 그대로(벽 가장자리 포함). 스캔 바닥 텍스처(y 0.003)보다 위(0.006)에 놓는다
     for (const t of this.tiles) {
       const sf = this.s.getSurface(`floor_t${t.num}`); const sfa = this.s.getSurface('floor'); const paint = sf.paint || sfa.paint; if (!paint) continue;
-      if (t.geo) { const m = new THREE.Mesh(t.geo, this.paintMat(paint)); m.position.y = 0.011; m.userData.surface = 'floor'; this.overlays.add(m); }
+      if (t.pgeo === undefined) t.pgeo = t.geo ? this.tileGeometry(t, t.last || {}, true) : null;
+      if (t.geo && !t.pgeo) continue;
+      if (t.pgeo) { const m = new THREE.Mesh(t.pgeo, this.paintMat(paint)); m.position.y = 0.011; m.userData.surface = 'floor'; this.overlays.add(m); }
       else { const m = new THREE.Mesh(new THREE.PlaneGeometry(t.x[1] - t.x[0], t.z[1] - t.z[0]), this.paintMat(paint)); m.rotation.x = -Math.PI / 2; m.position.set((t.x[0] + t.x[1]) / 2, 0.006, (t.z[0] + t.z[1]) / 2); m.userData.surface = 'floor'; this.overlays.add(m); }
     }
     // 스캔 텍스처 끄기(단색 보기) — 면별 texture=false 면 해당 _tex 숨김
@@ -409,8 +464,10 @@ export class Editor {
       row('칠할 영역', selectEl([['전체', 'all'], ['띠 위(상부)', 'upper'], ['띠 아래(하부)', 'lower']], sf.zone || 'all', (v) => { sf.zone = v; commit('zone'); }));
       row('색', this.palette(PALETTE_WALL, sf.paint, (hex) => { sf.paint = hex; commit('paint'); }));
       row('스캔 텍스처', check(sfw.texture !== false, (v) => { sfw.texture = v; commit('tex'); }, '보이기 (끄면 단색)'));
-      row('화이트 몰딩', check(sfw.molding !== false, (v) => { sfw.molding = v; commit('molding'); }, '이 벽에 몰딩'));
-      row('액자', check(sfw.art !== false, (v) => { sfw.art = v; commit('art'); }, '이 벽에 작품 걸기'));
+      const svc = serviceOf(this.meta, w.id); const dflt = (v) => v === true || (v !== false && !svc);
+      if (svc) h(`<div class="hint">${svc} 안쪽 벽 — 몰딩·액자는 기본으로 달지 않습니다(체크하면 표시).</div>`);
+      row('화이트 몰딩', check(dflt(sfw.molding), (v) => { sfw.molding = v; commit('molding'); }, '이 벽에 몰딩'));
+      row('액자', check(dflt(sfw.art), (v) => { sfw.art = v; commit('art'); }, '이 벽에 작품 걸기'));
       row('액자 수', num(sfw.artCount ?? '', 1, (v) => { sfw.artCount = v || null; commit('art'); }, '개 (비우면 자동)'));
       row('액자 틀', selectEl(FRAME_STYLES, sfw.frame || 'gold', (v) => { sfw.frame = v; commit('frame'); }));
       this.renderTrimControls(box, w.id, '벽');
