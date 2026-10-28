@@ -148,3 +148,24 @@ export function cutWallOpening(mesh, axis, t0, t1, y0, y1) {
   merged.computeBoundingBox(); merged.computeBoundingSphere(); mesh.geometry = merged; old.dispose(); if (geos.length > 1) geos.forEach((g) => g.dispose());
   return true;
 }
+
+// 통로 커튼(이케아 사진처럼 검은 봉 + 짙은 회색 암막 커튼): 벽 면(face_x) 바깥에 봉, 주름 진 한 장을 한쪽으로 걷는다.
+// 경첩 대신 '접는 축'(gather 쪽 끝)을 기준으로 가로 비율(scale.x)을 줄였다 늘렸다 — Editor.toggleDoor 가 같은 방식으로 움직인다
+export function buildPassCurtain(d, isOpen, onToggle) {
+  const g = new THREE.Group(); g.name = 'pass_curtain'; const dir = d.face_dir || 1, x0 = d.face_x, top = d.y1 + 0.07;
+  const z0 = d.from - 0.02, z1 = d.to + 0.02, W = z1 - z0, H = top - 0.03;
+  const iron = std(0x161616, { metalness: 0.5, roughness: 0.4 });
+  const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, W + 0.06, 12), iron); rod.rotation.x = Math.PI / 2; rod.position.set(x0 + dir * 0.075, top, (z0 + z1) / 2); g.add(rod);
+  for (const z of [z0 - 0.01, z1 + 0.01]) { const br = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.035, 0.02), iron); br.position.set(x0 + dir * 0.04, top, z); g.add(br); const fin = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.04, 14), iron); fin.rotation.x = Math.PI / 2; fin.position.set(x0 + dir * 0.075, top, z + (z < (z0 + z1) / 2 ? -0.03 : 0.03)); g.add(fin); }
+  // 주름 판: 로컬 x 0…W, 로컬 z 로 주름 깊이. 접는 축은 gather 쪽 끝
+  const seg = 48, geo = new THREE.PlaneGeometry(W, H, seg, 1); const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) { const u = pos.getX(i) + W / 2; pos.setX(i, u); pos.setZ(i, Math.sin((u / W) * Math.PI * 14) * 0.025); }
+  geo.computeVertexNormals();
+  const panel = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: d.curtain?.color || '#5c5955', roughness: 0.95, side: THREE.DoubleSide })); panel.position.y = 0.03 + H / 2;
+  const toEnd = (d.curtain?.gather || 'to') === 'to'; const pivot = new THREE.Group(); pivot.name = 'pass_curtain_panel'; pivot.add(panel);
+  // 로컬 +x 가 접는 축에서 반대쪽 끝으로 향하게: to 끝에서 −Z 로 = 회전 +90°, from 끝에서 +Z 로 = −90°
+  pivot.position.set(x0 + dir * 0.06, 0, toEnd ? z1 : z0); pivot.rotation.y = toEnd ? Math.PI / 2 : -Math.PI / 2; g.add(pivot);
+  pivot.userData.swing = { kind: 'scale', closed: 1, open: 0.18, isOpen, onToggle }; pivot.scale.x = isOpen ? 0.18 : 1;
+  pivot.traverse((o) => { o.userData.doorPivot = pivot; }); g.traverse((o) => { if (o.isMesh) o.userData.surface = 'curtain'; });
+  return g;
+}

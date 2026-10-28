@@ -101,7 +101,12 @@ try {
     if (document.querySelectorAll('#slotBar button').length !== 4) throw new Error('안 버튼 4개 아님');
     // D안(이케아 코너): 처음 열 때 C안을 바탕으로 자동 생성 — 주방 입구 막기 + 사이드보드·거울·흉상·장식
     const dd = s.getSlot('D'); if (!dd?.closures?.kitchen || !['sideboard', 'wall_mirror', 'sculpture', 'deco_set'].every((t) => dd.props.some((p) => p.type === t))) throw new Error('D안 이케아 코너 없음');
-    window.__switchSlot('D'); if (!e.walls().some((w) => w.id === 'wall_kitchen_close') || !e.closureG.children.length) throw new Error('주방 입구 막기 벽 없음'); window.__switchSlot('A');
+    window.__switchSlot('D'); if (!e.walls().some((w) => w.id === 'wall_kitchen_close') || !e.closureG.children.length) throw new Error('주방 입구 막기 벽 없음');
+    // 옆 통로: 벽 4 끝이 뚫리고 검은 봉 커튼(누르면 걷힘/쳐짐), 다른 안으로 가면 원래 벽
+    const cutOf = () => { let c = false; window.__viewer.loaded.reconstructed.traverse((o) => { if (o.name === 'wall_x_3' && (o.userData.cut || []).includes('kitchen_side')) c = true; }); return c; };
+    let cp = null; e.closureG.traverse((o) => { if (o.userData.swing?.kind === 'scale') cp = o; }); if (!cutOf() || !cp) throw new Error('주방 옆 통로·커튼 없음');
+    if (!e.toggleDoor(cp) || !e.curtainOpen.kitchen_side) throw new Error('커튼 걷기 실패'); e.toggleDoor(cp);
+    window.__switchSlot('A'); if (cutOf()) throw new Error('A안에 옆 통로 구멍이 남음');
     if (e.walls().some((w) => w.id === 'wall_kitchen_close') || e.closureG.children.length) throw new Error('A안에 막기 벽이 남음');
     // 북쪽 창: 사진대로 큰 미닫이창 2세트
     const nw = Object.entries(s.design.windows).find(([k]) => k === e.walls().find((x) => x.axis === 'z' && Math.abs(x.offset + 4.8) < 0.15)?.id)?.[1] || [];

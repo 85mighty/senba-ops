@@ -54,7 +54,7 @@ export class InteriorA {
   }
   // 편집기에서 바꾼 창 목록을 벽 openings 로 반영한 복사본 (문 후보는 유지) + 화장실 문·입구 밖 구간
   withEditedWindows(w) {
-    const extra = doorOpenings(this.meta, w.id).map((d) => ({ kind: 'door', from: d.from, to: d.to, y: [0, d.y1] }))
+    const extra = doorOpenings(this.meta, w.id, this.store?.design).map((d) => ({ kind: 'door', from: d.from, to: d.to, y: [0, d.y1] }))
       .concat(exteriorSpans(this.meta, w).map(([a, b]) => ({ kind: 'exterior', from: a, to: b, y: [0, this.ceil] })));
     if (!this.store) return { ...w, openings: (w.openings || []).concat(extra) }; const wins = this.store.windowsOf(w.id);
     const doors = (w.openings || []).filter((o) => o.kind !== 'window');

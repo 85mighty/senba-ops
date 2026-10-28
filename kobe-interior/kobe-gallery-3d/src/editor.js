@@ -4,8 +4,8 @@ import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { PALETTE_WALL, PALETTE_FLOOR, PALETTE_CEIL, PALETTE_CURTAIN, PALETTE_TRIM, PALETTE_LOWER, FRAME_STYLES, PROP_TYPES } from './design.js';
 import { buildProp, buildWindow, buildCurtain, measureLine } from './props.js';
 import { disposeTree } from './viewer.js';
-import { isFixtureWall, isExteriorWall, exteriorSpans, doorOpenings, serviceOf, subtractRects, floorKept, inExterior, closureWallsAll, closureOn } from './scope.js';
-import { buildFixtures, cutWallOpening } from './fixtures.js';
+import { isFixtureWall, isExteriorWall, exteriorSpans, doorOpenings, openingOn, serviceOf, subtractRects, floorKept, inExterior, closureWallsAll, closureOn } from './scope.js';
+import { buildFixtures, cutWallOpening, buildPassCurtain } from './fixtures.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -95,7 +95,7 @@ export class Editor {
     if (!w || w.key) return [];   // 기둥 면
     const H = [];
     for (const win of this.s.windowsOf(w.id)) H.push([win.from - 0.04, win.to + 0.04, win.y0 - 0.04, win.y1 + 0.04]);
-    for (const d of doorOpenings(this.meta, w.id)) H.push([d.from - 0.03, d.to + 0.03, -1, d.y1 + 0.03]);
+    for (const d of doorOpenings(this.meta, w.id, this.s.design)) H.push([d.from - 0.03, d.to + 0.03, -1, d.y1 + 0.03]);
     for (const [a, b] of exteriorSpans(this.meta, w)) H.push([a, b, -1, 99]);
     return H;
   }
@@ -145,6 +145,8 @@ export class Editor {
     disposeTree(this.closureG); this.closureG.visible = this.modelOn !== false; const mat = new THREE.MeshStandardMaterial({ color: 0xa9a59f, roughness: 0.9 });
     const on = []; for (const c of this.meta.closures || []) { if (!this.s.design.closures?.[c.id]) continue; on.push(c.id); const w = c.wall, T = this.meta.wall_thickness_m || 0.1;
       const m = new THREE.Mesh(new THREE.BoxGeometry(w.to - w.from, this.ceil, T), mat); m.userData.surface = w.id; this.placeOnWall(m, { ...w, sid: w.id }, (w.from + w.to) / 2, this.ceil / 2, -T / 2); this.closureG.add(m); }
+    this.curtainOpen = this.curtainOpen || {};
+    for (const d of this.meta.door_openings || []) if (d.curtain && openingOn(d, this.s.design)) this.closureG.add(buildPassCurtain(d, !!this.curtainOpen[d.id], (open) => { this.curtainOpen[d.id] = open; }));
     const key = on.join(','); if (this._closureKey !== undefined && key !== this._closureKey) { this.buildItems(); this.buildPicks(); this.buildLabels(); this.renderChips?.(); } this._closureKey = key;
   }
   // 스캔 복원 모델 정리(한 번): 싱크대 앞면·수납 상자처럼 잘못 잡힌 면은 숨기고 주방·화장실 설비로 대체, 화장실 문 구멍 내기.
@@ -161,9 +163,13 @@ export class Editor {
       if (owner(o.name, ext) && (o.name.includes('_tex') || /_window_\d+$/.test(o.name))) o.userData.keepVisible = true;
     });
     for (const d of this.meta.door_openings || []) {
-      const w = this.allWalls().find((x) => x.id === d.wall); if (!w) continue; const meshes = [];
-      rec.traverse((o) => { if (o.isMesh && owner(o.name, [d.wall]) && !(o.userData.cut || []).includes(d.id)) meshes.push(o); });
-      for (const o of meshes) { cutWallOpening(o, w.axis, d.from, d.to, -1, d.y1); (o.userData.cut = o.userData.cut || []).push(d.id); }
+      const w = this.allWalls().find((x) => x.id === d.wall); if (!w) continue; const on = openingOn(d, this.s.design); const meshes = [];
+      rec.traverse((o) => { if (o.isMesh && owner(o.name, [d.wall])) meshes.push(o); });
+      for (const o of meshes) {
+        const cut = (o.userData.cut || []).includes(d.id);
+        if (on && !cut) { if (d.when && !o.userData.base) o.userData.base = o.geometry.clone(); cutWallOpening(o, w.axis, d.from, d.to, -1, d.y1); (o.userData.cut = o.userData.cut || []).push(d.id); }
+        else if (!on && cut && o.userData.base) { o.geometry.dispose(); o.geometry = o.userData.base.clone(); o.userData.cut = o.userData.cut.filter((x) => x !== d.id); }   // 막기 벽을 끄면 원래 벽으로
+      }
     }
   }
   // ---------------- 문 열고 닫기: 화면에서 문짝을 누르면 경첩을 돌린다(가려진 문은 안 잡힘)
@@ -178,8 +184,10 @@ export class Editor {
   }
   doorAt(ev) { if (!this.fixtures?.visible) return null; return this.frontHit(ev)?.object.userData.doorPivot || null; }
   toggleDoor(pivot) {
-    const sw = pivot.userData.swing; sw.isOpen = !sw.isOpen; const from = pivot.rotation.y, to = sw.isOpen ? sw.open : sw.closed; let t = 0;
-    this.v.onFrame.push((dt) => { t = Math.min(1, t + dt * 1.8); const k = t * t * (3 - 2 * t); pivot.rotation.y = from + (to - from) * k; return t < 1; });
+    const sw = pivot.userData.swing; sw.isOpen = !sw.isOpen; sw.onToggle?.(sw.isOpen);
+    const get = () => (sw.kind === 'scale' ? pivot.scale.x : pivot.rotation.y), set = (v) => { if (sw.kind === 'scale') pivot.scale.x = v; else pivot.rotation.y = v; };
+    const from = get(), to = sw.isOpen ? sw.open : sw.closed; let t = 0;
+    this.v.onFrame.push((dt) => { t = Math.min(1, t + dt * 1.8); const k = t * t * (3 - 2 * t); set(from + (to - from) * k); return t < 1; });
     return sw.isOpen;
   }
   // ---------------- 띠(체어레일)·걸레받이: 벽/기둥별. 기본(검정·평면)과 다른 면만 GLB 띠를 숨기고 직접 그린다
