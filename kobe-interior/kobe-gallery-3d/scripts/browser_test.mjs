@@ -110,6 +110,9 @@ try {
     if (!(s.design.patches || []).includes('d_upper_mirrors_20261028') || !['thin_column_4', 'wide_column_11', 'thin_column_18'].every((k) => s.getColumn(k).mirrorFit === 'upper')) throw new Error('D안 기둥 거울 적용 안 됨');
     const mir = window.__interior.layers.mirror_4_sides.children.filter((m) => m.name === 'mirror'); const railTop = window.__viewer.meta.chair_rail_height_m;
     if (mir.length < 12 || !mir.every((m) => { m.geometry.computeBoundingBox(); const hh = m.geometry.boundingBox.max.y - m.geometry.boundingBox.min.y; return m.position.y - hh / 2 >= railTop - 0.01; })) throw new Error('띠 위 거울 범위 이상 ' + mir.length);
+    // D안 창 커튼: 북쪽 큰 창 2세트에 같은 색 커튼, 누르면 두 장이 함께 걷힘/쳐짐
+    const sws = new Set(); e.windows.traverse((o) => { if (o.userData.swing?.label === '창 커튼') sws.add(o.userData.swing); });
+    if (sws.size !== 2) throw new Error('창 커튼 2세트 아님 ' + sws.size); const sw0 = [...sws][0]; const wasOpen = sw0.isOpen; e.toggleDoor(sw0.pivots[0]); if (sw0.isOpen === wasOpen) throw new Error('창 커튼 토글 실패'); e.toggleDoor(sw0.pivots[0]);
     window.__switchSlot('A'); if (cutOf()) throw new Error('A안에 옆 통로 구멍이 남음');
     if (e.walls().some((w) => w.id === 'wall_kitchen_close') || e.closureG.children.length) throw new Error('A안에 막기 벽이 남음');
     // 북쪽 창: 사진대로 큰 미닫이창 2세트

@@ -186,7 +186,7 @@ export class Editor {
   doorAt(ev) { if (!this.fixtures?.visible) return null; return this.frontHit(ev)?.object.userData.doorPivot || null; }
   toggleDoor(pivot) {
     const sw = pivot.userData.swing; sw.isOpen = !sw.isOpen; sw.onToggle?.(sw.isOpen);
-    const get = () => (sw.kind === 'scale' ? pivot.scale.x : pivot.rotation.y), set = (v) => { if (sw.kind === 'scale') pivot.scale.x = v; else pivot.rotation.y = v; };
+    const ps = sw.pivots || [pivot]; const get = () => (sw.kind === 'scale' ? ps[0].scale.x : ps[0].rotation.y), set = (v) => { for (const q of ps) { if (sw.kind === 'scale') q.scale.x = v; else q.rotation.y = v; } };
     const from = get(), to = sw.isOpen ? sw.open : sw.closed; let t = 0;
     this.v.onFrame.push((dt) => { t = Math.min(1, t + dt * 1.8); const k = t * t * (3 - 2 * t); set(from + (to - from) * k); return t < 1; });
     return sw.isOpen;
@@ -398,7 +398,13 @@ export class Editor {
     for (const w of this.walls()) for (const win of this.s.windowsOf(w.id)) {
       const place = (obj, t, y, off) => this.placeOnWall(obj, w, t, y, off);
       const wm = buildWindow(win, place); wm.userData.pick = { kind: 'window', id: win.id, wall: w.id }; wm.traverse((o) => { o.userData.windowOf = w.id; }); this.windows.add(wm);
-      if (win.curtain?.on) { const cm = buildCurtain(win, this.ceil, place); cm.traverse((o) => { o.userData.windowOf = w.id; }); this.windows.add(cm); }
+      if (win.curtain?.on) {
+        const others = this.s.windowsOf(w.id).filter((x) => x !== win); let ext = 0.18;   // 옆 창과 봉이 겹치지 않게
+        for (const o of others) { const gap = o.from >= win.to ? o.from - win.to : win.from >= o.to ? win.from - o.to : null; if (gap !== null) ext = Math.min(ext, gap / 2 - 0.015); }
+        ext = Math.min(ext, win.from - w.from - 0.03, w.to - win.to - 0.03); this.curtainOpen = this.curtainOpen || {};
+        const cm = buildCurtain(win, this.ceil, place, { ext: Math.max(0.02, ext), isOpen: this.curtainOpen[win.id] ?? (win.curtain.style !== 'closed'), onToggle: (open) => { this.curtainOpen[win.id] = open; } });
+        cm.traverse((o) => { o.userData.windowOf = w.id; }); this.windows.add(cm);
+      }
     }
   }
   buildProps() { disposeTree(this.props); for (const p of this.s.design.props) { const g = buildProp(p); g.userData.pick = { kind: 'prop', id: p.id }; this.props.add(g); } }
