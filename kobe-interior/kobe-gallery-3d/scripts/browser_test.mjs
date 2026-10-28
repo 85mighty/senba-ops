@@ -159,7 +159,14 @@ try {
     const p = s.addProp({ type: 'pedestal', x: 0.4, z: -2.4, rot: 0, scale: 1, color: null }); s.commit('prop'); const v = window.__viewer; v.camera.position.set(0.4, 6, -0.4); v.controls.target.set(0.4, 0, -2.4); v.controls.update(); return p.id; });
   await wait(1200);
   const pp = await page.evaluate((id) => { const e = window.__editor; const g = e.props.children.find((c) => c.userData.pick?.id === id); const w = g.position.clone(); w.y = 0.9; const q = w.project(window.__viewer.camera); const c = window.__viewer.renderer.domElement.getBoundingClientRect(); return { x: c.left + (q.x + 1) / 2 * c.width, y: c.top + (1 - q.y) / 2 * c.height }; }, dragRes);
-  await page.mouse.move(pp.x, pp.y); await page.mouse.down(); for (let k = 1; k <= 6; k++) { await page.mouse.move(pp.x + k * 15, pp.y); await wait(60); } await page.mouse.up(); await wait(800);
+  // 짧게 누르고 바로 끌면 화면 회전 — 소품은 그대로
+  await page.evaluate(({ x, y }) => { const c = window.__viewer.renderer.domElement; const ev = (t, dx) => new PointerEvent(t, { clientX: x + dx, clientY: y, isPrimary: true, pointerId: 7, pointerType: 'touch', bubbles: true });   // 느린 테스트 렌더링에서도 '짧게'가 되도록 한 번에 보냄
+    const oc = window.__viewer.controls; oc.enabled = false;   // 합성 이벤트는 실제 포인터가 없어 화면 회전(포인터 캡처)은 끄고 소품 판정만 본다
+    c.dispatchEvent(ev('pointerdown', 0)); for (let k = 1; k <= 6; k++) c.dispatchEvent(ev('pointermove', k * 15)); c.dispatchEvent(ev('pointerup', 90)); oc.enabled = true; }, pp); await wait(800);
+  const quick = await page.evaluate((id) => window.__store.design.props.find((x) => x.id === id).x, dragRes); if (quick !== 0.4) problems.push('짧게 끌었는데 소품이 움직임 ' + quick);
+  await page.evaluate(() => { const v = window.__viewer; v.controls.enableDamping = false; v.controls.update(); v.camera.position.set(0.4, 6, -0.4); v.controls.target.set(0.4, 0, -2.4); v.controls.update(); v.controls.enableDamping = true; }); await wait(1000);   // 회전 관성 제거 후 원위치
+  // 길게 누른 뒤 끌면 이동
+  await page.mouse.move(pp.x, pp.y); await page.mouse.down(); await page.waitForFunction(() => window.__editor.drag?.active, null, { timeout: 30000 }); for (let k = 1; k <= 6; k++) { await page.mouse.move(pp.x + k * 15, pp.y); await wait(60); } await page.mouse.up(); await wait(800);
   const moved = await page.evaluate((id) => { const p = window.__store.design.props.find((x) => x.id === id); return { x: p.x, z: p.z, sel: window.__editor.selected?.id === id, edit: window.__editor.enabled, fab: !document.querySelector('#propFab').hidden }; }, dragRes);
   console.log('소품 끌기:', JSON.stringify(moved));
   if (!(moved.x > 0.6 && Math.abs(moved.z + 2.4) < 0.3 && moved.sel && moved.edit && moved.fab)) problems.push('소품 끌어 옮기기 실패 ' + JSON.stringify(moved));
