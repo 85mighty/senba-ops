@@ -5,7 +5,9 @@
 //  door_openings  : 스캔에서 막혀 버린 문 개구부(화장실 문)
 export const isFixtureWall = (meta, id) => !!(meta.fixture_walls || {})[id];
 export const serviceOf = (meta, id) => (meta.service_walls || {})[id] || null;
-export const doorOpenings = (meta, wallId) => (meta.door_openings || []).filter((d) => d.wall === wallId);
+// when: 'closure:<id>' 이면 그 막기 벽을 켠 디자인에서만 뚫린다
+export const openingOn = (d, design) => { if (!d.when) return true; const [k, id] = d.when.split(':'); return k === 'closure' && !!design?.closures?.[id]; };
+export const doorOpenings = (meta, wallId, design) => (meta.door_openings || []).filter((d) => d.wall === wallId && openingOn(d, design));
 
 // 벽 길이방향(t) 구간 중 입구 밖에 해당하는 구간들
 export function exteriorSpans(meta, w) {
