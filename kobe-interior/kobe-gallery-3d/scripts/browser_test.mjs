@@ -113,6 +113,9 @@ try {
     // D안 창 커튼: 북쪽 큰 창 2세트에 같은 색 커튼, 누르면 두 장이 함께 걷힘/쳐짐
     const sws = new Set(); e.windows.traverse((o) => { if (o.userData.swing?.label === '창 커튼') sws.add(o.userData.swing); });
     if (sws.size !== 2) throw new Error('창 커튼 2세트 아님 ' + sws.size); const sw0 = [...sws][0]; const wasOpen = sw0.isOpen; e.toggleDoor(sw0.pivots[0]); if (sw0.isOpen === wasOpen) throw new Error('창 커튼 토글 실패'); e.toggleDoor(sw0.pivots[0]);
+    // D안 바닥: 실제 원목 사진 텍스처(공용 재질, 다시 그려도 해제 안 됨)
+    if (s.getSurface('floor').paint !== 'tex:wood_real') throw new Error('D안 바닥 텍스처 아님'); let fm = null; e.overlays.traverse((o) => { if (o.isMesh && o.material?.map && o.userData.surface === 'floor') fm = o; });
+    if (!fm || !fm.geometry.attributes.uv) throw new Error('바닥 텍스처 메쉬·UV 없음');
     window.__switchSlot('A'); if (cutOf()) throw new Error('A안에 옆 통로 구멍이 남음');
     if (e.walls().some((w) => w.id === 'wall_kitchen_close') || e.closureG.children.length) throw new Error('A안에 막기 벽이 남음');
     // 북쪽 창: 사진대로 큰 미닫이창 2세트
