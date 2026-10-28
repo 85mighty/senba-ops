@@ -402,7 +402,8 @@ export class Editor {
         const others = this.s.windowsOf(w.id).filter((x) => x !== win); let ext = 0.18;   // 옆 창과 봉이 겹치지 않게
         for (const o of others) { const gap = o.from >= win.to ? o.from - win.to : win.from >= o.to ? win.from - o.to : null; if (gap !== null) ext = Math.min(ext, gap / 2 - 0.015); }
         ext = Math.min(ext, win.from - w.from - 0.03, w.to - win.to - 0.03); this.curtainOpen = this.curtainOpen || {};
-        const cm = buildCurtain(win, this.ceil, place, { ext: Math.max(0.02, ext), isOpen: this.curtainOpen[win.id] ?? (win.curtain.style !== 'closed'), onToggle: (open) => { this.curtainOpen[win.id] = open; } });
+        const after = others.some((o) => o.from >= win.to), before = others.some((o) => o.to <= win.from); const gather = after && !before ? 'from' : before && !after ? 'to' : undefined;   // 옆 창 반대쪽(바깥)으로 걷음
+        const cm = buildCurtain(win, this.ceil, place, { gather, ext: Math.max(0.02, ext), isOpen: this.curtainOpen[win.id] ?? (win.curtain.style !== 'closed'), onToggle: (open) => { this.curtainOpen[win.id] = open; } });
         cm.traverse((o) => { o.userData.windowOf = w.id; }); this.windows.add(cm);
       }
     }
@@ -588,7 +589,8 @@ export class Editor {
       h('<h4>커튼</h4>');
       row('커튼', check(win.curtain.on, (v) => { win.curtain.on = v; commit('curtain'); }, '달기'));
       row('커튼 색', this.palette(PALETTE_CURTAIN, win.curtain.color, (hex) => { win.curtain.color = hex; commit('curtain'); }));
-      row('스타일', selectEl([['양쪽으로 걷음', 'open'], ['전체 닫음', 'closed']], win.curtain.style, (v) => { win.curtain.style = v; commit('curtain'); }));
+      row('스타일', selectEl([['걷힌 상태로 시작', 'open'], ['쳐진 상태로 시작', 'closed']], win.curtain.style, (v) => { win.curtain.style = v; commit('curtain'); }));
+      if (win.valance) row('다는 방식', selectEl([['커튼박스 안 레일 · 창 길이 · 한 장', 'valance'], ['검은 봉 · 바닥까지 · 두 장', 'rod']], win.curtain.mount || 'valance', (v) => { win.curtain.mount = v; commit('curtain'); }));
       box.appendChild(btn('이 창 삭제', () => { this.s.removeWindow(w.id, win.id); commit('window'); this.renderChips(); this.select({ kind: 'wall', id: w.id }); }, 'danger'));
     }
     if (sel.kind === 'prop') {
