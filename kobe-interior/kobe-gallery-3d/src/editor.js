@@ -12,6 +12,7 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 const TILE = 1.5;
 
 export class Editor {
+  static LONG_PRESS = 450;   // 소품을 옮기려면 이만큼(ms) 누르고 있어야 한다
   constructor(viewer, interior, store, toast) {
     this.v = viewer; this.i = interior; this.s = store; this.meta = viewer.meta; this.toast = toast;
     this.enabled = false; this.selected = null; this.placing = null; this.measuring = null;
@@ -26,7 +27,7 @@ export class Editor {
     this.autoHide = true; try { this.autoHide = localStorage.getItem('kobe3d.autoHide') !== '0'; } catch {}   // 기본 켬, 끄면 기억
     this._autoHidden = new Set();
     viewer.controls.addEventListener('change', () => { if (this.autoHide) this.scheduleAutoHide(); });
-    this.tc = new TransformControls(viewer.camera, viewer.renderer.domElement); this.tc.setSize(0.7); this.tc.showY = false;
+    this.tc = new TransformControls(viewer.camera, viewer.renderer.domElement); this.tc.setSize(0.7); this.tc.showY = false; this.tc.enabled = false;   // 화살표 기즈모는 쓰지 않음(길게 눌러 끌기) — 포인터를 붙잡지 않게 끔
     viewer.scene.add(this.tc.getHelper ? this.tc.getHelper() : this.tc);
     this.tc.addEventListener('dragging-changed', (e) => { viewer.controls.enabled = !e.value; if (!e.value) this.onDragEnd(); });
     this.tc.addEventListener('objectChange', () => { const o = this.tc.object; if (o) o.position.y = 0; });
@@ -323,22 +324,31 @@ export class Editor {
     const changed = next.size !== this._autoHidden.size || [...next].some((x) => !this._autoHidden.has(x));
     if (changed) { this._autoHidden = next; this.applyHidden(); }
   }
-  reattach() {}   // 소품·핀은 화살표 기즈모 대신 손가락으로 바로 끌어 옮긴다(dragTargetAt·beginDrag)
+  reattach() {}   // 소품·핀은 화살표 기즈모 대신 길게 눌러 끌어 옮긴다(dragTargetAt·beginDrag)
   // ---------------- 소품 끌어 옮기기: 화면 맨 앞에 보이는 것이 소품(편집 중이면 위치 핀도)일 때만 잡는다
   dragTargetAt(ev) {
     const hit = this.frontHit(ev); if (!hit) return null;
     for (let o = hit.object; o; o = o.parent) { const k = o.userData.pick?.kind; if (k === 'prop' || k === 'landmark') return o; if (o === this.props || o === this.marks) break; }
     return null;
   }
-  beginDrag(g, ev) { const p = this.floorPoint(ev); this.drag = { g, off: p ? g.position.clone().sub(p) : new THREE.Vector3(), x: ev.clientX, y: ev.clientY, moved: false }; }
+  // 길게 누르기(LONG_PRESS ms) 전에 손가락이 움직이면 화면 돌리기로 넘기고, 오래 누르고 있으면 그때부터 소품이 손가락을 따라온다
+  beginDrag(g, ev) {
+    const d = { g, x: ev.clientX, y: ev.clientY, lx: ev.clientX, ly: ev.clientY, active: false, moved: false };
+    d.timer = setTimeout(() => { if (this.drag !== d) return; d.active = true; this.v.controls.enabled = false;
+      const p = this.floorPoint({ clientX: d.lx, clientY: d.ly }); d.off = p ? g.position.clone().sub(p).setY(0) : new THREE.Vector3(); d.y0 = g.position.y; g.position.y = d.y0 + 0.04;   // 살짝 들어 올려 '잡힘' 표시
+      this.toast('옮기는 중 — 손을 떼면 그 자리에 놓습니다'); }, Editor.LONG_PRESS);
+    this.drag = d;
+  }
+  cancelDrag() { const d = this.drag; if (!d) return; clearTimeout(d.timer); if (d.active) d.g.position.y = d.y0; this.drag = null; }
   dragMove(ev) {
-    const d = this.drag; if (!d) return; if (!d.moved && Math.hypot(ev.clientX - d.x, ev.clientY - d.y) < 6) return;
+    const d = this.drag; if (!d) return; d.lx = ev.clientX; d.ly = ev.clientY;
+    if (!d.active) { if (Math.hypot(ev.clientX - d.x, ev.clientY - d.y) > 8) this.cancelDrag(); return; }   // 짧게 누르고 끌면 화면 회전
     if (!d.moved) { d.moved = true; disposeTree(this.hl); }
     const p = this.floorPoint(ev); if (p) { d.g.position.x = p.x + d.off.x; d.g.position.z = p.z + d.off.z; }
   }
   // 손을 떼면: 움직였으면 위치 저장, 그냥 눌렀으면 선택. 편집 모드가 꺼져 있으면 켠다
   endDrag() {
-    const d = this.drag; this.drag = null; if (!d) return false; const pk = d.g.userData.pick;
+    const d = this.drag; this.drag = null; if (!d) return false; clearTimeout(d.timer); if (d.active) d.g.position.y = d.y0; const pk = d.g.userData.pick;
     if (!this.enabled) { const cb = $('#editMode'); if (cb) cb.checked = true; this.setEnabled(true); }
     if (d.moved) {
       if (pk.kind === 'prop') { const p = this.s.design.props.find((x) => x.id === pk.id); if (p) { p.x = +d.g.position.x.toFixed(2); p.z = +d.g.position.z.toFixed(2); this.s.commit('prop-move'); } }
@@ -417,7 +427,7 @@ export class Editor {
   setEnabled(on) { this.enabled = on; this.marks.visible = on; if (!on) { this.select(null); this.tc.detach(); this.placing = null; } $('#editorPanel').classList.toggle('on', on); }
   onClick(ev) {
     if (!this.enabled) return false;
-    if (this.placing) { const p = this.floorPoint(ev); if (p) { const prop = this.s.addProp({ type: this.placing, x: +p.x.toFixed(2), z: +p.z.toFixed(2), rot: 0, scale: 1, color: null }); this.placing = null; $('#placingHint').textContent = ''; this.s.commit('prop'); this.select({ kind: 'prop', id: prop.id }); this.toast('놓았습니다 — 손가락으로 끌어 옮기고, 아래 버튼으로 회전·복제·삭제'); } return true; }
+    if (this.placing) { const p = this.floorPoint(ev); if (p) { const prop = this.s.addProp({ type: this.placing, x: +p.x.toFixed(2), z: +p.z.toFixed(2), rot: 0, scale: 1, color: null }); this.placing = null; $('#placingHint').textContent = ''; this.s.commit('prop'); this.select({ kind: 'prop', id: prop.id }); this.toast('놓았습니다 — 길게 누른 채 끌어 옮기고, 아래 버튼으로 회전·복제·삭제'); } return true; }
     if (this.measuring) { const p = this.hitPoint(ev); if (p) { this.measuring.push(p); if (this.measuring.length === 2) { this.measures.add(measureLine(this.measuring[0], this.measuring[1], (t) => this.v.textSprite(t))); this.measuring = []; this.toast('두 점을 다시 찍으면 다른 거리를 잽니다'); } } return true; }
     const hit = this.pickAll(ev); this.select(hit ? hit.userData.pick : null); return true;
   }
@@ -437,7 +447,7 @@ export class Editor {
     if (sel?.kind === 'prop' || sel?.kind === 'landmark') this.reattach(sel);
     this.refreshHighlight(); this.renderInspector();
     document.querySelectorAll('#itemChips button').forEach((b) => b.classList.toggle('active', !!sel && b.dataset.id === (sel.seg || sel.id)));
-    const fab = $('#propFab'); if (fab) { fab.hidden = !(sel && (sel.kind === 'prop' || sel.kind === 'window')); const fh = $('#fabHint'); if (fh) fh.textContent = sel?.kind === 'window' ? '위치·폭·커튼은 ☰ 패널 아래에서' : '손가락으로 끌어서 옮기기'; if (sel?.kind === 'prop') { const p = this.s.design.props.find((x) => x.id === sel.id); $('#fabName').textContent = (PROP_TYPES.find((x) => x[1] === p?.type) || ['소품'])[0]; } if (sel?.kind === 'window') $('#fabName').textContent = '창'; }
+    const fab = $('#propFab'); if (fab) { fab.hidden = !(sel && (sel.kind === 'prop' || sel.kind === 'window')); const fh = $('#fabHint'); if (fh) fh.textContent = sel?.kind === 'window' ? '위치·폭·커튼은 ☰ 패널 아래에서' : '길게 누른 채 끌어서 옮기기'; if (sel?.kind === 'prop') { const p = this.s.design.props.find((x) => x.id === sel.id); $('#fabName').textContent = (PROP_TYPES.find((x) => x[1] === p?.type) || ['소품'])[0]; } if (sel?.kind === 'window') $('#fabName').textContent = '창'; }
   }
   onDragEnd() {
     const o = this.tc.object; if (!o) return; const pk = o.userData.pick;

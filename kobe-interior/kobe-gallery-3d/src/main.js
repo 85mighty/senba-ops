@@ -69,8 +69,8 @@ function setCentral(id, status) {
 try { const saved = localStorage.getItem('kobe3d.central'); if (saved && meta.elements?.some((e) => e.id === saved)) setCentral(saved, '(이 브라우저에 저장된 선택)'); else setCentral(meta.central_wide_column, `(${meta.central_wide_column_status || 'inferred'})`); } catch { setCentral(meta.central_wide_column, ''); }
 const canvas = $('#c'); let downAt = null;
 canvas.addEventListener('pointerdown', (e) => { downAt = [e.clientX, e.clientY]; });
-// 소품(편집 중에는 위치 핀도)을 손가락으로 바로 끌어 옮긴다 — 화면 회전보다 먼저 잡아야 해서 capture 단계
-(canvas.parentElement || document).addEventListener('pointerdown', (e) => { if (e.target === canvas && editor && e.isPrimary && (viewer.mode === 'reconstructed' || viewer.mode === 'interior') && !editor.placing && !editor.measuring) { const g = editor.dragTargetAt(e); if (g) { viewer.controls.enabled = false; editor.beginDrag(g, e); } } }, { capture: true });
+// 소품(편집 중에는 위치 핀도): 짧게 누르면 선택, 길게 누르면 손가락을 따라 이동 — 화면 회전보다 먼저 잡아야 해서 capture 단계
+(canvas.parentElement || document).addEventListener('pointerdown', (e) => { if (e.target === canvas && editor && e.isPrimary && (viewer.mode === 'reconstructed' || viewer.mode === 'interior') && !editor.placing && !editor.measuring) { const g = editor.dragTargetAt(e); if (g) editor.beginDrag(g, e); } else if (!e.isPrimary && editor?.drag && !editor.drag.active) editor.cancelDrag(); }, { capture: true });   // 두 손가락(확대)이면 취소
 window.addEventListener('pointermove', (e) => { if (editor?.drag && e.isPrimary) editor.dragMove(e); });
 const finishDrag = (e) => { if (!editor?.drag) return false; editor.endDrag(e); viewer.controls.enabled = true; downAt = null; return true; };
 window.addEventListener('pointerup', finishDrag); window.addEventListener('pointercancel', finishDrag);
