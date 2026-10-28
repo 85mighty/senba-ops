@@ -193,6 +193,7 @@ export function buildWindow(win, placeOnWall) {
 // 커튼: 창 위 검은 봉(창보다 ext 만큼 넓게, 커튼박스 앞) + 짙은 암막 두 장. 각 장은 바깥 끝을 축으로 가로 비율(scale.x)을 줄여 걷는다.
 // 두 장이 같은 swing 을 나눠 써서 한 번 누르면 함께 움직인다 — Editor.toggleDoor. opts: { ext, isOpen, onToggle }
 export function buildCurtain(win, ceilH, placeOnWall, opts = {}) {
+  if (win.valance && (win.curtain?.mount ?? 'valance') === 'valance') return buildValanceCurtain(win, placeOnWall, opts);
   const g = new THREE.Group(); g.name = 'curtain'; g.userData.windowId = win.id;
   const W = win.to - win.from, ext = opts.ext ?? 0.15, half = W / 2 + ext; const top = Math.min(ceilH - 0.06, win.y1 + 0.3), bottom = 0.03, H = top - 0.03 - bottom;
   const iron = std(0x161616, { metalness: 0.5, roughness: 0.4 }); const zr = 0.2;
@@ -208,6 +209,23 @@ export function buildCurtain(win, ceilH, placeOnWall, opts = {}) {
   const sw = { kind: 'scale', closed: 1, open: OPEN, isOpen, onToggle: opts.onToggle, pivots, label: '창 커튼' };
   for (const p of pivots) { p.userData.swing = sw; p.traverse((o) => { o.userData.doorPivot = pivots[0]; }); }
   placeOnWall(g, (win.from + win.to) / 2, 0, 0);
+  return g;
+}
+
+// 커튼박스(창 위 회색 상자) 안 레일에 거는 커튼 — 봉 없이 창 길이만큼(박스 안 ~ 창턱 아래), 창 하나에 한 장.
+// 한쪽 끝(gather: 'from' | 'to')으로 접어 걷는다. 박스·창틀과 겹치지 않게 벽에서 약 10 cm 앞
+function buildValanceCurtain(win, placeOnWall, opts) {
+  const g = new THREE.Group(); g.name = 'curtain'; g.userData.windowId = win.id;
+  const W = win.to - win.from + 0.08, top = win.y1 + 0.12, bottom = win.y0 - 0.08, H = top - bottom, zc = 0.105;
+  const mat = new THREE.MeshStandardMaterial({ color: win.curtain?.color || '#5c5955', roughness: 0.95, side: THREE.DoubleSide });
+  const seg = Math.max(24, Math.round(W / 0.03)), geo = new THREE.PlaneGeometry(W, H, seg, 1), pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) { const u = pos.getX(i) + W / 2; pos.setX(i, u); pos.setZ(i, Math.sin((u / W) * Math.PI * 2 * Math.max(4, W / 0.15)) * 0.022); }
+  geo.computeVertexNormals(); const panel = new THREE.Mesh(geo, mat); panel.position.y = bottom + H / 2;
+  const toEnd = (opts.gather || win.curtain?.gather || 'from') === 'to';
+  const pivot = new THREE.Group(); pivot.add(panel); pivot.position.set(toEnd ? W / 2 : -W / 2, 0, zc); pivot.rotation.y = toEnd ? Math.PI : 0; g.add(pivot);
+  const OPEN = Math.min(0.6, 0.3 / W), isOpen = opts.isOpen ?? (win.curtain?.style !== 'closed'); pivot.scale.x = isOpen ? OPEN : 1;
+  pivot.userData.swing = { kind: 'scale', closed: 1, open: OPEN, isOpen, onToggle: opts.onToggle, pivots: [pivot], label: '창 커튼' }; pivot.traverse((o) => { o.userData.doorPivot = pivot; });
+  placeOnWall(g, (win.from + win.to) / 2, 0, 0.012);
   return g;
 }
 
