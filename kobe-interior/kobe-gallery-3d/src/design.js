@@ -17,11 +17,12 @@ export const FRAME_STYLES = [['골드', 'gold'], ['블랙', 'black'], ['화이�
 export const PROP_TYPES = [
   ['센바 커플 세팅(보드2+의자2+카트)', 'couple_set'], ['센바 작업 보드', 'board'], ['검은 의자', 'chair'], ['물감 카트', 'cart'],
   ['이젤', 'easel'], ['이젤+캔버스', 'easel_canvas'], ['작업 테이블', 'table'], ['스툴', 'stool'], ['벤치', 'bench'], ['전시 좌대', 'pedestal'],
+  ['사이드보드(유리문·서랍)', 'sideboard'], ['벽 거울(검은 틀)', 'wall_mirror'], ['조각상(흉상)', 'sculpture'], ['장식(조명·꽃병)', 'deco_set'],
   ['화분', 'plant'], ['파티션', 'partition'], ['러그', 'rug'], ['접수 카운터', 'counter'], ['안내판', 'sign'], ['펜던트 조명', 'pendant'],
 ];
 
 export const STORAGE_KEY = 'kobe3d.design.v1';
-export const SLOTS = ['A', 'B', 'C'];
+export const SLOTS = ['A', 'B', 'C', 'D'];
 
 export function emptyDesign() {
   return { version: 1, surfaces: {}, columns: {}, windows: null, landmarks: {}, props: [], global: DEFAULT_GLOBAL() };
@@ -124,6 +125,8 @@ export class DesignStore {
   windowsOf(wallId) { return this.design.windows[wallId] || []; }
   addWindow(wallId, rec) { (this.design.windows[wallId] = this.design.windows[wallId] || []).push(rec); }
   removeWindow(wallId, id) { this.design.windows[wallId] = (this.design.windows[wallId] || []).filter((w) => w.id !== id); }
+  // ---- 막기 벽(주방 입구 등)
+  setClosure(id, on) { this.design.closures = { ...(this.design.closures || {}), [id]: !!on }; }
   // ---- 소품
   addProp(p) { p.id = p.id || ('p' + Math.random().toString(36).slice(2, 8)); this.design.props.push(p); return p; }
   removeProp(id) { this.design.props = this.design.props.filter((p) => p.id !== id); }

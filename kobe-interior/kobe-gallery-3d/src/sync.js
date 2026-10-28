@@ -13,7 +13,7 @@ export class Sync {
   constructor(store, { onApplied = () => {}, onStatus = () => {} } = {}) {
     this.store = store; this.onApplied = onApplied; this.onStatus = onStatus;
     this.cfg = load(CFG, { url: DEFAULT_SYNC_URL, token: '' }); this.meta = load(META, {});
-    this.applying = false; this.timers = {}; this.status = this.enabled ? 'idle' : 'off'; this.lastSync = null;
+    this.applying = false; this.timers = {}; this.unsupported = new Set(); this.status = this.enabled ? 'idle' : 'off'; this.lastSync = null;
     store.onChange((reason) => { if (this.applying || reason === 'switch' || reason === 'sync' || !this.enabled) return; this.touched(store.active); });
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') this.pull(); });
     window.addEventListener('online', () => this.pull());
@@ -42,7 +42,8 @@ export class Sync {
     try {
       const r = await this.req(`/designs/${slot}`, { method: 'PUT', body: JSON.stringify({ design, editedAt: design.editedAt || 0, device: device() }) });
       const j = await r.json();
-      if (r.status === 409) { this.apply(slot, j.current, true); }
+      if (r.status === 404) { this.unsupported.add(slot); this.m(slot).dirty = false; this.saveMeta(); }   // 서버가 아직 이 안(D안 등)을 모름 → 이 기기에만 보관
+      else if (r.status === 409) { this.apply(slot, j.current, true); }
       else if (r.ok) { const mm = this.m(slot); mm.rev = j.rev; if ((this.store.getSlot(slot)?.editedAt || 0) <= j.editedAt) mm.dirty = false; this.saveMeta(); }
       else throw new Error(j.error || r.status);
       this.done();
@@ -60,6 +61,7 @@ export class Sync {
     try {
       const r = await this.req('/designs'); if (!r.ok) throw new Error(r.status); const { slots } = await r.json();
       for (const s of SLOTS) {
+        if (this.unsupported.has(s)) continue;
         const remote = slots[s]; const local = this.store.getSlot(s); const mm = this.m(s);
         if (!remote) { if (local) await this.push(s); continue; }
         if (remote.rev === mm.rev) { if (mm.dirty) await this.push(s); continue; }
@@ -73,5 +75,5 @@ export class Sync {
     } catch (e) { if (!e.auth) this.setStatus('offline', first ? '서버에 연결할 수 없습니다' : '연결되면 다시 맞춥니다'); return false; }
     finally { this._pulling = false; }
   }
-  done() { if (SLOTS.some((s) => this.m(s).dirty)) return this.setStatus('pending'); this.lastSync = new Date(); this.setStatus('ok'); }
+  done() { if (SLOTS.some((s) => !this.unsupported.has(s) && this.m(s).dirty)) return this.setStatus('pending'); this.lastSync = new Date(); this.setStatus('ok'); }
 }

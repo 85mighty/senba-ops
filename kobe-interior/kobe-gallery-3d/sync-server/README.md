@@ -8,7 +8,7 @@
 | 운영 위치 | `/opt/kobe3d-sync/` (pm2 `kobe3d-sync`) |
 | 포트 | `127.0.0.1:<PORT>` — 기본 3018, 서버에서 빈 포트로 (외부 직접 노출 없음, nginx 경유) |
 | 공개 주소 | `https://blog.senbaartstudio.com/kobe3d-api/` |
-| 데이터 | `/opt/kobe3d-sync/data/{A,B,C}.json` + `data/history/` (안마다 최근 50개 이력) |
+| 데이터 | `/opt/kobe3d-sync/data/{A,B,C,D}.json` + `data/history/` (안마다 최근 50개 이력) |
 | 시크릿 | `/opt/kobe3d-sync/.env` 의 `SYNC_TOKEN` (커밋 금지) |
 
 ## 설치 (서버에서, root)
@@ -83,3 +83,11 @@ node -e 'const f=process.argv[1],s=process.argv[2],r=require(f);r.editedAt=Date.
 node test.mjs                                   # 서버 API 단위 테스트 (12개)
 cd .. && npm run build && npm run test:sync     # 폰·아이패드 두 브라우저로 종단 테스트 (오프라인 포함)
 ```
+
+## 서버 코드 바꾸기 (예: D안 추가 — 10/28)
+```bash
+curl -fsSL https://raw.githubusercontent.com/85mighty/senba-ops/main/kobe-interior/kobe-gallery-3d/sync-server/server.mjs -o /opt/kobe3d-sync/server.mjs
+pm2 restart kobe3d-sync          # 이 프로세스만 — pm2 restart all 금지
+curl -s https://blog.senbaartstudio.com/kobe3d-api/health   # "slots":["A","B","C","D"] 이면 완료
+```
+서버를 아직 바꾸지 않았으면 뷰어는 D안을 그 기기에만 보관하고(오류 표시 없음) A·B·C안은 그대로 동기화한다.

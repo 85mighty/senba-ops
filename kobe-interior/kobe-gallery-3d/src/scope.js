@@ -39,3 +39,8 @@ export function subtractRects(r, holes) {
   }
   return out.filter(([a, b, c, d]) => b - a > 0.005 && d - c > 0.005);
 }
+
+// 디자인에서 켜는 '막기 벽'(예: 주방 입구). 꺼져 있으면 없는 벽으로 본다
+export const closureWallsAll = (meta) => (meta.closures || []).map((c) => c.wall);
+export const closureOn = (meta, design, wallId) => (meta.closures || []).some((c) => c.wall.id === wallId && !!design?.closures?.[c.id]);
+export const activeClosureWalls = (meta, design) => (meta.closures || []).filter((c) => !!design?.closures?.[c.id]).map((c) => c.wall);
