@@ -24,3 +24,11 @@ export function applyIkeaCorner(base) {
   d.editedAt = Date.now();
   return d;
 }
+
+// 기둥 거울(10/28 요청): 큰방 기둥 3개(4·11·18)에 띠(몰드) 위부터 천장까지 사방 꽉 차게
+export const UPPER_MIRROR_COLUMNS = ['thin_column_4', 'wide_column_11', 'thin_column_18'];
+export function applyUpperMirrors(base) {
+  const d = JSON.parse(JSON.stringify(base || {})); d.columns = d.columns || {};
+  for (const id of UPPER_MIRROR_COLUMNS) d.columns[id] = { w: null, d: null, dx: 0, dz: 0, ...(d.columns[id] || {}), mirror: true, mirrorFit: 'upper', mirrorFaces: ['xn', 'xp', 'zn', 'zp'] };
+  d.editedAt = Date.now(); return d;
+}

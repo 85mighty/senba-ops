@@ -536,6 +536,7 @@ export class Editor {
       row('위치 보정 Z', num(Math.round((c.dz || 0) * 100), 1, (v) => { c.dz = v / 100; commit('size'); }));
       box.appendChild(btn('스캔 치수로 되돌리기', () => { c.w = c.d = null; c.dx = c.dz = 0; commit('size'); }, 'ghost'));
       row('4면 거울', check(c.mirror ?? (col.id === this.meta.central_wide_column), (v) => { c.mirror = v; commit('mirror'); }, '이 기둥에 거울'));
+      row('거울 범위', selectEl([['바닥 위~거울 높이, 좌우 여백', 'frame'], ['띠(몰드) 위~천장, 좌우 꽉 차게', 'upper']], c.mirrorFit || 'frame', (v) => { c.mirrorFit = v; if (v === 'upper') c.mirror = true; commit('mirror'); }));
       const faces = document.createElement('span'); for (const [k, t] of [['xn', '서(−X)'], ['xp', '동(+X)'], ['zn', '북(−Z)'], ['zp', '남(+Z)']]) faces.appendChild(check(c.mirrorFaces.includes(k), (v) => { c.mirrorFaces = v ? [...new Set([...c.mirrorFaces, k])] : c.mirrorFaces.filter((x) => x !== k); commit('mirror'); }, t)); row('거울 면', faces);
       row('칠할 영역', selectEl([['전체', 'all'], ['띠 위', 'upper'], ['띠 아래', 'lower']], sf.zone || 'all', (v) => { sf.zone = v; commit('zone'); }));
       row('색', this.palette(PALETTE_WALL, sf.paint, (hex) => { sf.paint = hex; commit('paint'); }));
