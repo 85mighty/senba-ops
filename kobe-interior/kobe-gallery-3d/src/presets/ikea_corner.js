@@ -32,3 +32,12 @@ export function applyUpperMirrors(base) {
   for (const id of UPPER_MIRROR_COLUMNS) d.columns[id] = { w: null, d: null, dx: 0, dz: 0, ...(d.columns[id] || {}), mirror: true, mirrorFit: 'upper', mirrorFaces: ['xn', 'xp', 'zn', 'zp'] };
   d.editedAt = Date.now(); return d;
 }
+
+// 창 커튼(10/28 요청): 큰 미닫이창 두 세트에 각각 통로 커튼과 같은 짙은 회색 암막 — 양쪽으로 걷힌 상태로 시작
+export const CURTAIN_GRAY = '#5c5955';
+export function applyWindowCurtains(base, store) {
+  const d = JSON.parse(JSON.stringify(base || {})); if (!d.windows && store) d.windows = store.defaultWindows();
+  const meta = store?.meta || {};
+  for (const list of Object.values(d.windows || {})) for (const w of list) if (w.style === 'jp_sliding') w.curtain = { ...(w.curtain || {}), on: true, color: CURTAIN_GRAY, style: 'open' };   // 사진의 큰 미닫이창(북쪽 2세트)만
+  d.windowsEdited = true; if (meta.windows_version) d.windows_ver = meta.windows_version; d.editedAt = Date.now(); return d;
+}

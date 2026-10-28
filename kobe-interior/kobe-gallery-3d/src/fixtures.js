@@ -165,7 +165,7 @@ export function buildPassCurtain(d, isOpen, onToggle) {
   const toEnd = (d.curtain?.gather || 'to') === 'to'; const pivot = new THREE.Group(); pivot.name = 'pass_curtain_panel'; pivot.add(panel);
   // 로컬 +x 가 접는 축에서 반대쪽 끝으로 향하게: to 끝에서 −Z 로 = 회전 +90°, from 끝에서 +Z 로 = −90°
   pivot.position.set(x0 + dir * 0.06, 0, toEnd ? z1 : z0); pivot.rotation.y = toEnd ? Math.PI / 2 : -Math.PI / 2; g.add(pivot);
-  pivot.userData.swing = { kind: 'scale', closed: 1, open: 0.18, isOpen, onToggle }; pivot.scale.x = isOpen ? 0.18 : 1;
+  pivot.userData.swing = { kind: 'scale', closed: 1, open: 0.18, isOpen, onToggle, label: '주방 통로 커튼' }; pivot.scale.x = isOpen ? 0.18 : 1;
   pivot.traverse((o) => { o.userData.doorPivot = pivot; }); g.traverse((o) => { if (o.isMesh) o.userData.surface = 'curtain'; });
   return g;
 }

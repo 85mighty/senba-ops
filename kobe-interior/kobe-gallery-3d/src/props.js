@@ -190,20 +190,24 @@ export function buildWindow(win, placeOnWall) {
 }
 
 /** 커튼: 봉 + 주름 패널(사인파 변위). style open = 양쪽으로 걷음, closed = 전체 */
-export function buildCurtain(win, ceilH, placeOnWall) {
+// 커튼: 창 위 검은 봉(창보다 ext 만큼 넓게, 커튼박스 앞) + 짙은 암막 두 장. 각 장은 바깥 끝을 축으로 가로 비율(scale.x)을 줄여 걷는다.
+// 두 장이 같은 swing 을 나눠 써서 한 번 누르면 함께 움직인다 — Editor.toggleDoor. opts: { ext, isOpen, onToggle }
+export function buildCurtain(win, ceilH, placeOnWall, opts = {}) {
   const g = new THREE.Group(); g.name = 'curtain'; g.userData.windowId = win.id;
-  const W = win.to - win.from; const top = Math.min(ceilH - 0.08, win.y1 + 0.18); const bottom = 0.12; const H = top - bottom;
-  const rodMat = std(0x2a2a2a, { metalness: 0.6, roughness: 0.4 }); const rodLen = W + 0.5;
-  const rod = cyl(0.014, 0.014, rodLen, rodMat); rod.rotation.z = Math.PI / 2; rod.position.set(0, H / 2 + 0.03, -0.08); g.add(rod);
-  const mat = new THREE.MeshStandardMaterial({ color: win.curtain.color || '#5a3a22', roughness: 0.9, side: THREE.DoubleSide });
-  const panel = (width, xc) => {
-    const seg = Math.max(8, Math.round(width / 0.05)); const geo = new THREE.PlaneGeometry(width, H, seg, 4); const pos = geo.attributes.position;
-    for (let i = 0; i < pos.count; i++) { const x = pos.getX(i); pos.setZ(i, Math.sin((x / width) * Math.PI * 2 * Math.max(2, width / 0.18)) * 0.035); }
-    geo.computeVertexNormals(); const m = new THREE.Mesh(geo, mat); m.position.set(xc, 0, -0.06); return m;
-  };
-  if (win.curtain.style === 'closed') g.add(panel(rodLen - 0.1, 0));
-  else { const pw = Math.max(0.3, rodLen * 0.22); g.add(panel(pw, -rodLen / 2 + pw / 2)); g.add(panel(pw, rodLen / 2 - pw / 2)); }
-  placeOnWall(g, (win.from + win.to) / 2, bottom + H / 2, 0.16);
+  const W = win.to - win.from, ext = opts.ext ?? 0.15, half = W / 2 + ext; const top = Math.min(ceilH - 0.06, win.y1 + 0.3), bottom = 0.03, H = top - 0.03 - bottom;
+  const iron = std(0x161616, { metalness: 0.5, roughness: 0.4 }); const zr = 0.2;
+  const rod = cyl(0.012, 0.012, 2 * half + 0.04, iron); rod.rotation.z = Math.PI / 2; rod.position.set(0, top, zr); g.add(rod);
+  for (const sx of [-1, 1]) { g.add(box(0.025, 0.04, zr, iron, sx * (half - 0.02), top, zr / 2)); const fin = cyl(0.024, 0.024, 0.045, iron, sx * (half + 0.035), top, zr); fin.rotation.z = Math.PI / 2; g.add(fin); }
+  const mat = new THREE.MeshStandardMaterial({ color: win.curtain?.color || '#5c5955', roughness: 0.95, side: THREE.DoubleSide });
+  const pw = half - 0.01, seg = Math.max(16, Math.round(pw / 0.03));
+  const mkPanel = () => { const geo = new THREE.PlaneGeometry(pw, H, seg, 1); const pos = geo.attributes.position;
+    for (let i = 0; i < pos.count; i++) { const u = pos.getX(i) + pw / 2; pos.setX(i, u); pos.setZ(i, Math.sin((u / pw) * Math.PI * 2 * Math.max(3, pw / 0.16)) * 0.03); }
+    geo.computeVertexNormals(); const m = new THREE.Mesh(geo, mat); m.position.y = bottom + H / 2; return m; };
+  const OPEN = Math.min(0.9, 0.16 / pw * 1.6 + 0.08), isOpen = opts.isOpen ?? (win.curtain?.style !== 'closed');
+  const pivots = [-1, 1].map((sx) => { const p = new THREE.Group(); p.position.set(sx * half, 0, zr - 0.03); p.rotation.y = sx < 0 ? 0 : Math.PI; p.add(mkPanel()); p.scale.x = isOpen ? OPEN : 1; g.add(p); return p; });
+  const sw = { kind: 'scale', closed: 1, open: OPEN, isOpen, onToggle: opts.onToggle, pivots, label: '창 커튼' };
+  for (const p of pivots) { p.userData.swing = sw; p.traverse((o) => { o.userData.doorPivot = pivots[0]; }); }
+  placeOnWall(g, (win.from + win.to) / 2, 0, 0);
   return g;
 }
 
