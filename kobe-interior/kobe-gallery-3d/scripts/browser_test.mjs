@@ -98,7 +98,11 @@ try {
     const ceilA = s.getSurface('ceiling').paint; window.__switchSlot('B'); s.surface('ceiling').paint = '#1c1c1c'; s.commit('paint'); window.__switchSlot('A');
     if (s.active !== 'A' || s.getSurface('ceiling').paint !== ceilA) throw new Error('안 전환 실패');
     window.__switchSlot('B'); if (s.getSurface('ceiling').paint !== '#1c1c1c') throw new Error('B안 저장 실패'); window.__switchSlot('A');
-    if (document.querySelectorAll('#slotBar button').length !== 3) throw new Error('안 버튼 3개 아님');
+    if (document.querySelectorAll('#slotBar button').length !== 4) throw new Error('안 버튼 4개 아님');
+    // D안(이케아 코너): 처음 열 때 C안을 바탕으로 자동 생성 — 주방 입구 막기 + 사이드보드·거울·흉상·장식
+    const dd = s.getSlot('D'); if (!dd?.closures?.kitchen || !['sideboard', 'wall_mirror', 'sculpture', 'deco_set'].every((t) => dd.props.some((p) => p.type === t))) throw new Error('D안 이케아 코너 없음');
+    window.__switchSlot('D'); if (!e.walls().some((w) => w.id === 'wall_kitchen_close') || !e.closureG.children.length) throw new Error('주방 입구 막기 벽 없음'); window.__switchSlot('A');
+    if (e.walls().some((w) => w.id === 'wall_kitchen_close') || e.closureG.children.length) throw new Error('A안에 막기 벽이 남음');
     // 북쪽 창: 사진대로 큰 미닫이창 2세트
     const nw = Object.entries(s.design.windows).find(([k]) => k === e.walls().find((x) => x.axis === 'z' && Math.abs(x.offset + 4.8) < 0.15)?.id)?.[1] || [];
     if (nw.length !== 2 || !nw.every((x) => x.style === 'jp_sliding' && x.valance)) throw new Error('북쪽 창 2세트 아님 ' + JSON.stringify(nw.map((x) => [x.from, x.to, x.style])));

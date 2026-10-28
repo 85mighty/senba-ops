@@ -4,7 +4,7 @@ import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { PALETTE_WALL, PALETTE_FLOOR, PALETTE_CEIL, PALETTE_CURTAIN, PALETTE_TRIM, PALETTE_LOWER, FRAME_STYLES, PROP_TYPES } from './design.js';
 import { buildProp, buildWindow, buildCurtain, measureLine } from './props.js';
 import { disposeTree } from './viewer.js';
-import { isFixtureWall, isExteriorWall, exteriorSpans, doorOpenings, serviceOf, subtractRects, floorKept, inExterior } from './scope.js';
+import { isFixtureWall, isExteriorWall, exteriorSpans, doorOpenings, serviceOf, subtractRects, floorKept, inExterior, closureWallsAll, closureOn } from './scope.js';
 import { buildFixtures, cutWallOpening } from './fixtures.js';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -37,9 +37,9 @@ export class Editor {
   get ceil() { return this.meta.ceiling_height_m || 2.4; }
   get chair() { return this.meta.chair_rail_height_m || 0.9; }
   get base() { return this.meta.baseboard_height_m || 0.1; }
-  allWalls() { return (this.meta.elements || []).filter((e) => e.type === 'wall'); }
+  allWalls() { return (this.meta.elements || []).filter((e) => e.type === 'wall').concat(closureWallsAll(this.meta)); }
   // 꾸밀 수 있는 벽 — 싱크대 앞면처럼 벽이 아닌 면, 입구 밖 벽은 뺀다(번호는 그대로 유지)
-  walls() { return this.allWalls().filter((e) => !isFixtureWall(this.meta, e.id) && !isExteriorWall(this.meta, e)); }
+  walls() { return this.allWalls().filter((e) => !isFixtureWall(this.meta, e.id) && !isExteriorWall(this.meta, e) && (!e.virtual || closureOn(this.meta, this.s.design, e.id))); }
   columns() { return (this.meta.elements || []).filter((e) => ['wide_column', 'thin_column'].includes(e.type)); }
 
   // ---------------- 번호 매긴 항목
@@ -127,7 +127,7 @@ export class Editor {
   }
   setLabels(on) { this.labels.visible = on; }
   // ①②(스캔 비교)에서는 디자인·설비 그림을 숨기고 스캔만 보인다
-  setModelVisible(on) { this.modelOn = on; for (const g of [this.overlays, this.bands, this.windows, this.doors, this.fixtures, this.props]) if (g) g.visible = on; this.applyHidden(); }
+  setModelVisible(on) { this.modelOn = on; for (const g of [this.overlays, this.bands, this.windows, this.doors, this.fixtures, this.props, this.closureG]) if (g) g.visible = on; this.applyHidden(); }
   setTileLabels(on) { if (this.tileLabels) this.tileLabels.visible = on; }
 
   // ---------------- 디자인 적용 (오버레이·창·커튼·소품·랜드마크)
@@ -137,7 +137,15 @@ export class Editor {
     this.i.rebuild('molding'); this.i.rebuild('gallery_art'); this.i.rebuild('mirror_4_sides'); this.applyColumnSizes(); this.buildLabels();
     this.v.updateHighlight(); this.refreshHighlight();
     if (keep?.kind === 'prop' || keep?.kind === 'landmark') this.reattach(keep);
-    this.buildBands(); this.buildInteriorCeiling(); this.buildDoors(); this.applyScanScope(); this.applyHidden();
+    this.buildBands(); this.buildInteriorCeiling(); this.buildDoors(); this.buildClosures(); this.applyScanScope(); this.applyHidden();
+  }
+  // 막기 벽(주방 입구 등): 디자인에서 켠 것만 회색 벽지 벽으로 세운다. 켜고 끌 때 번호 목록도 다시 만든다
+  buildClosures() {
+    if (!this.closureG) { this.closureG = new THREE.Group(); this.closureG.name = 'closures'; this.root.add(this.closureG); }
+    disposeTree(this.closureG); this.closureG.visible = this.modelOn !== false; const mat = new THREE.MeshStandardMaterial({ color: 0xa9a59f, roughness: 0.9 });
+    const on = []; for (const c of this.meta.closures || []) { if (!this.s.design.closures?.[c.id]) continue; on.push(c.id); const w = c.wall, T = this.meta.wall_thickness_m || 0.1;
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w.to - w.from, this.ceil, T), mat); m.userData.surface = w.id; this.placeOnWall(m, { ...w, sid: w.id }, (w.from + w.to) / 2, this.ceil / 2, -T / 2); this.closureG.add(m); }
+    const key = on.join(','); if (this._closureKey !== undefined && key !== this._closureKey) { this.buildItems(); this.buildPicks(); this.buildLabels(); this.renderChips?.(); } this._closureKey = key;
   }
   // 스캔 복원 모델 정리(한 번): 싱크대 앞면·수납 상자처럼 잘못 잡힌 면은 숨기고 주방·화장실 설비로 대체, 화장실 문 구멍 내기.
   // 입구 밖 벽은 스캔 그대로(텍스처·창·띠 보임)
@@ -202,7 +210,7 @@ export class Editor {
         }
       }
     };
-    for (const w of this.walls()) addBands([w], w.id, this.holesOf(w).length > 0);
+    for (const w of this.walls()) addBands([w], w.id, this.holesOf(w).length > 0 || !!w.virtual);   // 막기 벽은 스캔 띠가 없어 직접 그림
     for (const col of this.columns()) addBands(this.i.columnFaces(col).map((f) => ({ ...f, two_sided: false })), col.id);
   }
   // 하부 벽(띠 사이) 마감 오버레이 — 벽/기둥별

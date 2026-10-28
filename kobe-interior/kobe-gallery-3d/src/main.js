@@ -8,9 +8,12 @@ import { Editor } from './editor.js';
 import { encodeDesign, decodeDesign, shareCodeFromHash } from './share.js';
 import { Sync, DEFAULT_SYNC_URL } from './sync.js';
 import presetCPhone from './presets/c_phone_20261027.json';
+import { applyIkeaCorner } from './presets/ikea_corner.js';
 
 // 저장소에 보관된 디자인 — 어느 기기에서든 불러올 수 있다. seedSlot: 그 안이 비어 있으면 처음 열 때 자동으로 채움
-const PRESETS = [{ id: 'c_phone_20261027', name: 'C안 (폰에서 만든 것, 10/27)', seedSlot: 'C', design: presetCPhone }];
+const PRESETS = [{ id: 'c_phone_20261027', name: 'C안 (폰에서 만든 것, 10/27)', seedSlot: 'C', design: presetCPhone },
+  // D안: C안을 바탕으로 주방 입구를 막고 이케아 느낌 코너(사이드보드·거울·흉상, 서랍에 소데커버·베레모). 버튼은 '지금 안에 코너만 더하기'
+  { id: 'd_ikea_20261028', name: '이케아 코너 (주방 입구 막기 + 사이드보드·거울·흉상)', seedSlot: 'D', afterSync: true, apply: applyIkeaCorner, base: () => store.getSlot('C') || presetCPhone }];
 import meta from './geometry_metadata.json';
 
 const $ = (s) => document.querySelector(s);
@@ -151,10 +154,13 @@ function setupEditorUI() {
   for (const sl of SLOTS) { const btn = $(`#copy${sl}`); btn.addEventListener('click', () => { if (sl === store.active) { toast(`지금 ${sl}안입니다`); return; } if (store.hasSlot(sl) && !btn.dataset.arm) { btn.dataset.arm = '1'; btn.textContent = `${sl}안 덮어쓰기? (다시 누름)`; setTimeout(() => { delete btn.dataset.arm; btn.textContent = `→ ${sl}안`; }, 4000); return; } delete btn.dataset.arm; btn.textContent = `→ ${sl}안`; store.copyTo(sl); window.__sync?.touched(sl); renderSlotBar(); toast(`지금 디자인을 ${sl}안으로 복사`); }); }
   // 보관 디자인 자동 채우기 + 버튼
   for (const p of PRESETS) { const flag = 'kobe3d.seed.' + p.id; let seeded = false; try { seeded = !!localStorage.getItem(flag); } catch {}
-    if (p.seedSlot && !seeded && !store.hasSlot(p.seedSlot)) { store.putSlot(p.seedSlot, p.design); try { localStorage.setItem(flag, '1'); } catch {} } }
-  for (const p of PRESETS) { const b = document.createElement('button'); b.className = 'ghost'; b.textContent = `${p.name} → 지금 안에 불러오기`;
-    b.addEventListener('click', () => { if (!b.dataset.arm) { b.dataset.arm = '1'; b.textContent = `지금 ${store.active}안을 덮어씁니다. 다시 누르세요`; setTimeout(() => { delete b.dataset.arm; b.textContent = `${p.name} → 지금 안에 불러오기`; }, 4000); return; }
-      delete b.dataset.arm; b.textContent = `${p.name} → 지금 안에 불러오기`; store.putSlot(store.active, p.design); editor.renderChips(); refreshBookmarks(); toast(`${p.name}을 ${store.active}안에 불러옴`); });
+    if (p.seedSlot && !p.afterSync && !seeded && !store.hasSlot(p.seedSlot)) { store.putSlot(p.seedSlot, p.design); try { localStorage.setItem(flag, '1'); } catch {} } }
+  // 동기화로 최신 C안을 받은 뒤 채우는 안(D안) — 비어 있을 때 한 번만
+  const seedAfterSync = () => { for (const p of PRESETS) { if (!p.afterSync) continue; const flag = 'kobe3d.seed.' + p.id; let seeded = false; try { seeded = !!localStorage.getItem(flag); } catch {}
+    if (seeded || store.hasSlot(p.seedSlot)) continue; store.putSlot(p.seedSlot, p.apply(p.base())); try { localStorage.setItem(flag, '1'); } catch {} window.__sync?.touched(p.seedSlot); renderSlotBar(); toast(`${p.seedSlot}안(${p.name.split(' (')[0]})을 만들었습니다 — 위쪽 ${p.seedSlot}안을 누르세요`); } };
+  for (const p of PRESETS) { const b = document.createElement('button'); b.className = 'ghost'; const label = p.apply ? `${p.name} → 지금 안에 더하기` : `${p.name} → 지금 안에 불러오기`; b.textContent = label;
+    b.addEventListener('click', () => { if (!b.dataset.arm) { b.dataset.arm = '1'; b.textContent = p.apply ? `지금 ${store.active}안에 코너를 더합니다(그 자리 소품은 치움). 다시 누르세요` : `지금 ${store.active}안을 덮어씁니다. 다시 누르세요`; setTimeout(() => { delete b.dataset.arm; b.textContent = label; }, 4000); return; }
+      delete b.dataset.arm; b.textContent = label; store.putSlot(store.active, p.apply ? p.apply(store.design) : p.design); editor.renderChips(); refreshBookmarks(); toast(`${p.name}을 ${store.active}안에 불러옴`); });
     $('#presetList').appendChild(b); }
   // 공유 링크
   $('#shareLink').addEventListener('click', async () => {
@@ -186,7 +192,10 @@ function setupEditorUI() {
   $('#syncConnect').addEventListener('click', async () => { const tok = $('#syncToken').value; if (tok.trim().length < 8) { toast('비밀번호는 8자 이상'); return; } const ok = await sync.connect($('#syncUrl').value, tok); toast(ok ? '동기화 연결됨' : '연결 실패 — 주소·비밀번호를 확인하세요'); });
   $('#syncNow').addEventListener('click', async () => { const ok = await sync.pull(); toast(ok ? '최신으로 맞춤' : '연결 실패'); });
   $('#syncOff').addEventListener('click', () => { sync.disconnect(); $('#syncToken').value = ''; toast('동기화 끔 (이 기기에는 그대로 남아 있습니다)'); });
-  if (sync.enabled) { sync.setStatus('idle'); sync.pull(); } else sync.setStatus('off');
+  if (sync.enabled) { sync.setStatus('idle'); Promise.resolve(sync.pull()).catch(() => {}).finally(seedAfterSync); } else { sync.setStatus('off'); seedAfterSync(); }
+  // 주방 입구 막기
+  const closeCb = $('#closeKitchen'); const syncClose = () => { closeCb.checked = !!store.design.closures?.kitchen; }; syncClose(); store.onChange(syncClose);
+  closeCb.addEventListener('change', () => { store.setClosure('kitchen', closeCb.checked); store.commit('closure'); toast(closeCb.checked ? '주방 입구를 벽으로 막았습니다 (벽 18 — 눌러서 칠·띠 설정)' : '주방 입구를 다시 열었습니다'); });
   $('#exportDesign').addEventListener('click', async () => { const j = store.exportJSON(); $('#designJson').value = j; try { await navigator.clipboard.writeText(j); toast('디자인 JSON 복사됨 (아래 칸에도 표시)'); } catch { toast('아래 칸의 JSON 을 복사하세요'); } });
   $('#importDesign').addEventListener('click', () => { try { store.importJSON($('#designJson').value); editor.renderChips(); refreshBookmarks(); toast('디자인 불러옴'); } catch (e) { toast('불러오기 실패: ' + e.message); } });
   $('#resetDesign').addEventListener('click', () => { if ($('#resetDesign').dataset.arm) { store.reset(); editor.renderChips(); refreshBookmarks(); toast('초기화됨'); delete $('#resetDesign').dataset.arm; $('#resetDesign').textContent = '디자인 초기화'; } else { $('#resetDesign').dataset.arm = '1'; $('#resetDesign').textContent = '정말 초기화? (다시 클릭)'; setTimeout(() => { delete $('#resetDesign').dataset.arm; $('#resetDesign').textContent = '디자인 초기화'; }, 4000); } });

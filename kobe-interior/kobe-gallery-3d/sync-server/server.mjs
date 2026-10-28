@@ -20,7 +20,7 @@ const DATA_DIR = process.env.DATA_DIR || path.join(path.dirname(new URL(import.m
 const TOKEN = process.env.SYNC_TOKEN || '';
 const ORIGINS = (process.env.ALLOW_ORIGIN || 'https://85mighty.github.io').split(',').map((s) => s.trim()).filter(Boolean);
 const PREFIX = (process.env.PATH_PREFIX ?? '/kobe3d-api').replace(/\/$/, '');
-const SLOTS = ['A', 'B', 'C'];
+const SLOTS = ['A', 'B', 'C', 'D'];
 const MAX_BODY = 1024 * 1024;
 const KEEP_HISTORY = +(process.env.KEEP_HISTORY || 50);
 
@@ -67,7 +67,7 @@ const server = http.createServer(async (req, res) => {
       const slots = {}; for (const s of SLOTS) { const r = await readSlot(s); if (r) slots[s] = r; }
       return send(res, 200, { slots, now: Date.now() }, cors);
     }
-    const m = p.match(/^\/designs\/([ABC])$/);
+    const m = p.match(/^\/designs\/([A-D])$/);
     if (m && req.method === 'GET') { const r = await readSlot(m[1]); return r ? send(res, 200, r, cors) : send(res, 404, { error: '없음' }, cors); }
     if (m && req.method === 'PUT') {
       const body = JSON.parse(await readBody(req));

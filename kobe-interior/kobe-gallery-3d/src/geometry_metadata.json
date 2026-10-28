@@ -947,5 +947,25 @@
     "basin_z": 3.03,
     "status": "observed",
     "note": "Polycam 스캔(위·옆에서 본 화면): 싱크대와 세면실 사이 양변기 칸. Scaniverse 스캔에는 비어 있음 — 치수 추정"
-  }
+  },
+  "closures": [
+    {
+      "id": "kitchen",
+      "label": "주방 입구 막기",
+      "status": "design",
+      "note": "디자인 선택: 주방 입구(소핏 아래)를 벽으로 막음. 앞면은 벽 15 앞면과 같은 면",
+      "wall": {
+        "id": "wall_kitchen_close",
+        "type": "wall",
+        "axis": "z",
+        "offset": 1.761,
+        "inward": -1.0,
+        "from": -0.86,
+        "to": 0.26,
+        "two_sided": false,
+        "virtual": true,
+        "openings": []
+      }
+    }
+  ]
 }
