@@ -27,7 +27,8 @@ export function disposeTree(root, { keepRoot = true } = {}) {
     if (o.isReflector && o.dispose) o.dispose();
   });
   for (const g of geos) g.dispose();
-  for (const m of mats) { for (const k of ['map', 'emissiveMap', 'normalMap', 'roughnessMap', 'metalnessMap', 'alphaMap', 'aoMap']) if (m[k]?.isTexture) m[k].dispose(); m.dispose(); }
+  for (const m of mats) { if (m.userData?.shared) continue;   // 여러 번 다시 그려도 계속 쓰는 공용 재질(바닥 사진 텍스처 등)
+    for (const k of ['map', 'emissiveMap', 'normalMap', 'roughnessMap', 'metalnessMap', 'alphaMap', 'aoMap']) if (m[k]?.isTexture) m[k].dispose(); m.dispose(); }
   if (keepRoot) root.clear();
 }
 function b64ToBuffer(text) {

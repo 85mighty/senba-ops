@@ -8,7 +8,7 @@ import { Editor } from './editor.js';
 import { encodeDesign, decodeDesign, shareCodeFromHash } from './share.js';
 import { Sync, DEFAULT_SYNC_URL } from './sync.js';
 import presetCPhone from './presets/c_phone_20261027.json';
-import { applyIkeaCorner, applyUpperMirrors, applyWindowCurtains } from './presets/ikea_corner.js';
+import { applyIkeaCorner, applyUpperMirrors, applyWindowCurtains, applyRealFloor } from './presets/ikea_corner.js';
 
 // 저장소에 보관된 디자인 — 어느 기기에서든 불러올 수 있다. seedSlot: 그 안이 비어 있으면 처음 열 때 자동으로 채움
 const PRESETS = [{ id: 'c_phone_20261027', name: 'C안 (폰에서 만든 것, 10/27)', seedSlot: 'C', design: presetCPhone },
@@ -16,7 +16,8 @@ const PRESETS = [{ id: 'c_phone_20261027', name: 'C안 (폰에서 만든 것, 10
   { id: 'd_ikea_20261028', name: '이케아 코너 (주방 입구 막기 + 사이드보드·거울·흉상)', seedSlot: 'D', afterSync: true, apply: applyIkeaCorner, base: () => store.getSlot('C') || presetCPhone }];
 import meta from './geometry_metadata.json';
 const PATCHES = [{ id: 'd_upper_mirrors_20261028', slot: 'D', apply: applyUpperMirrors, msg: 'D안: 큰방 기둥 3개에 띠 위~천장 4면 거울을 붙였습니다' },
-  { id: 'd_window_curtains_20261028', slot: 'D', apply: applyWindowCurtains, msg: 'D안: 창 두 곳에 커튼을 달았습니다 (누르면 걷힘/쳐짐)' }];
+  { id: 'd_window_curtains_20261028', slot: 'D', apply: applyWindowCurtains, msg: 'D안: 창 두 곳에 커튼을 달았습니다 (누르면 걷힘/쳐짐)' },
+  { id: 'd_real_floor_20261028', slot: 'D', apply: applyRealFloor, msg: 'D안: 바닥을 실제 원목 마루(사진) 느낌으로 바꿨습니다' }];
 
 const $ = (s) => document.querySelector(s);
 const errors = []; window.__viewerErrors = errors; window.__viewerReady = false;

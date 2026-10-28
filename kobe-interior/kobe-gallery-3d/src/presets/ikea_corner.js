@@ -41,3 +41,10 @@ export function applyWindowCurtains(base, store) {
   for (const list of Object.values(d.windows || {})) for (const w of list) if (w.style === 'jp_sliding') w.curtain = { ...(w.curtain || {}), on: true, color: CURTAIN_GRAY, style: 'open' };   // 사진의 큰 미닫이창(북쪽 2세트)만
   d.windowsEdited = true; if (meta.windows_version) d.windows_ver = meta.windows_version; d.editedAt = Date.now(); return d;
 }
+
+// 바닥(10/28 요청): 실제 바닥 사진으로 만든 원목 마루 텍스처 — 칸별 칠은 지우고 전체에
+export function applyRealFloor(base) {
+  const d = JSON.parse(JSON.stringify(base || {})); d.surfaces = d.surfaces || {};
+  for (const k of Object.keys(d.surfaces)) if (k.startsWith('floor_t')) d.surfaces[k].paint = null;
+  d.surfaces.floor = { ...(d.surfaces.floor || {}), paint: 'tex:wood_real', texture: true }; d.editedAt = Date.now(); return d;
+}

@@ -12,6 +12,7 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 const TILE = 1.5;
 
 export class Editor {
+  static FLOOR_TEX_M = 2.16;   // scripts/make_floor_texture.py SIZE_M 과 같게
   static LONG_PRESS = 450;   // 소품을 옮기려면 이만큼(ms) 누르고 있어야 한다
   constructor(viewer, interior, store, toast) {
     this.v = viewer; this.i = interior; this.s = store; this.meta = viewer.meta; this.toast = toast;
@@ -74,7 +75,15 @@ export class Editor {
       if (cx >= tile.x[0] && (cx < tile.x[1] || (last.x && cx <= tile.x[1] + 0.2)) && cz >= tile.z[0] && (cz < tile.z[1] || (last.z && cz <= tile.z[1] + 0.2))) for (let k = 0; k < 9; k++) out.push(pos[i + k]);
     }
     if (!out.length) return null;
-    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(out, 3)); geo.computeVertexNormals(); return geo;
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(out, 3)); geo.computeVertexNormals(); this.floorUV(geo); return geo;
+  }
+  // 바닥 텍스처 좌표: 실제 m 단위. 원목 판 길이 방향 = Z(스캔 위에서 본 판 방향), 텍스처 한 장 = FLOOR_TEX_M
+  floorUV(geo) { const p = geo.attributes.position, uv = new Float32Array(p.count * 2); for (let i = 0; i < p.count; i++) { uv[i * 2] = p.getZ(i) / Editor.FLOOR_TEX_M; uv[i * 2 + 1] = p.getX(i) / Editor.FLOOR_TEX_M; } geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); return geo; }
+  floorMat(paint) {
+    if (!paint?.startsWith('tex:')) return this.paintMat(paint);
+    this._floorTex = this._floorTex || {}; if (this._floorTex[paint]) return this._floorTex[paint];
+    const tex = new THREE.TextureLoader().load(`../assets/textures/floor_${paint.slice(4)}.jpg`); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = Math.min(8, this.v.renderer.capabilities.getMaxAnisotropy());
+    const m = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5, metalness: 0, polygonOffset: true, polygonOffsetFactor: -1 }); m.userData.shared = true; return (this._floorTex[paint] = m);
   }
   tileOnFloor(tile) { if (!this.floorTris()) return true; tile.geo = this.tileGeometry(tile, tile.last || {}); return !!tile.geo; }
   itemById(id) { return this.items.find((x) => x.id === id); }
@@ -383,8 +392,8 @@ export class Editor {
       const sf = this.s.getSurface(`floor_t${t.num}`); const sfa = this.s.getSurface('floor'); const paint = sf.paint || sfa.paint; if (!paint) continue;
       if (t.pgeo === undefined) t.pgeo = t.geo ? this.tileGeometry(t, t.last || {}, true) : null;
       if (t.geo && !t.pgeo) continue;
-      if (t.pgeo) { const m = new THREE.Mesh(t.pgeo, this.paintMat(paint)); m.position.y = 0.011; m.userData.surface = 'floor'; this.overlays.add(m); }
-      else { const m = new THREE.Mesh(new THREE.PlaneGeometry(t.x[1] - t.x[0], t.z[1] - t.z[0]), this.paintMat(paint)); m.rotation.x = -Math.PI / 2; m.position.set((t.x[0] + t.x[1]) / 2, 0.006, (t.z[0] + t.z[1]) / 2); m.userData.surface = 'floor'; this.overlays.add(m); }
+      if (t.pgeo) { const m = new THREE.Mesh(t.pgeo, this.floorMat(paint)); m.position.y = 0.011; m.userData.surface = 'floor'; this.overlays.add(m); }
+      else { const pg = new THREE.PlaneGeometry(t.x[1] - t.x[0], t.z[1] - t.z[0]); pg.rotateX(-Math.PI / 2); pg.translate((t.x[0] + t.x[1]) / 2, 0, (t.z[0] + t.z[1]) / 2); this.floorUV(pg); pg.translate(-(t.x[0] + t.x[1]) / 2, 0, -(t.z[0] + t.z[1]) / 2); const m = new THREE.Mesh(pg, this.floorMat(paint)); m.position.set((t.x[0] + t.x[1]) / 2, 0.006, (t.z[0] + t.z[1]) / 2); m.userData.surface = 'floor'; this.overlays.add(m); }
     }
     // 스캔 텍스처 끄기(단색 보기) — 면별 texture=false 면 해당 _tex 숨김
     const rec = this.v.loaded?.reconstructed; if (rec) rec.traverse((o) => {

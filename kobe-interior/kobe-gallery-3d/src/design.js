@@ -8,7 +8,7 @@ export const PALETTE_TRIM = [['블랙(현재)', '#1c1c1c'], ['원목(오크)', '
 export const PALETTE_LOWER = [['벽지 그대로', null], ['원목 패널(오크)', '#a98457'], ['원목 패널(월넛)', '#6b4a2e'], ['화이트 패널', '#f3f1ec'], ['딥 그린', '#3f5a52'], ['네이비', '#2f3a4f'], ['와인', '#7a2e2e'], ['차콜', '#3a3a3a'], ['블랙', '#1c1c1c']];
 export const DEFAULT_GLOBAL = () => ({ rail: { color: '#1c1c1c', style: 'flat' }, base: { color: '#1c1c1c', style: 'flat' }, moldingColor: '#f4f1ea', lower: { paint: null, style: 'flat' } });
 export const PALETTE_FLOOR = [
-  ['현재 우드(스캔)', null], ['현재 톤 · 밝게', '#866752'], ['현재 톤 · 어둡게', '#4f351d'], ['라이트 오크', '#c9a97a'], ['내추럴 오크', '#a98457'],
+  ['현재 우드(스캔)', null], ['실제 원목 마루(사진)', 'tex:wood_real', 'url(../assets/textures/floor_wood_real.jpg) center/300%'], ['현재 톤 · 밝게', '#866752'], ['현재 톤 · 어둡게', '#4f351d'], ['라이트 오크', '#c9a97a'], ['내추럴 오크', '#a98457'],
   ['월넛', '#5c3d26'], ['다크 월넛', '#3b2616'], ['그레이 우드', '#8a8178'], ['화이트 워시', '#d9cfc0'], ['블랙', '#222222'],
 ];
 export const PALETTE_CEIL = [['화이트(기본)', null, '#f2efe9'], ['웜 화이트', '#ebe3d4'], ['라이트 그레이', '#cfcdc8'], ['딥 그린', '#3f5a52'], ['원목', '#a98457'], ['차콜', '#333333'], ['블랙', '#1c1c1c'], ['스캔 원본(현재 천장)', 'scan']];
