@@ -8,13 +8,14 @@ import { Editor } from './editor.js';
 import { encodeDesign, decodeDesign, shareCodeFromHash } from './share.js';
 import { Sync, DEFAULT_SYNC_URL } from './sync.js';
 import presetCPhone from './presets/c_phone_20261027.json';
-import { applyIkeaCorner } from './presets/ikea_corner.js';
+import { applyIkeaCorner, applyUpperMirrors } from './presets/ikea_corner.js';
 
 // 저장소에 보관된 디자인 — 어느 기기에서든 불러올 수 있다. seedSlot: 그 안이 비어 있으면 처음 열 때 자동으로 채움
 const PRESETS = [{ id: 'c_phone_20261027', name: 'C안 (폰에서 만든 것, 10/27)', seedSlot: 'C', design: presetCPhone },
   // D안: C안을 바탕으로 주방 입구를 막고 이케아 느낌 코너(사이드보드·거울·흉상, 서랍에 소데커버·베레모). 버튼은 '지금 안에 코너만 더하기'
   { id: 'd_ikea_20261028', name: '이케아 코너 (주방 입구 막기 + 사이드보드·거울·흉상)', seedSlot: 'D', afterSync: true, apply: applyIkeaCorner, base: () => store.getSlot('C') || presetCPhone }];
 import meta from './geometry_metadata.json';
+const PATCHES = [{ id: 'd_upper_mirrors_20261028', slot: 'D', apply: applyUpperMirrors, msg: 'D안: 큰방 기둥 3개에 띠 위~천장 4면 거울을 붙였습니다' }];
 
 const $ = (s) => document.querySelector(s);
 const errors = []; window.__viewerErrors = errors; window.__viewerReady = false;
@@ -157,7 +158,9 @@ function setupEditorUI() {
     if (p.seedSlot && !p.afterSync && !seeded && !store.hasSlot(p.seedSlot)) { store.putSlot(p.seedSlot, p.design); try { localStorage.setItem(flag, '1'); } catch {} } }
   // 동기화로 최신 C안을 받은 뒤 채우는 안(D안) — 비어 있을 때 한 번만
   const seedAfterSync = () => { for (const p of PRESETS) { if (!p.afterSync) continue; const flag = 'kobe3d.seed.' + p.id; let seeded = false; try { seeded = !!localStorage.getItem(flag); } catch {}
-    if (seeded || store.hasSlot(p.seedSlot)) continue; store.putSlot(p.seedSlot, p.apply(p.base())); try { localStorage.setItem(flag, '1'); } catch {} window.__sync?.touched(p.seedSlot); renderSlotBar(); toast(`${p.seedSlot}안(${p.name.split(' (')[0]})을 만들었습니다 — 위쪽 ${p.seedSlot}안을 누르세요`); } };
+    if (seeded || store.hasSlot(p.seedSlot)) continue; store.putSlot(p.seedSlot, p.apply(p.base())); try { localStorage.setItem(flag, '1'); } catch {} window.__sync?.touched(p.seedSlot); renderSlotBar(); toast(`${p.seedSlot}안(${p.name.split(' (')[0]})을 만들었습니다 — 위쪽 ${p.seedSlot}안을 누르세요`); }
+    // 이미 있는 안에 한 번만 더하는 수정(디자인 안에 표시가 남아 다른 기기에서 다시 하지 않음)
+    for (const pt of PATCHES) { const d = store.getSlot(pt.slot); if (!d || (d.patches || []).includes(pt.id)) continue; const nd = pt.apply(d); nd.patches = [...(d.patches || []), pt.id]; store.putSlot(pt.slot, nd); window.__sync?.touched(pt.slot); if (pt.slot === store.active) { editor.renderChips(); } toast(pt.msg); } };
   for (const p of PRESETS) { const b = document.createElement('button'); b.className = 'ghost'; const label = p.apply ? `${p.name} → 지금 안에 더하기` : `${p.name} → 지금 안에 불러오기`; b.textContent = label;
     b.addEventListener('click', () => { if (!b.dataset.arm) { b.dataset.arm = '1'; b.textContent = p.apply ? `지금 ${store.active}안에 코너를 더합니다(그 자리 소품은 치움). 다시 누르세요` : `지금 ${store.active}안을 덮어씁니다. 다시 누르세요`; setTimeout(() => { delete b.dataset.arm; b.textContent = label; }, 4000); return; }
       delete b.dataset.arm; b.textContent = label; store.putSlot(store.active, p.apply ? p.apply(store.design) : p.design); editor.renderChips(); refreshBookmarks(); toast(`${p.name}을 ${store.active}안에 불러옴`); });

@@ -90,7 +90,7 @@ export class InteriorA {
     const yBottom = this.base + 0.08, yTop = this.chair - 0.06 - 0.08; const ht = yTop - yBottom; if (ht < 0.25) return;
     const mirrored = new Set(this.mirrorColumns().map((c) => c.id));
     const targets = this.walls().filter((w) => this.on(w.id, 'molding')).map((w) => this.withEditedWindows(w));
-    for (const c of this.columns()) if (!mirrored.has(c.id) && this.sf(c.id).molding !== false) targets.push(...this.columnFaces(c));
+    for (const c of this.columns()) if ((!mirrored.has(c.id) || this.store?.getColumn(c.id).mirrorFit === 'upper') && this.sf(c.id).molding !== false) targets.push(...this.columnFaces(c));
     let count = 0;
     for (const w of targets) for (const [a, b] of this.wallRuns(w, w.key ? 0.08 : CORNER_MARGIN)) {
       const L = b - a; const n = Math.max(1, Math.floor((L + FRAME_GAP) / (FRAME_W_TARGET + FRAME_GAP))); const wd = (L - FRAME_GAP * (n - 1)) / n;
@@ -102,12 +102,20 @@ export class InteriorA {
     }
     g.userData.count = count;
   }
+  mirrorMesh(wd, ht) {
+    if (this.opts.mirrorMode === 'reflector') return new Reflector(new THREE.PlaneGeometry(wd, ht), { clipBias: 0.003, textureWidth: 1024, textureHeight: 1024, color: 0xcfd3d6 });
+    return new THREE.Mesh(new THREE.PlaneGeometry(wd, ht), new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 1, roughness: 0.03, envMapIntensity: 1.4 }));
+  }
   // ---- 중앙 넓은 기둥 4면 거울
   build_mirror_4_sides() {
     const g = this.layers.mirror_4_sides;
     const y0 = this.base + 0.02, y1 = Math.min(this.opts.mirrorH, this.ceil - 0.05); const h = y1 - y0;
     for (const col of this.mirrorColumns()) for (const f of this.columnFaces(col)) {
       const cs = this.store ? this.store.getColumn(col.id) : null; if (cs && cs.mirrorFaces && !cs.mirrorFaces.includes(f.key)) continue;
+      if (cs?.mirrorFit === 'upper') {   // 띠(몰드) 위부터 천장까지, 좌우 여백 없이 꽉 — 모서리에서 옆면 거울과 맞물리게 두께만큼 더 넓힘
+        const u0 = this.chair + 0.004, u1 = this.ceil - 0.004, wd = (f.to - f.from) + 0.024, m = this.mirrorMesh(wd, u1 - u0);
+        m.name = 'mirror'; this.placeOnWall(m, f, (f.from + f.to) / 2, (u0 + u1) / 2, 0.012); g.add(m); continue;
+      }
       const wd = (f.to - f.from) - 2 * this.opts.mirrorInset; if (wd < 0.2 || h < 0.3) continue;
       let m;
       if (this.opts.mirrorMode === 'reflector') {

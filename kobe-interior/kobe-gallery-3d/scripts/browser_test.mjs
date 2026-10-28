@@ -106,6 +106,10 @@ try {
     const cutOf = () => { let c = false; window.__viewer.loaded.reconstructed.traverse((o) => { if (o.name === 'wall_x_3' && (o.userData.cut || []).includes('kitchen_side')) c = true; }); return c; };
     let cp = null; e.closureG.traverse((o) => { if (o.userData.swing?.kind === 'scale') cp = o; }); if (!cutOf() || !cp) throw new Error('주방 옆 통로·커튼 없음');
     if (!e.toggleDoor(cp) || !e.curtainOpen.kitchen_side) throw new Error('커튼 걷기 실패'); e.toggleDoor(cp);
+    // D안: 큰방 기둥 3개 띠 위~천장 4면 거울(한 번만 적용 표시 포함)
+    if (!(s.design.patches || []).includes('d_upper_mirrors_20261028') || !['thin_column_4', 'wide_column_11', 'thin_column_18'].every((k) => s.getColumn(k).mirrorFit === 'upper')) throw new Error('D안 기둥 거울 적용 안 됨');
+    const mir = window.__interior.layers.mirror_4_sides.children.filter((m) => m.name === 'mirror'); const railTop = window.__viewer.meta.chair_rail_height_m;
+    if (mir.length < 12 || !mir.every((m) => { m.geometry.computeBoundingBox(); const hh = m.geometry.boundingBox.max.y - m.geometry.boundingBox.min.y; return m.position.y - hh / 2 >= railTop - 0.01; })) throw new Error('띠 위 거울 범위 이상 ' + mir.length);
     window.__switchSlot('A'); if (cutOf()) throw new Error('A안에 옆 통로 구멍이 남음');
     if (e.walls().some((w) => w.id === 'wall_kitchen_close') || e.closureG.children.length) throw new Error('A안에 막기 벽이 남음');
     // 북쪽 창: 사진대로 큰 미닫이창 2세트
