@@ -89,8 +89,9 @@ export class InteriorA {
     const g = this.layers.molding; const mats = {}; const matFor = (sid) => { const c = (this.store && sid && this.store.trimOf(sid).moldingColor) || WHITE; return mats[c] || (mats[c] = new THREE.MeshStandardMaterial({ color: c, roughness: 0.55 })); };
     const yBottom = this.base + 0.08, yTop = this.chair - 0.06 - 0.08; const ht = yTop - yBottom; if (ht < 0.25) return;
     const mirrored = new Set(this.mirrorColumns().map((c) => c.id));
-    const targets = this.walls().filter((w) => this.on(w.id, 'molding')).map((w) => this.withEditedWindows(w));
-    for (const c of this.columns()) if ((!mirrored.has(c.id) || this.store?.getColumn(c.id).mirrorFit === 'upper') && this.sf(c.id).molding !== false) targets.push(...this.columnFaces(c));
+    const covered = (id) => this.store?.trimOf(id).lower.style === 'air_panel';   // 방법 ③ 판이 덮는 면에는 액자 몰딩 없음
+    const targets = this.walls().filter((w) => this.on(w.id, 'molding') && !covered(w.id)).map((w) => this.withEditedWindows(w));
+    for (const c of this.columns()) if (!covered(c.id) && (!mirrored.has(c.id) || this.store?.getColumn(c.id).mirrorFit === 'upper') && this.sf(c.id).molding !== false) targets.push(...this.columnFaces(c));
     let count = 0;
     for (const w of targets) for (const [a, b] of this.wallRuns(w, w.key ? 0.08 : CORNER_MARGIN)) {
       const L = b - a; const n = Math.max(1, Math.floor((L + FRAME_GAP) / (FRAME_W_TARGET + FRAME_GAP))); const wd = (L - FRAME_GAP * (n - 1)) / n;

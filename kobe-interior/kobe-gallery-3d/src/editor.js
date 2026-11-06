@@ -12,6 +12,7 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 const TILE = 1.5;
 
 export class Editor {
+  static AIR_PANEL = { t: 0.007, w: 0.313, bandProj: 0.012, capD: 0.025, capH: 0.012 };   // 판 두께·폭, 띠가 벽에서 튀어나온 두께(실측 전 추정), 見切り材 깊이·높이
   static FLOOR_TEX_M = 2.16;   // scripts/make_floor_texture.py SIZE_M 과 같게
   static LONG_PRESS = 450;   // 소품을 옮기려면 이만큼(ms) 누르고 있어야 한다
   constructor(viewer, interior, store, toast) {
@@ -203,7 +204,27 @@ export class Editor {
   // ---------------- 띠(체어레일)·걸레받이: 벽/기둥별. 기본(검정·평면)과 다른 면만 GLB 띠를 숨기고 직접 그린다
   // 주방·화장실 안쪽 벽은 실제로 띠가 없다(타일·회색 벽) — 그 벽만의 띠 설정을 하지 않았으면 전체 설정(띠·하부 벽)을 적용하지 않는다
   plainService(id) { return !!serviceOf(this.meta, id) && !this.s.hasOwnTrim(id); }
-  isDefaultTrim(t) { return t.rail.color === '#1c1c1c' && t.rail.style === 'flat' && t.base.color === '#1c1c1c' && t.base.style === 'flat'; }
+  isDefaultTrim(t) { return t.rail.color === '#1c1c1c' && t.rail.style === 'flat' && t.base.color === '#1c1c1c' && t.base.style === 'flat' && t.lower?.style !== 'air_panel'; }
+  // 방법 ③ — エアサーモパネルlite(두께 7 mm, 폭 313 mm)를 바닥부터 검은 띠 위끝까지 세워 붙임.
+  // 띠·걸레받이는 판 뒤 받침(벽에서 BAND_PROJ 만큼 뜸)이 되어 가려지고, 위끝은 전용 見切り材(깊이 25 × 높이 12 mm)로 덮는다.
+  // 창·문 구간은 피하고, 잘린 위끝마다 見切り材. 기둥은 바깥 모서리가 맞물리게 판을 두께만큼 늘린다
+  airPanel(f, sid, sd, color, isCol) {
+    const P = Editor.AIR_PANEL, off0 = P.bandProj, face = off0 + P.t, top = this.chair, ww = { ...f, inward: sd, sid };
+    this._apMats = this._apMats || {}; const mk = (c) => this._apMats[c] || (this._apMats[c] = new THREE.MeshStandardMaterial({ color: c, roughness: 0.62 }));
+    const cap = mk(this.shade(color, 0.86)), joint = mk('#141414');
+    // 판 겉면: 실제 원목 사진 텍스처를 세로 결로(판 길이 = 세로). 고른 색 쪽으로 물들임(텍스처 평균색 ≈ #7e522a)
+    if (!this._apTex) { this._apTex = new THREE.TextureLoader().load('../assets/textures/floor_wood_real.jpg'); this._apTex.wrapS = this._apTex.wrapT = THREE.RepeatWrapping; this._apTex.colorSpace = THREE.SRGBColorSpace; }
+    const c0 = new THREE.Color(color), tint = new THREE.Color(Math.min(1, c0.r / 0.21), Math.min(1, c0.g / 0.085), Math.min(1, c0.b / 0.023));   // sRGB 7e522a → 선형값으로 나눔
+    // 텍스처를 2배로 늘려 판 하나(31 cm)≈결 한 줄, 가로 이음이 거의 안 보이게. 판마다 위치를 흩뜨림
+    const woodMat = (wdt, hgt) => { const t = this._apTex.clone(); t.needsUpdate = true; t.center.set(0.5, 0.5); t.rotation = Math.PI / 2; t.repeat.set(hgt / 4.3, wdt / 4.3); t.offset.set(Math.random(), Math.random()); return new THREE.MeshStandardMaterial({ color: tint, map: t, roughness: 0.6 }); };
+    const ext = isCol ? face : 0, from = f.from - ext, to = f.to + ext;
+    const box = (a, b, y0, y1, depth, off, mat) => { const m = new THREE.Mesh(new THREE.BoxGeometry(b - a, y1 - y0, depth), mat); this.placeOnWall(m, ww, (a + b) / 2, (y0 + y1) / 2, off); m.userData.surface = sid; this.bands.add(m); };
+    this.eachPiece(f, from, to, 0.003, top, (a, b, c, d) => {
+      box(a, b, c, d, P.t, off0 + P.t / 2, woodMat(b - a, d - c));
+      for (let t = f.from + P.w; t < to - 0.01; t += P.w) if (t > a + 0.004 && t < b - 0.004) box(t - 0.003, t + 0.003, c, d, 0.002, face + 0.0005, joint);   // 판 이음(검은 줄)
+      if (d - c > 0.15) { box(a, b, d, d + P.capH, P.capD, P.capD / 2, cap); }                                                                  // 위끝 見切り材
+    });
+  }
   buildBands() {
     disposeTree(this.bands);
     const rec = this.v.loaded?.reconstructed;
@@ -216,11 +237,12 @@ export class Editor {
     const mats = {}; const mk = (color) => mats[color] || (mats[color] = new THREE.MeshStandardMaterial({ color, roughness: 0.6, metalness: color === '#c9a24a' ? 0.6 : 0.0 }));
     // 창·문·입구 밖 구간은 띠를 끊는다(창 유리 뒤로 띠가 비치지 않게)
     const strip = (w, y0, y1, depth, mat, sd, sid) => { const ww = { ...w, inward: sd, sid }; this.eachPiece(w, w.from, w.to, y0, y1, (a, b, c, d) => { const m = new THREE.Mesh(new THREE.BoxGeometry(b - a, d - c, depth), mat); this.placeOnWall(m, ww, (a + b) / 2, (c + d) / 2, depth / 2 + 0.002); this.bands.add(m); }); };
-    const addBands = (faces, sid, force = false) => {
+    const addBands = (faces, sid, force = false, isCol = false) => {
       const g = this.s.trimOf(sid); if ((this.isDefaultTrim(g) && !force) || this.plainService(sid)) return;
       for (const f of faces) {
         const sides = f.two_sided ? [f.inward, -f.inward] : [f.inward];
         for (const sd of sides) {
+          if (g.lower.style === 'air_panel') { this.airPanel(f, sid, sd, g.lower.paint || '#8b5e3c', isCol); continue; }
           if (g.base.style === 'molding') { strip(f, 0, base, 0.014, mk(g.base.color), sd, sid); strip(f, base - 0.02, base, 0.022, mk(g.base.color), sd, sid); }
           else strip(f, 0, base, 0.012, mk(g.base.color), sd, sid);
           if (g.rail.style === 'molding') { strip(f, chair - railT, chair, 0.012, mk(g.rail.color), sd, sid); strip(f, chair - railT * 0.65, chair - railT * 0.35, 0.03, mk(g.rail.color), sd, sid); strip(f, chair - 0.006, chair, 0.02, mk(g.rail.color), sd, sid); }
@@ -229,11 +251,13 @@ export class Editor {
       }
     };
     for (const w of this.walls()) addBands([w], w.id, this.holesOf(w).length > 0 || !!w.virtual);   // 막기 벽은 스캔 띠가 없어 직접 그림
-    for (const col of this.columns()) addBands(this.i.columnFaces(col).map((f) => ({ ...f, two_sided: false })), col.id);
+    for (const col of this.columns()) { const c = this.s.getColumn(col.id), fullMirror = (c.mirror ?? (col.id === this.meta.central_wide_column)) && c.mirrorFit !== 'upper' && this.i.layers.mirror_4_sides.visible;
+      if (fullMirror && this.s.trimOf(col.id).lower.style === 'air_panel') continue;   // 바닥까지 거울인 기둥은 판 대신 거울
+      addBands(this.i.columnFaces(col).map((f) => ({ ...f, two_sided: false })), col.id, false, true); }
   }
   // 하부 벽(띠 사이) 마감 오버레이 — 벽/기둥별
   addLower(face, sid, sides) {
-    const lower = this.s.trimOf(sid).lower; if (!lower.paint || this.plainService(sid)) return;
+    const lower = this.s.trimOf(sid).lower; if (!lower.paint || this.plainService(sid) || lower.style === 'air_panel') return;   // 판이 덮음
     const top = this.chair - (this.meta.chair_rail_thickness_m || 0.08);
     const mat = this.paintMat(lower.paint), dark = lower.style === 'wood_panel' ? this.paintMat(this.shade(lower.paint, 0.7)) : null;
     for (const sd of sides) {
@@ -503,7 +527,7 @@ export class Editor {
     row('걸레받이 형태', selectEl([['평면', 'flat'], ['몰드', 'molding']], t.base.style, (v) => { ed().base.style = v; commit(); }));
     row('흰 몰딩 색', this.palette([['화이트', '#f4f1ea'], ['웜 화이트', '#efe6d6'], ['원목', '#a98457'], ['월넛', '#6b4a2e'], ['골드', '#c9a24a'], ['블랙', '#1c1c1c']], t.moldingColor, (hex) => { ed().moldingColor = hex; commit(); }));
     row('하부 벽(띠 사이)', this.palette(PALETTE_LOWER, t.lower.paint, (hex) => { const e = ed(); e.lower.paint = hex; if (hex && /#a98457|#6b4a2e/.test(hex)) e.lower.style = 'wood_panel'; commit(); }));
-    row('하부 형태', selectEl([['단색', 'flat'], ['원목 패널(세로 홈)', 'wood_panel']], t.lower.style, (v) => { ed().lower.style = v; commit(); }));
+    row('하부 형태', selectEl([['단색', 'flat'], ['원목 패널(세로 홈)', 'wood_panel'], ['エアサーモパネル · 띠까지 덮기(방법 ③)', 'air_panel']], t.lower.style, (v) => { ed().lower.style = v; commit(); }));
     const r = document.createElement('div'); r.className = 'row wrap';
     if (own) r.appendChild(btn('기본값 따르기(이 설정 지우기)', () => { this.s.clearTrim(id); commit(); }));
     r.appendChild(btn(`이 ${noun} 설정을 모든 벽·기둥에`, () => { this.s.applyTrimToAll(id); commit(); this.toast('모든 벽·기둥에 적용'); }));

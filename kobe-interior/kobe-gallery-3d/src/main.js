@@ -8,18 +8,20 @@ import { Editor } from './editor.js';
 import { encodeDesign, decodeDesign, shareCodeFromHash } from './share.js';
 import { Sync, DEFAULT_SYNC_URL } from './sync.js';
 import presetCPhone from './presets/c_phone_20261027.json';
-import { applyIkeaCorner, applyUpperMirrors, applyWindowCurtains, applyRealFloor, applyDullGreen } from './presets/ikea_corner.js';
+import { applyIkeaCorner, applyUpperMirrors, applyWindowCurtains, applyRealFloor, applyDullGreen, applyAirPanel } from './presets/ikea_corner.js';
 
 // 저장소에 보관된 디자인 — 어느 기기에서든 불러올 수 있다. seedSlot: 그 안이 비어 있으면 처음 열 때 자동으로 채움
 const PRESETS = [{ id: 'c_phone_20261027', name: 'C안 (폰에서 만든 것, 10/27)', seedSlot: 'C', design: presetCPhone },
   // D안: C안을 바탕으로 주방 입구를 막고 이케아 느낌 코너(사이드보드·거울·흉상, 서랍에 소데커버·베레모). 버튼은 '지금 안에 코너만 더하기'
   { id: 'd_ikea_20261028', name: '이케아 코너 (주방 입구 막기 + 사이드보드·거울·흉상)', seedSlot: 'D', afterSync: true, apply: applyIkeaCorner, base: () => store.getSlot('C') || presetCPhone },
+  { id: 'air_panel', name: '아래 벽 → エアサーモパネル(방법 ③)', apply: applyAirPanel, armText: (sl) => `지금 ${sl}안의 아래 벽을 판으로 덮습니다(띠까지). 다시 누르세요` },
   { id: 'dull_green', name: '벽 초록 → ダルグリーン(STYLE)', apply: applyDullGreen, armText: (sl) => `지금 ${sl}안의 초록 벽·띠를 ダルグリーン으로 바꿉니다. 다시 누르세요` }];
 import meta from './geometry_metadata.json';
 const PATCHES = [{ id: 'd_upper_mirrors_20261028', slot: 'D', apply: applyUpperMirrors, msg: 'D안: 큰방 기둥 3개에 띠 위~천장 4면 거울을 붙였습니다' },
   { id: 'd_window_curtains_20261028', slot: 'D', apply: applyWindowCurtains, msg: 'D안: 창 두 곳에 커튼을 달았습니다 (누르면 걷힘/쳐짐)' },
   { id: 'd_real_floor_20261028', slot: 'D', apply: applyRealFloor, msg: 'D안: 바닥을 실제 원목 마루(사진) 느낌으로 바꿨습니다' },
-  { id: 'd_dull_green_20261106', slot: 'D', apply: applyDullGreen, msg: 'D안: 벽 초록을 STYLE ダルグリーン 느낌으로 바꿨습니다' }];
+  { id: 'd_dull_green_20261106', slot: 'D', apply: applyDullGreen, msg: 'D안: 벽 초록을 STYLE ダルグリーン 느낌으로 바꿨습니다' },
+  { id: 'd_air_panel_20261106', slot: 'D', apply: applyAirPanel, msg: 'D안: 아래 벽을 エアサーモパネル로 띠까지 덮었습니다(방법 ③)' }];
 
 const $ = (s) => document.querySelector(s);
 const errors = []; window.__viewerErrors = errors; window.__viewerReady = false;
