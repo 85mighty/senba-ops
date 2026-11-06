@@ -42,8 +42,9 @@ function breakSlot(bk, start, end) {
   let best = null;
   for (let i = 0; i + 1 < pts.length; i++) { const len = pts[i + 1] - pts[i]; if (!best || len > best.len) best = { a: pts[i], b: pts[i + 1], len }; }
   if (!best) return null;
-  const a = best.a, b = Math.min(best.b, a + 45);   // 45분만 쓰고 나머지는 근무
-  return { a, b, short: best.len < 45 };
+  const a = best.a === lo ? lo : best.a + 15;        // 손님 안내 15분 뒤부터, 45분만 쓰고 나머지는 근무
+  const b = Math.min(best.b, a + 45);
+  return { a, b, short: b - a < 45 };
 }
 
 function plan(ymd, bookings, opts = {}) {
