@@ -613,6 +613,7 @@ async function apiStatus(p) {
 }
 
 // ── 근무 안내 (마미짱·아이미짱) — 매일 마감(기본 22시)+5분 JST 에 다음날 예약 기준 출퇴근을 텔레그램(근태봇 그룹)으로 발송
+if (!process.env.SHIFT_WAGE) { const a = envOf('/opt/senba-attend/.env'); const w = E.SHIFT_WAGE || a.SHIFT_WAGE || a.ATTEND_WAGE; if (w) process.env.SHIFT_WAGE = w; }   // 근태봇과 같은 시급(ATTEND_WAGE) 사용
 const SHIFT = require('./shift-rules');
 const SHIFT_ENV = { ...envOf('/opt/senba-attend/.env'), ...envOf('/opt/senba-booking-view/.env') };
 const SHIFT_TOKEN = E.SHIFT_BOT_TOKEN || SHIFT_ENV.SHIFT_BOT_TOKEN || SHIFT_ENV.ATTEND_BOT_TOKEN || '';
@@ -620,7 +621,6 @@ const SHIFT_CHAT = E.SHIFT_CHAT_ID || SHIFT_ENV.SHIFT_CHAT_ID || SHIFT_ENV.ATTEN
 const SHIFT_ON = (E.SHIFT_NOTIFY || SHIFT_ENV.SHIFT_NOTIFY || '1') !== '0';
 const SHIFT_SENT_FILE = require('path').join(__dirname, '.shift-last');
 const jstDay = off => new Date(Date.now() + 9 * 3600e3 + off * 86400e3).toISOString().slice(0, 10);
-const SHIFT_WED_OPEN = (E.SHIFT_WED_OPEN || SHIFT_ENV.SHIFT_WED_OPEN || '0') === '1';   // 1이면 수요일도 마미짱 13:45 고정 영업
 const SHIFT_OVR_FILE = require('path').join(__dirname, '.shift-overrides.json');   // { 'YYYY-MM-DD': { aimiOff: true } }
 const shiftOvr = () => { try { return JSON.parse(fs.readFileSync(SHIFT_OVR_FILE, 'utf8')); } catch { return {}; } };
 function shiftOvrSet(ymd, patch) {
@@ -630,7 +630,7 @@ function shiftOvrSet(ymd, patch) {
 }
 async function shiftFor(ymd) {
   const evs = await dayEvents(ymd);
-  const p = SHIFT.plan(ymd, evs.map(e => ({ s: e.s, e: e.e })), { wedOpen: SHIFT_WED_OPEN, ...(shiftOvr()[ymd] || {}) });
+  const p = SHIFT.plan(ymd, evs.map(e => ({ s: e.s, e: e.e })), shiftOvr()[ymd] || {});
   return { p, text: SHIFT.message(ymd, p) };
 }
 async function shiftSend(text) {
