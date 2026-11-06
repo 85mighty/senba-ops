@@ -12,7 +12,9 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 const TILE = 1.5;
 
 export class Editor {
-  static AIR_PANEL = { t: 0.007, w: 0.313, bandProj: 0.012, capD: 0.025, capH: 0.012 };   // 판 두께·폭, 띠가 벽에서 튀어나온 두께(실측 전 추정), 見切り材 깊이·높이
+  // エアサーモパネルlite D(판매 표기): 두께 7 mm, 앞면 313 mm·유효 폭 304 mm(겹쳐 끼움), 홈은 이음과 판 가운데. 見切り材 25×12 mm.
+  // bandProj = 검은 띠가 벽에서 튀어나온 두께 — 실측 전 추정. 사양·실측표: kobe-interior/03-자재-실측.md
+  static AIR_PANEL = { t: 0.007, w: 0.304, grooves: 2, bandProj: 0.012, capD: 0.025, capH: 0.012 };
   static FLOOR_TEX_M = 2.16;   // scripts/make_floor_texture.py SIZE_M 과 같게
   static LONG_PRESS = 450;   // 소품을 옮기려면 이만큼(ms) 누르고 있어야 한다
   constructor(viewer, interior, store, toast) {
@@ -221,7 +223,7 @@ export class Editor {
     const box = (a, b, y0, y1, depth, off, mat) => { const m = new THREE.Mesh(new THREE.BoxGeometry(b - a, y1 - y0, depth), mat); this.placeOnWall(m, ww, (a + b) / 2, (y0 + y1) / 2, off); m.userData.surface = sid; this.bands.add(m); };
     this.eachPiece(f, from, to, 0.003, top, (a, b, c, d) => {
       box(a, b, c, d, P.t, off0 + P.t / 2, woodMat(b - a, d - c));
-      for (let t = f.from + P.w; t < to - 0.01; t += P.w) if (t > a + 0.004 && t < b - 0.004) box(t - 0.003, t + 0.003, c, d, 0.002, face + 0.0005, joint);   // 판 이음(검은 줄)
+      const step = P.w / (P.grooves || 1); for (let t = f.from + step; t < to - 0.01; t += step) if (t > a + 0.004 && t < b - 0.004) box(t - 0.003, t + 0.003, c, d, 0.002, face + 0.0005, joint);   // 검은 홈(판 이음 + 판 가운데)
       if (d - c > 0.15) { box(a, b, d, d + P.capH, P.capD, P.capD / 2, cap); }                                                                  // 위끝 見切り材
     });
   }
