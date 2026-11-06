@@ -48,3 +48,10 @@ export function applyRealFloor(base) {
   for (const k of Object.keys(d.surfaces)) if (k.startsWith('floor_t')) d.surfaces[k].paint = null;
   d.surfaces.floor = { ...(d.surfaces.floor || {}), paint: 'tex:wood_real', texture: true }; d.editedAt = Date.now(); return d;
 }
+
+// 벽 초록 → STYLE ダルグリーン(11/06 요청). 색값은 판매 페이지 색 견본 사진에서 뽑은 근사값 — 실물 견본을 칠해 보고 맞출 것
+export const DULL_GREEN = '#39433a';
+const OLD_GREENS = /#(2f4a3f|3f5a52)/gi;   // 포레스트 그린 · 딥 그린
+export function applyDullGreen(base) {
+  const d = JSON.parse(JSON.stringify(base || {}).replace(OLD_GREENS, DULL_GREEN)); d.editedAt = Date.now(); return d;
+}
