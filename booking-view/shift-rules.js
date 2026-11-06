@@ -33,6 +33,19 @@ function kindOf(ymd) {
   return 'weekday';                                       // 월·화·목
 }
 
+// 휴게 추천: 손님 도착·종료(입퇴실)가 없는 가장 긴 구간 (출근 1시간 후 ~ 퇴근 1시간 전, 12:00~16:30 안에서). 45분 미만이면 '짧음' 표시
+function breakSlot(bk, start, end) {
+  const lo = Math.max(start + 60, T(12)), hi = Math.min(end - 60, T(16, 30));
+  if (hi - lo < 30) return null;
+  const ev = [...new Set(bk.flatMap(b => [b.s, b.e]).filter(t => t > lo && t < hi))].sort((a, b) => a - b);
+  const pts = [lo, ...ev, hi];
+  let best = null;
+  for (let i = 0; i + 1 < pts.length; i++) { const len = pts[i + 1] - pts[i]; if (!best || len > best.len) best = { a: pts[i], b: pts[i + 1], len }; }
+  if (!best) return null;
+  const a = best.a, b = Math.min(best.b, a + 45);   // 45분만 쓰고 나머지는 근무
+  return { a, b, short: best.len < 45 };
+}
+
 function plan(ymd, bookings, opts = {}) {
   const bk = [...bookings].sort((a, b) => a.s - b.s || a.e - b.e);
   const kind = kindOf(ymd);
@@ -57,6 +70,7 @@ function plan(ymd, bookings, opts = {}) {
   out[who].cleanOnly = bk.length === 0;
   out[who].sub = who === 'mami';
   out[who].breakReq = end - start > 6 * 60;   // 6시간 초과 → 45분 휴게
+  if (out[who].breakReq) out[who].brk = breakSlot(bk, start, end);
   const early = bk.filter(b => b.s < MIN_S + 15).length;
   if (early) warn(`⚠️ ${hm(MIN_S + 15)} 전 시작 예약 ${early}건 — ${NAME[who][0]} 출근 전까지 사장님이 손님 맞이`, `⚠️ ${hm(MIN_S + 15)}前の予約 ${early}件 — ${NAME[who][1]}出勤前はオーナー対応`);
   return out;
@@ -77,8 +91,8 @@ function message(ymd, p) {
   if (s) {
     const who = p.aimi ? NAME.aimi : NAME.mami;
     if (s.sub) lines.push(`🔁 ${NAME.aimi[0]} 휴무 → ${NAME.mami[0]} 대신 출근 / ${NAME.aimi[1]}お休み → ${NAME.mami[1]}が代わりに出勤`);
-    const ko = (s.cleanOnly ? ` · 예약 없음 — ${hm(s.end)}까지 청소·그림·SNS 콘텐츠(최소 ${MIN_H}시간)` : '') + (s.breakReq ? ' · 6시간 초과 → 예약 사이에 45분 휴게' : '');
-    const ja = (s.cleanOnly ? ` · 予約なし — ${hm(s.end)}まで清掃・制作・SNS(最低${MIN_H}時間)` : '') + (s.breakReq ? ' · 6時間超 → 予約の合間に45分休憩' : '');
+    const ko = (s.cleanOnly ? ` · 예약 없음 — ${hm(s.end)}까지 청소·그림·SNS 콘텐츠(최소 ${MIN_H}시간)` : '') + (s.breakReq ? (s.brk ? ` · 6시간 초과 → 휴게 ${hm(s.brk.a)}~${hm(s.brk.b)} 추천${s.brk.short ? '(입퇴실 공백 45분 미만 — 손님 작업 중에 교대로)' : '(입퇴실 없음)'}` : ' · 6시간 초과 → 예약 사이에 45분 휴게') : '');
+    const ja = (s.cleanOnly ? ` · 予約なし — ${hm(s.end)}まで清掃・制作・SNS(最低${MIN_H}時間)` : '') + (s.breakReq ? (s.brk ? ` · 6時間超 → 休憩 ${hm(s.brk.a)}〜${hm(s.brk.b)} 推奨${s.brk.short ? '(入退室の空きが45分未満 — 作業中に交代で)' : '(入退室なし)'}` : ' · 6時間超 → 予約の合間に45分休憩') : '');
     both(who, `출근 ${fmt(s)}${ko}`, `出勤 ${fmt(s)}${ja}`);
   }
   for (const w of p.warns) lines.push(w.ko + '\n   ' + w.ja);
