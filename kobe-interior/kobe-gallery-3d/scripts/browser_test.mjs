@@ -116,6 +116,9 @@ try {
     // D안 바닥: 실제 원목 사진 텍스처(공용 재질, 다시 그려도 해제 안 됨)
     if (s.getSurface('floor').paint !== 'tex:wood_real') throw new Error('D안 바닥 텍스처 아님'); let fm = null; e.overlays.traverse((o) => { if (o.isMesh && o.material?.map && o.userData.surface === 'floor') fm = o; });
     if (!fm || !fm.geometry.attributes.uv) throw new Error('바닥 텍스처 메쉬·UV 없음');
+    // D안 아래 벽 방법 ③: 판이 띠까지 덮고 스캔 검은 띠는 숨김, 판 위 見切り材
+    if (s.trimOf('wall_x_0').lower.style !== 'air_panel') throw new Error('D안 방법 ③ 아님'); let rail0 = null; window.__viewer.loaded.reconstructed.traverse((o) => { if (o.name === 'wall_x_0_chairrail') rail0 = o; });
+    if (rail0?.visible) throw new Error('판 뒤 검은 띠가 보임'); let panels = 0; e.bands.traverse((o) => { if (o.isMesh && o.material?.map && o.userData.surface === 'wall_x_0') panels++; }); if (!panels) throw new Error('판 없음');
     window.__switchSlot('A'); if (cutOf()) throw new Error('A안에 옆 통로 구멍이 남음');
     if (e.walls().some((w) => w.id === 'wall_kitchen_close') || e.closureG.children.length) throw new Error('A안에 막기 벽이 남음');
     // 북쪽 창: 사진대로 큰 미닫이창 2세트

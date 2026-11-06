@@ -55,3 +55,10 @@ const OLD_GREENS = /#(2f4a3f|3f5a52)/gi;   // 포레스트 그린 · 딥 그린
 export function applyDullGreen(base) {
   const d = JSON.parse(JSON.stringify(base || {}).replace(OLD_GREENS, DULL_GREEN)); d.editedAt = Date.now(); return d;
 }
+
+// 아래 벽 방법 ③(11/06): エアサーモパネルlite(월넛 계열)를 바닥~검은 띠 위끝까지, 위끝은 전용 見切り材. 액자 몰딩 없음
+export const AIR_PANEL_COLOR = '#8b5e3c';
+export function applyAirPanel(base) {
+  const d = JSON.parse(JSON.stringify(base || {})); d.global = { ...(d.global || {}), lower: { paint: AIR_PANEL_COLOR, style: 'air_panel' } };
+  d.editedAt = Date.now(); return d;
+}
