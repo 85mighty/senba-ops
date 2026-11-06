@@ -2,23 +2,23 @@
 // 데이터: 매출 시트 「예약관리」 탭 (취소 제외, 코스에서 시간 추출, 없으면 2시간) · 2026-09 (확정) / 2026-10 / 2026-11 (접수분 기준) + 11월 예상
 // 시나리오:
 //  ① 현행(1,200): 아이미짱만 금토일월 (12:45~13:45 출근, 17:00~18:15 퇴근) — 화수목·주말 오전은 사장님
-//  ② 1인 체제(1,300): 아이미짱 토일월화목, 예약 있으면 첫 예약 15분 전(주말 10:45~, 평일 12:45~), 없으면 13:30-16:30, 마감 18:15 · 수금 휴무
-//  ③ ②와 같은 근무를 1,200엔으로 (인상분이 얼마인지)
-//  ④ ②에서 주말 오전 미영업 (주말도 12:45 이후 출근, 1,300)
+//  ② 1인 체제(1,200): 아이미짱 토일월화목, 예약 있으면 첫 예약 15분 전(주말 12:15~, 평일 12:45~), 없으면 13:30-16:30, 마감 18:15 · 수금 휴무
+//  ③ ②와 같은 근무를 1,300엔으로 (인상 시 차액)
+//  ④ ②에서 주말 오전도 영업 (주말 10:45 출근 허용, 1,200)
 const path = require('path');
 const { google } = require(path.join('/opt/senba-sales-sync/node_modules/googleapis'));
-process.env.SHIFT_WAGE = '1300';
+process.env.SHIFT_WAGE = '1200';
 const SHIFT = require(path.join(__dirname, '..', 'booking-view', 'shift-rules.js'));
 
 const LEDGER_ID = '1sUXyrXxYzl_n6n5T4dV_flQ6Ocli3c0B-Ggbwzw5YC4';
 const SHEET_ID = '1OiQnj_slGsZvQ8BBQBP6a6eK3_j4J35nCReSTT2HRgc';
 const TAB = '인건비 시뮬';
-const RULE_TAG = '규칙v6 1인체제(아이미 토일월화목·주말 10:45·시급 1,300)';
+const RULE_TAG = '규칙v7 확정 1인체제(아이미 토일월화목·주말 12:15~·1,200)';
 const PREV_2P = { '2026-09': 174000, '2026-10': 174000, '2026-11': 171600 };   // 참고: 직전 2인안(마미+아이미, 1,200) 결과
 const MONTHS = ['2026-09', '2026-10', '2026-11'];
 const PROJ = { month: '2026-11', base: '2026-10' };   // 11월 예상 = 10월 요일별 평균 일당 × 11월 요일 수
 const HOLI = { '2026-11-03': '文化の日', '2026-11-23': '勤労感謝の日' };
-const W_NEW = 1300, W_OLD = 1200;
+const W_NEW = 1200, W_ALT = 1300;
 const WD = '日月火水木金土';
 const NCOL = 9;
 
@@ -36,7 +36,7 @@ function current(ymd, bk) {
   const lastEnd = bk.length ? Math.max(...bk.map(b => b.e)) : null;
   const s = bk.length ? clamp(bk[0].s - 15, 12 * 60 + 45, 13 * 60 + 45) : 12 * 60 + 45;
   const e = lastEnd === null ? 17 * 60 : clamp(lastEnd + 15, 17 * 60, 18 * 60 + 15);
-  return payAt(s, e, W_OLD);
+  return payAt(s, e, W_NEW);
 }
 
 (async () => {
@@ -63,9 +63,9 @@ function current(ymd, bk) {
     const dayRows = [];
     for (const ymd of daysIn(ym)) {
       const bk = (byDay[ymd] || []).sort((a, b) => a.s - b.s);
-      const p = SHIFT.plan(ymd, bk), pn = SHIFT.plan(ymd, bk, { noMorning: true });
+      const p = SHIFT.plan(ymd, bk), pn = SHIFT.plan(ymd, bk, { morning: true });
       const sh = p.aimi, shn = pn.aimi;
-      const pay = sh ? sh.pay : 0, old = sh ? payAt(sh.start, sh.end, W_OLD) : 0, noMorn = shn ? shn.pay : 0, hours = sh ? sh.hours : 0;
+      const pay = sh ? sh.pay : 0, old = sh ? payAt(sh.start, sh.end, W_ALT) : 0, noMorn = shn ? shn.pay : 0, hours = sh ? sh.hours : 0;
       const cur = current(ymd, bk);
       tot.cur += cur; tot.fix += pay; tot.old += old; tot.noMorn += noMorn; tot.hours += hours; tot.bookings += bk.length;
       if (sh) { tot.days++; if (sh.cleanOnly) tot.cleanDays++; if (sh.breakReq) tot.longDays++; }
@@ -75,13 +75,13 @@ function current(ymd, bk) {
     }
     monthSummary[ym] = tot;
     const label = (ym >= '2026-10' ? ym + ' (접수분 기준)' : ym) + ' ' + RULE_TAG;
-    titles.push(push([`${label} — ①현행(1,200) ${yen(tot.cur)}엔 → ②1인 체제(1,300) ${yen(tot.fix)}엔 (${tot.days}일 ${tot.hours}h · 예약없는날 ${tot.cleanDays}일 · 6h초과 ${tot.longDays}일) | ③같은 근무 1,200 ${yen(tot.old)}엔 (인상분 ${yen(tot.fix - tot.old)}) | ④주말 오전 미영업 ${yen(tot.noMorn)}엔 | 참고 2인안 ${yen(PREV_2P[ym])}엔`]));
-    hdrIdx.push(push(['요일', '일수', '출근일', '시간(h)', '급여 1,300', '같은 근무 1,200', '주말오전 미영업', '', '']));
+    titles.push(push([`${label} — ①현행(1,200) ${yen(tot.cur)}엔 → ②1인 체제(1,200) ${yen(tot.fix)}엔 (${tot.days}일 ${tot.hours}h · 예약없는날 ${tot.cleanDays}일 · 6h초과 ${tot.longDays}일) | ③같은 근무 1,300 ${yen(tot.old)}엔 (+${yen(tot.old - tot.fix)}) | ④주말 오전도 영업(10:45~) ${yen(tot.noMorn)}엔 | 참고 2인안 ${yen(PREV_2P[ym])}엔`]));
+    hdrIdx.push(push(['요일', '일수', '출근일', '시간(h)', '급여 1,200', '같은 근무 1,300', '주말 오전 영업', '', '']));
     const b0 = rows.length;
     for (const d of [1, 2, 3, 4, 5, 6, 0]) { const w = byWd[d]; push([WD[d], w.days, w.work, w.hours, w.pay, w.old, w.noMorn, '', '']); }
     bandRanges.push([b0, rows.length]);
     push([]);
-    hdrIdx.push(push(['날짜', '예약', '아이미짱', '시간(h)', '급여 1,300', '같은 근무 1,200', '주말오전 미영업', '①현행', '비고']));
+    hdrIdx.push(push(['날짜', '예약', '아이미짱', '시간(h)', '급여 1,200', '같은 근무 1,300', '주말 오전 영업', '①현행', '비고']));
     const d0 = rows.length; for (const r of dayRows) push(r); bandRanges.push([d0, rows.length]);
     push([]);
   }
@@ -92,7 +92,7 @@ function current(ymd, bk) {
     titles.push(push([`${PROJ.month} 예상 인건비 약 ${yen(est)}엔 (10월 요일별 평균 일당 × 11월 요일 수 · ${parts.join(' / ')}) | 현재 접수분만 적용 시 ${yen(monthSummary[PROJ.month].fix)}엔 | 공휴일 ${Object.entries(HOLI).map(([k, v]) => k.slice(5) + ' ' + v).join(', ')}`]));
     monthSummary.proj = est;
   }
-  noteIdx.push(push(['※ 코스 시간은 예약관리의 코스명에서 추출(없으면 2시간) · 15분 단위 올림 · ①현행 = 아이미짱만 금토일월 1,200엔(화수목·주말 오전은 사장님) · 6시간 초과 근무일은 45분 휴게 법정 의무(급여에서 미차감 가정) · 10·11월은 접수 중인 예약이라 실제치는 더 늘어남']));
+  noteIdx.push(push(['※ 코스 시간은 예약관리의 코스명에서 추출(없으면 2시간) · 15분 단위 올림 · ①현행 = 아이미짱만 금토일월 1,200엔(화수목·주말 오전은 사장님) · ② 토일 오전(12:30 전) 예약은 사장님 또는 미접수 · 6시간 초과 근무일은 45분 휴게 법정 의무(급여에서 미차감 가정) · 10·11월은 접수 중인 예약이라 실제치는 더 늘어남']));
 
   const meta = await sheets.spreadsheets.get({ spreadsheetId: SHEET_ID });
   const old = meta.data.sheets.find(s => s.properties.title === TAB);
@@ -119,5 +119,5 @@ function current(ymd, bk) {
 
   console.log(`[인건비 시뮬 완료] ${RULE_TAG}`);
   console.log(`${PROJ.month} 예상: 약 ${yen(monthSummary.proj)}엔`);
-  for (const ym of MONTHS) { const t = monthSummary[ym]; console.log(`${ym}: 예약 ${t.bookings}건 출근 ${t.days}일 ${t.hours}h | ①현행 ${yen(t.cur)} | ②1인 1,300 ${yen(t.fix)} | ③1,200 ${yen(t.old)} | ④주말오전 미영업 ${yen(t.noMorn)} | 2인안 ${yen(PREV_2P[ym])}`); }
+  for (const ym of MONTHS) { const t = monthSummary[ym]; console.log(`${ym}: 예약 ${t.bookings}건 출근 ${t.days}일 ${t.hours}h | ①현행 ${yen(t.cur)} | ②1인 1,200 ${yen(t.fix)} | ③1,300 ${yen(t.old)} | ④주말오전 영업 ${yen(t.noMorn)} | 2인안 ${yen(PREV_2P[ym])}`); }
 })().catch(e => { console.error('ERROR:', e.response?.data?.error?.message || e.message); process.exit(1); });

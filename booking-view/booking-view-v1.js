@@ -697,10 +697,11 @@ http.createServer(async (req, res) => {
     if (u.searchParams.get('view') === 'shift') {   // 근무 안내 미리보기: ?view=shift&date=YYYY-MM-DD (기본=내일) · &send=1 이면 지금 발송
       const d = /^\d{4}-\d{2}-\d{2}$/.test(u.searchParams.get('date') || '') ? u.searchParams.get('date') : jstDay(1);
       if (u.searchParams.has('aimioff')) shiftOvrSet(d, { aimiOff: u.searchParams.get('aimioff') === '1' });   // &aimioff=1 아이미짱 휴무 등록 / =0 해제
+      if (u.searchParams.has('owner')) shiftOvrSet(d, { ownerOpen: u.searchParams.get('owner') === '1' });   // &owner=1 휴무일(수·금) 사장님 영업 등록 / =0 해제
       const { text } = await shiftFor(d);
-      const offDays = Object.keys(shiftOvr()).filter(k => shiftOvr()[k].aimiOff).sort();
-      let note = '(미리보기 — 발송 안 됨. 지금 보내려면 주소 끝에 &send=1 · 아이미짱 휴무 등록 &aimioff=1 / 해제 &aimioff=0)'
-        + (offDays.length ? '\n아이미짱 휴무 등록일: ' + offDays.join(', ') : '');
+      const ov = shiftOvr(), offDays = Object.keys(ov).filter(k => ov[k].aimiOff).sort(), openDays = Object.keys(ov).filter(k => ov[k].ownerOpen).sort();
+      let note = '(미리보기 — 발송 안 됨. 지금 보내려면 주소 끝에 &send=1 · 아이미짱 휴무 등록 &aimioff=1 / 해제 &aimioff=0 · 휴무일 사장님 영업 &owner=1 / 해제 &owner=0)'
+        + (offDays.length ? '\n아이미짱 휴무 등록일: ' + offDays.join(', ') : '') + (openDays.length ? '\n사장님 영업 등록일: ' + openDays.join(', ') : '');
       if (u.searchParams.get('send') === '1') { await shiftSend(text); note = '✅ 텔레그램으로 발송했습니다'; }
       res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
       return res.end(text + '\n\n' + note);
