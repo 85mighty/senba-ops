@@ -73,3 +73,15 @@ export function applyRegister(base, key) {
   d.props = (d.props || []).filter((p) => p.type !== 'register'); d.props.push({ id: 'reg_' + key, type: 'register', x: r.x, z: r.z, rot: r.rot, scale: 1, color: null });
   d.editedAt = Date.now(); return d;
 }
+
+// 포토 스폿 → 동쪽 벽(벽 1) 남쪽 절반(11/07 제안). 사이드보드·거울·흉상·장식을 벽 1 앞으로 옮김(정면 = 서쪽, 홀 쪽).
+// 벽 1 앞면 x≈2.354 + 판·見切り材 여유 3 cm. 앞 3 m 가 비어 있고 입구에서 대각선으로 바로 보임
+const EAST_FACE = 2.354 - 0.03, PZ = -0.15, WEST = -Math.PI / 2;   // 화장실 문이 사진에 안 들어오게 북쪽으로
+export function applyPhotoEast(base) {
+  const d = JSON.parse(JSON.stringify(base || {})); d.props = d.props || [];
+  const put = (type, x, z, y) => { let p = d.props.find((q) => q.type === type && String(q.id).startsWith('ik_')) || d.props.find((q) => q.type === type);
+    if (!p) { p = { id: 'ik_' + type, type, scale: type === 'sculpture' ? 1.25 : 1, color: null }; d.props.push(p); } Object.assign(p, { x: +x.toFixed(3), z: +z.toFixed(3), rot: WEST }); if (y != null) p.y = y; };
+  put('sideboard', EAST_FACE - 0.235, PZ); put('wall_mirror', EAST_FACE - 0.005, PZ);
+  put('sculpture', EAST_FACE - 0.24, PZ - 0.42, 0.86); put('deco_set', EAST_FACE - 0.22, PZ + 0.45, 0.86);
+  d.editedAt = Date.now(); return d;
+}
