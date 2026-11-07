@@ -57,9 +57,9 @@
     "components": 6006
   },
   "chair_rail_height_m": 0.89,
-  "chair_rail_status": "measured(texture)",
-  "baseboard_height_m": 0.1,
-  "baseboard_status": "measured(texture)",
+  "chair_rail_status": "measured(현장 11/07: 높이 7.4 cm, 벽에서 1 cm)",
+  "baseboard_height_m": 0.112,
+  "baseboard_status": "measured(현장 11/07: 11.2 cm, 벽에서 0.4~0.7 cm)",
   "wall_thickness_m": 0.1,
   "room_bounds": {
     "x": [
@@ -223,13 +223,13 @@
       "openings": [
         {
           "kind": "window",
-          "from": -3.6,
-          "to": -0.9,
+          "from": -3.674,
+          "to": -0.969,
           "y": [
             0.55,
             1.78
           ],
-          "status": "observed",
+          "status": "measured 11/07",
           "note": "사진 + 스캔 텍스처: 알루미늄 4짝 미닫이, 간유리, 커튼박스",
           "style": "jp_sliding",
           "panes": 4,
@@ -239,13 +239,13 @@
         },
         {
           "kind": "window",
-          "from": -0.72,
-          "to": 2.24,
+          "from": -0.674,
+          "to": 2.031,
           "y": [
             0.55,
             1.78
           ],
-          "status": "observed",
+          "status": "measured 11/07",
           "note": "사진 + 스캔 텍스처: 알루미늄 4짝 미닫이, 간유리, 커튼박스",
           "style": "jp_sliding",
           "panes": 4,
@@ -631,7 +631,7 @@
       "drop": ""
     }
   },
-  "chair_rail_thickness_m": 0.08,
+  "chair_rail_thickness_m": 0.074,
   "floor_area_m2": 48.94,
   "landmarks": {
     "entrance": {
@@ -753,13 +753,13 @@
       "windows": [
         {
           "kind": "window",
-          "from": -3.6,
-          "to": -0.9,
+          "from": -3.674,
+          "to": -0.969,
           "y": [
             0.55,
             1.78
           ],
-          "status": "observed",
+          "status": "measured 11/07",
           "note": "사진 + 스캔 텍스처: 알루미늄 4짝 미닫이, 간유리, 커튼박스",
           "style": "jp_sliding",
           "panes": 4,
@@ -769,13 +769,13 @@
         },
         {
           "kind": "window",
-          "from": -0.72,
-          "to": 2.24,
+          "from": -0.674,
+          "to": 2.031,
           "y": [
             0.55,
             1.78
           ],
-          "status": "observed",
+          "status": "measured 11/07",
           "note": "사진 + 스캔 텍스처: 알루미늄 4짝 미닫이, 간유리, 커튼박스",
           "style": "jp_sliding",
           "panes": 4,
@@ -786,7 +786,7 @@
       ]
     }
   ],
-  "windows_version": 2,
+  "windows_version": 3,
   "exterior_zones": [
     {
       "x": [
@@ -856,20 +856,20 @@
     {
       "id": "toilet_door",
       "wall": "wall_z_9",
-      "from": 1.25,
-      "to": 1.95,
+      "from": 1.252,
+      "to": 1.897,
       "y1": 1.92,
       "hinge": "from",
       "swing_deg": 72,
       "room_side": -1,
-      "status": "observed",
+      "status": "measured 11/07",
       "note": "원본 스캔·사진 08/11: 회색 철문(바깥여닫이, 오른쪽 경첩, 도어클로저)"
     },
     {
       "id": "stall_door",
       "wall": "wall_x_5",
-      "from": 3.05,
-      "to": 3.7,
+      "from": 3.073,
+      "to": 3.723,
       "y1": 1.88,
       "kind": "stall",
       "status": "observed",
@@ -957,8 +957,8 @@
       3.8
     ],
     "door_z": [
-      3.05,
-      3.7
+      3.073,
+      3.723
     ],
     "basin_z": 3.03,
     "status": "observed",
@@ -983,5 +983,81 @@
         "openings": []
       }
     }
+  ],
+  "measured_20261107": {
+    "source": "실측용_평면도.pdf 1쪽 손글씨 (2026-11-07)",
+    "room_width_wall2_to_wall1": 6.271,
+    "room_depth_window_to_wall11": 6.84,
+    "window_wall": {
+      "gap_left": 0.28,
+      "window_left": 2.66,
+      "pier": 0.295,
+      "window_right": 2.66,
+      "gap_right": 0.285,
+      "note": "합 6.18 m < 방 폭 6.271 m — 창 폭은 유리 부분, 틀 포함 약 2.71 m로 보고 양쪽 끝 간격은 실측값 유지"
+    },
+    "columns_x_chain": "벽2 →1.5→ 기둥1 →1.383→ 기둥2 →1.389→ 기둥3 →1.473→ 벽1, 벽2→기둥2 3.055, 기둥2→벽1 3.010 (기둥 가로폭은 이 값들로 역산)",
+    "columns_from_window_wall": {
+      "col1": 3.641,
+      "col2": 3.032,
+      "col3": 3.633
+    },
+    "col1_to_entrance_door": 4.022,
+    "col3_to_wall10": 3.476,
+    "wall2_to_wall5": 2.158,
+    "wall11_to_entrance_door": 0.965,
+    "entrance_corridor_wall3_to_wall5": 1.093,
+    "kitchen_width_wall7_to_wall4": 1.209,
+    "wall4_to_wall1": 2.087,
+    "wall4_to_wall6": 1.025,
+    "toilet_door_width": 0.645,
+    "toilet_door_right_to_wall1": 0.42,
+    "toilet_width_wall6_to_wall17": 1.124,
+    "toilet_depth": 2.17,
+    "wall10_to_stall_door": 0.66,
+    "chair_rail_height": 0.074,
+    "chair_rail_projection": 0.01,
+    "baseboard_height": 0.112,
+    "baseboard_projection": [
+      0.004,
+      0.007
+    ],
+    "ceiling_height": 2.393,
+    "removed": {
+      "thin_column_23": "기둥 5 — 실측에서 X(없음). 방 밖(벽 1 바깥)으로 잡힌 스캔 덩어리"
+    },
+    "unclear": [
+      "벽 5·15 근처 1.77 m (어느 구간인지)",
+      "벽 15 근처 0.8 m",
+      "주방 입구 위 세로 글씨(2.? m)",
+      "바닥 → 검은 띠 위끝 높이(미기입)"
+    ]
+  },
+  "ceiling_height_measured_m": 2.393,
+  "measured_columns": {
+    "thin_column_4": {
+      "w": 0.172,
+      "d": 0.22,
+      "dx": -0.019,
+      "dz": 0.094,
+      "status": "measured 11/07"
+    },
+    "wide_column_11": {
+      "w": 0.206,
+      "d": 0.821,
+      "dx": -0.073,
+      "dz": 0.052,
+      "status": "measured 11/07"
+    },
+    "thin_column_18": {
+      "w": 0.148,
+      "d": 0.186,
+      "dx": -0.101,
+      "dz": 0.029,
+      "status": "measured 11/07"
+    }
+  },
+  "removed_elements": [
+    "thin_column_23"
   ]
 }
