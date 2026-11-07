@@ -108,6 +108,25 @@ export function buildProp(p) {
       }
       break;
     }
+    case 'register': {      // 1인용 레지 카운터(약 80×45×100 cm): 손님 쪽 = +Z(정면 안내판), 직원 쪽 = −Z(태블릿 POS·카드 단말·선반·스툴)
+      const body = std(c || 0x39433a, { roughness: 0.8 }), oak = std(0x9b7650, { roughness: 0.55 }), blk = std(0x1a1a1a, { roughness: 0.5 });
+      const W = 0.8, D = 0.45, H = 1.0;
+      g.add(box(W, 0.06, D - 0.04, blk, 0, 0.03, -0.01));                                   // 걸레받이
+      g.add(box(W, H - 0.09, 0.03, body, 0, 0.06 + (H - 0.09) / 2, D / 2 - 0.015));         // 손님 쪽 앞판
+      for (const sx of [-1, 1]) g.add(box(0.03, H - 0.09, D, body, sx * (W / 2 - 0.015), 0.06 + (H - 0.09) / 2, 0));
+      for (let k = -2; k <= 2; k++) g.add(box(0.006, H - 0.2, 0.004, std(0x2c3329), k * 0.14, 0.52, D / 2 + 0.001));   // 세로 홈(판 느낌)
+      g.add(box(W + 0.06, 0.035, D + 0.06, oak, 0, H, 0.01));                               // 오크 상판
+      g.add(box(W - 0.06, 0.02, D - 0.1, oak, 0, 0.72, -0.04)); g.add(box(W - 0.06, 0.02, D - 0.1, oak, 0, 0.35, -0.04));   // 직원 쪽 선반(가방·봉투)
+      const sign = labelPlate('RECEPTION\n受付 · 접수', 0.36, 0.14, '#2b2118', '#e9d9b6'); sign.position.set(0, 0.82, D / 2 + 0.002); g.add(sign);
+      const stand = box(0.03, 0.12, 0.03, blk, 0.12, H + 0.07, -0.08); g.add(stand);       // 태블릿 POS (손님 쪽으로 돌릴 수 있는 받침)
+      const tab = box(0.25, 0.18, 0.012, std(0x111111, { roughness: 0.3 }), 0.12, H + 0.15, -0.07); tab.rotation.x = -0.35; g.add(tab);
+      const scr = box(0.22, 0.15, 0.002, std(0x3a6f8a, { emissive: 0x23455a, emissiveIntensity: 0.6 }), 0.12, H + 0.15, -0.062); scr.rotation.x = -0.35; g.add(scr);
+      g.add(box(0.08, 0.03, 0.15, std(0x2a2a2a), -0.18, H + 0.03, 0.02));                   // 카드 단말
+      g.add(cyl(0.04, 0.05, 0.03, std(0xc9a24a, { metalness: 0.7, roughness: 0.3 }), -0.32, H + 0.033, 0.1, 16));   // 호출 벨
+      g.add(box(0.12, 0.09, 0.06, std(0xf3f1ec), 0.32, H + 0.06, 0.12));                    // 명함·쿠폰 꽂이
+      const st = buildProp({ id: p.id, type: 'stool', x: 0, z: -0.62, rot: 0, scale: 1.4, color: '#2a2a2a' }); st.name = 'sub'; g.add(st);   // 직원 스툴(높이 약 60 cm)
+      break;
+    }
     case 'wall_mirror': {   // 검은 틀 가로 거울(약 120×60 cm) — 중심 높이 1.55 m, 벽에 붙임
       const fr = std(c || 0x1a1a1a, { roughness: 0.5 }); const W = 1.2, H = 0.6, y = 1.55;
       g.add(box(W + 0.06, H + 0.06, 0.03, fr, 0, y, 0.015)); const m = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 1, roughness: 0.04, envMapIntensity: 1.3 }));

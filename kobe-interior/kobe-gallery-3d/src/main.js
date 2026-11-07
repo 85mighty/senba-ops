@@ -8,12 +8,13 @@ import { Editor } from './editor.js';
 import { encodeDesign, decodeDesign, shareCodeFromHash } from './share.js';
 import { Sync, DEFAULT_SYNC_URL } from './sync.js';
 import presetCPhone from './presets/c_phone_20261027.json';
-import { applyIkeaCorner, applyUpperMirrors, applyWindowCurtains, applyRealFloor, applyDullGreen, applyAirPanel } from './presets/ikea_corner.js';
+import { applyIkeaCorner, applyUpperMirrors, applyWindowCurtains, applyRealFloor, applyDullGreen, applyAirPanel, applyRegister, REGISTER_PLANS } from './presets/ikea_corner.js';
 
 // 저장소에 보관된 디자인 — 어느 기기에서든 불러올 수 있다. seedSlot: 그 안이 비어 있으면 처음 열 때 자동으로 채움
 const PRESETS = [{ id: 'c_phone_20261027', name: 'C안 (폰에서 만든 것, 10/27)', seedSlot: 'C', design: presetCPhone },
   // D안: C안을 바탕으로 주방 입구를 막고 이케아 느낌 코너(사이드보드·거울·흉상, 서랍에 소데커버·베레모). 버튼은 '지금 안에 코너만 더하기'
   { id: 'd_ikea_20261028', name: '이케아 코너 (주방 입구 막기 + 사이드보드·거울·흉상)', seedSlot: 'D', afterSync: true, apply: applyIkeaCorner, base: () => store.getSlot('C') || presetCPhone },
+  ...Object.entries(REGISTER_PLANS).map(([k, r]) => ({ id: 'register_' + k, name: r.name, apply: (d) => applyRegister(d, k), armText: (sl) => `${sl}안에 레지를 놓습니다(있던 레지는 옮김). 다시 누르세요` })),
   { id: 'air_panel', name: '아래 벽 → エアサーモパネル(방법 ③)', apply: applyAirPanel, armText: (sl) => `지금 ${sl}안의 아래 벽을 판으로 덮습니다(띠까지). 다시 누르세요` },
   { id: 'dull_green', name: '벽 초록 → ダルグリーン(STYLE)', apply: applyDullGreen, armText: (sl) => `지금 ${sl}안의 초록 벽·띠를 ダルグリーン으로 바꿉니다. 다시 누르세요` }];
 import meta from './geometry_metadata.json';
