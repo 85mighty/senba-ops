@@ -20,8 +20,16 @@ def load():
     m = json.loads((ROOT / "src" / "geometry_metadata.json").read_text(encoding="utf-8"))
     walls = [e for e in m["elements"] if e["type"] == "wall"]
     for i, w in enumerate(walls, 1): w["num"] = i
+    gone = set(m.get("removed_elements", []))
     cols = [e for e in m["elements"] if e["type"] in ("wide_column", "thin_column")]
-    for i, c in enumerate(cols, 1): c["num"] = i
+    for i, c in enumerate(cols, 1): c["num"] = i      # 번호는 3D 와 같게(없앤 기둥도 번호 유지)
+    cols = [c for c in cols if c["id"] not in gone]
+    mc = m.get("measured_columns", {})
+    for c in cols:                                    # 실측 보정 위치·치수
+        q = mc.get(c["id"])
+        if q:
+            fx, fz = c["footprint"]["x"], c["footprint"]["z"]; cx, cz = (fx[0] + fx[1]) / 2 + q["dx"], (fz[0] + fz[1]) / 2 + q["dz"]
+            c["footprint"] = {"x": [cx - q["w"] / 2, cx + q["w"] / 2], "z": [cz - q["d"] / 2, cz + q["d"] / 2]}; c["measured"] = True
     return m, walls, cols
 
 
@@ -58,12 +66,12 @@ def page_plan(pdf, m, walls, cols, zoom=None):
     for ov in m.get("window_overrides", []):
         for win in ov["windows"]:
             z = ov["offset"]; ax.plot([win["from"], win["to"]], [z, z], color="#6aa9d8", lw=7, solid_capstyle="butt", zorder=4)
-            ax.text((win["from"] + win["to"]) / 2, z + 0.2, f"창 약 {win['to'] - win['from']:.2f} m  창턱 {win['y'][0]:.2f} m / 실측 ____", ha="center", fontsize=7.5, color="#3a7fb5", zorder=4)
+            ax.text((win["from"] + win["to"]) / 2, z + 0.2, (f"✓ 창 {win['to'] - win['from']:.2f} m (실측 기준)  창턱 / 실측 ____" if "measured" in win.get("status", "") else f"창 약 {win['to'] - win['from']:.2f} m  창턱 {win['y'][0]:.2f} m / 실측 ____"), ha="center", fontsize=7.5, color="#3a7fb5", zorder=4)
     # 기둥
     for c in cols:
         fx, fz = c["footprint"]["x"], c["footprint"]["z"]; wdt, dep = fx[1] - fx[0], fz[1] - fz[0]
         ax.add_patch(Rectangle((fx[0], fz[0]), wdt, dep, fc="#555", ec=INK, zorder=4))
-        ax.text(fx[1] + 0.08, fz[0] - 0.02, f"기둥 {c['num']}\n약 {wdt*100:.0f}×{dep*100:.0f} cm\n실측 ___×___", fontsize=7.5, va="top", color=INK, zorder=6,
+        ax.text(fx[1] + 0.08, fz[0] - 0.02, f"기둥 {c['num']}\n" + (f"✓ 가로 {wdt*100:.1f} cm (실측 역산)\n세로 약 {dep*100:.0f} cm / 실측 ___" if c.get("measured") else f"약 {wdt*100:.0f}×{dep*100:.0f} cm\n실측 ___×___"), fontsize=7.5, va="top", color=INK, zorder=6,
                 bbox=dict(fc="white", ec="none", alpha=0.8, pad=1))
     # 문·설비
     for d in m.get("door_openings", []):
@@ -82,13 +90,13 @@ def page_plan(pdf, m, walls, cols, zoom=None):
     ax.set_aspect("equal"); ax.axis("off")
     for t in ax.texts: t.set_clip_on(True)   # 확대 장에서 그림 밖 글씨가 오른쪽 표로 넘치지 않게
     fig.text(0.03, 0.955, "고베 매장 — 실측용 평면도 (위에서 본 그림)" + ("  · 안쪽(주방·화장실·입구) 확대" if zoom else ""), fontsize=18, weight="bold")
-    fig.text(0.03, 0.93, "벽·기둥 번호 = 3D 뷰어 번호.  '약 ○ m'는 3D 스캔 추정값 — 옆 빈칸에 실측값을 적으세요.  회색 = 꾸미지 않는 면,  빨간 점선 = 문", fontsize=10, color=MUTE)
+    fig.text(0.03, 0.93, "✓ = 11/07 실측 반영.  벽·기둥 번호 = 3D 뷰어 번호.  '약 ○ m'는 3D 스캔 추정값 — 옆 빈칸에 실측값을 적으세요.  회색 = 꾸미지 않는 면,  빨간 점선 = 문", fontsize=10, color=MUTE)
     # 오른쪽: 공통 실측 + 메모
     x0 = 0.71
     fig.text(x0, 0.90, "공통 실측 (3~4곳 재서 적기)", fontsize=13, weight="bold")
-    rows = [("바닥 → 검은 띠 위끝", "약 89 cm", "900 mm 이하인지"), ("바닥 → 검은 띠 아래끝", "약 81 cm", ""), ("검은 띠 높이", "약 8 cm", ""),
-            ("검은 띠 튀어나온 두께", "12 mm 가정", "18 mm 이하인지"), ("걸레받이 높이", "약 10 cm", ""), ("걸레받이 튀어나온 두께", "?", "띠와 비슷한지"),
-            ("천장 높이", "약 2.38 m", ""), ("벽지 물방울 테스트", "", "튕김 / 스며듦")]
+    rows = [("바닥 → 검은 띠 위끝", "약 89 cm", "900 mm 이하인지 — 아직 안 잼"), ("바닥 → 검은 띠 아래끝", "약 81 cm", "아직 안 잼"), ("검은 띠 높이", "✓ 7.4 cm", ""),
+            ("검은 띠 튀어나온 두께", "✓ 1 cm", "18 mm 이하 OK"), ("걸레받이 높이", "✓ 11.2 cm", ""), ("걸레받이 튀어나온 두께", "✓ 0.4~0.7 cm", "띠(1 cm)보다 얇음 → 아래 스페이서 3~6 mm"),
+            ("천장 높이", "✓ 2.393 m", ""), ("벽지 물방울 테스트", "", "튕김 / 스며듦")]
     y = 0.87
     for name, est, hint in rows:
         fig.text(x0, y, name, fontsize=10); fig.text(x0 + 0.13, y, est, fontsize=9, color=MUTE)
@@ -123,7 +131,7 @@ def page_table(pdf, m, walls, cols):
     y -= 0.03
     for c in cols:
         fx, fz = c["footprint"]["x"], c["footprint"]["z"]
-        cells = [f"기둥 {c['num']}", "가로 × 세로", f"{(fx[1]-fx[0])*100:.0f}×{(fz[1]-fz[0])*100:.0f} cm", "___ × ___", "", "", "", "", ""]
+        cells = [f"기둥 {c['num']}", "가로 × 세로", f"{(fx[1]-fx[0])*100:.0f}×{(fz[1]-fz[0])*100:.0f} cm", (f"✓{(fx[1]-fx[0])*100:.1f} × ___" if c.get("measured") else "___ × ___"), "", "", "", "", ""]
         y -= 0.034
         for i, t in enumerate(cells): fig.text(xs[i] + 0.004, y + 0.01, t, fontsize=10, color=INK if i != 2 else MUTE)
         fig.add_artist(plt.Line2D([xs[0], xs[-1]], [y, y], color="#ccc", lw=0.7))

@@ -228,7 +228,7 @@ export class Viewer {
   updateHighlight(on = this.highlightOn ?? true) {
     this.highlightOn = on; disposeTree(this.highlight); if (!on) return;
     const col = (this.meta.elements || []).find((e) => e.id === this.meta.central_wide_column); if (!col) return;
-    const fx = col.footprint.x, fz = col.footprint.z, h = this.meta.ceiling_height_m || 3;
+    const fp = this.footprintOf ? this.footprintOf(col) : col.footprint; const fx = fp.x, fz = fp.z, h = this.meta.ceiling_height_m || 3;   // 실측·편집 치수(편집기가 footprintOf 를 연결)
     const g = new THREE.BoxGeometry(fx[1] - fx[0] + 0.06, h + 0.02, fz[1] - fz[0] + 0.06);
     const edges = new THREE.LineSegments(new THREE.EdgesGeometry(g), new THREE.LineBasicMaterial({ color: 0xff4fd8 }));
     edges.position.set((fx[0] + fx[1]) / 2, h / 2, (fz[0] + fz[1]) / 2); this.highlight.add(edges);

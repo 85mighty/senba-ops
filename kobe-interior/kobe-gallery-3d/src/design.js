@@ -115,10 +115,13 @@ export class DesignStore {
   column(id) { return this.design.columns[id] || (this.design.columns[id] = { w: null, d: null, dx: 0, dz: 0, mirror: null, mirrorFaces: ['xn', 'xp', 'zn', 'zp'] }); }
   getColumn(id) { return this.design.columns[id] || { w: null, d: null, dx: 0, dz: 0, mirror: null, mirrorFaces: ['xn', 'xp', 'zn', 'zp'] }; }
   // 유효 footprint (실측 입력 반영)
+  // 기둥 치수: 디자인에서 바꾼 값 > 현장 실측(meta.measured_columns) > 스캔. 위치 보정(dx·dz)은 실측 보정 위에 더한다
+  colSize(id, el) { const c = this.getColumn(id), mc = (this.meta.measured_columns || {})[id] || {}; const fx = el.footprint.x, fz = el.footprint.z;
+    return { w: c.w || mc.w || (fx[1] - fx[0]), d: c.d || mc.d || (fz[1] - fz[0]), dx: (c.dx || 0) + (mc.dx || 0), dz: (c.dz || 0) + (mc.dz || 0), measured: !!mc.w }; }
   footprint(el) {
-    const c = this.getColumn(el.id); const fx = el.footprint.x, fz = el.footprint.z;
-    const cx = (fx[0] + fx[1]) / 2 + (c.dx || 0), cz = (fz[0] + fz[1]) / 2 + (c.dz || 0);
-    const w = c.w || (fx[1] - fx[0]), d = c.d || (fz[1] - fz[0]);
+    const s = this.colSize(el.id, el); const fx = el.footprint.x, fz = el.footprint.z;
+    const cx = (fx[0] + fx[1]) / 2 + s.dx, cz = (fz[0] + fz[1]) / 2 + s.dz;
+    const w = s.w, d = s.d;
     return { x: [cx - w / 2, cx + w / 2], z: [cz - d / 2, cz + d / 2] };
   }
   // ---- 창

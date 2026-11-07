@@ -24,7 +24,7 @@ export class InteriorA {
   get base() { return this.meta.baseboard_height_m || 0.10; }
   // 꾸밀 수 있는 벽: 설비 면(싱크대 앞면)·입구 밖 벽 제외
   walls() { return (this.meta.elements || []).filter((e) => e.type === 'wall' && !isFixtureWall(this.meta, e.id) && !isExteriorWall(this.meta, e)).concat(activeClosureWalls(this.meta, this.store?.design)); }
-  columns() { return (this.meta.elements || []).filter((e) => ['wide_column', 'thin_column'].includes(e.type)); }
+  columns() { const gone = new Set(this.meta.removed_elements || []); return (this.meta.elements || []).filter((e) => ['wide_column', 'thin_column'].includes(e.type) && !gone.has(e.id)); }
   blockers() { return (this.meta.elements || []).filter((e) => e.footprint); }
   central() { return (this.meta.elements || []).find((e) => e.id === this.opts.central); }
   sf(id) { return this.store ? this.store.getSurface(id) : {}; }

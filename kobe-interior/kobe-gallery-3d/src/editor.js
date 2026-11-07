@@ -13,12 +13,12 @@ const TILE = 1.5;
 
 export class Editor {
   // エアサーモパネルlite D(판매 표기): 두께 7 mm, 앞면 313 mm·유효 폭 304 mm(겹쳐 끼움), 홈은 이음과 판 가운데. 見切り材 25×12 mm.
-  // bandProj = 검은 띠가 벽에서 튀어나온 두께 — 실측 전 추정. 사양·실측표: kobe-interior/03-자재-실측.md
-  static AIR_PANEL = { t: 0.007, w: 0.304, grooves: 2, bandProj: 0.012, capD: 0.025, capH: 0.012 };
+  // bandProj = 검은 띠가 벽에서 튀어나온 두께(실측 1 cm). 사양·실측표: kobe-interior/03-자재-실측.md
+  static AIR_PANEL = { t: 0.007, w: 0.304, grooves: 2, bandProj: 0.010, capD: 0.025, capH: 0.012 };   // bandProj 실측 1 cm(11/07)
   static FLOOR_TEX_M = 2.16;   // scripts/make_floor_texture.py SIZE_M 과 같게
   static LONG_PRESS = 450;   // 소품을 옮기려면 이만큼(ms) 누르고 있어야 한다
   constructor(viewer, interior, store, toast) {
-    this.v = viewer; this.i = interior; this.s = store; this.meta = viewer.meta; this.toast = toast;
+    this.v = viewer; this.i = interior; this.s = store; viewer.footprintOf = (el) => store.footprint(el); this.meta = viewer.meta; this.toast = toast;
     this.enabled = false; this.selected = null; this.placing = null; this.measuring = null;
     this.root = new THREE.Group(); this.root.name = 'editor'; viewer.scene.add(this.root);
     this.overlays = new THREE.Group(); this.picks = new THREE.Group(); this.labels = new THREE.Group(); this.hl = new THREE.Group();
@@ -45,7 +45,7 @@ export class Editor {
   allWalls() { return (this.meta.elements || []).filter((e) => e.type === 'wall').concat(closureWallsAll(this.meta)); }
   // 꾸밀 수 있는 벽 — 싱크대 앞면처럼 벽이 아닌 면, 입구 밖 벽은 뺀다(번호는 그대로 유지)
   walls() { return this.allWalls().filter((e) => !isFixtureWall(this.meta, e.id) && !isExteriorWall(this.meta, e) && (!e.virtual || closureOn(this.meta, this.s.design, e.id))); }
-  columns() { return (this.meta.elements || []).filter((e) => ['wide_column', 'thin_column'].includes(e.type)); }
+  columns() { const gone = new Set(this.meta.removed_elements || []); return (this.meta.elements || []).filter((e) => ['wide_column', 'thin_column'].includes(e.type) && !gone.has(e.id)); }   // 실측에서 없다고 확인한 기둥 제외
 
   // ---------------- 번호 매긴 항목
   buildItems() {
@@ -167,7 +167,7 @@ export class Editor {
   applyScanScope() {
     const rec = this.v.loaded?.reconstructed; if (!rec) return;
     if (!this.fixtures) { this.fixtures = buildFixtures(this.meta); this.fixtures.visible = this.modelOn !== false; this.root.add(this.fixtures); }
-    const hideIds = [...Object.keys(this.meta.fixture_walls || {}), ...Object.keys(this.meta.hidden_scan_blobs || {})];
+    const hideIds = [...Object.keys(this.meta.fixture_walls || {}), ...Object.keys(this.meta.hidden_scan_blobs || {}), ...(this.meta.removed_elements || [])];
     const ext = this.allWalls().filter((w) => isExteriorWall(this.meta, w)).map((w) => w.id);
     const owner = (name, ids) => ids.find((id) => name === id || name.startsWith(id + '_'));
     rec.traverse((o) => {
@@ -455,12 +455,12 @@ export class Editor {
   applyColumnSizes() {
     const rec = this.v.loaded?.reconstructed; if (!rec) return;
     for (const col of this.columns()) {
-      const c = this.s.getColumn(col.id); const fx = col.footprint.x, fz = col.footprint.z; const ow = fx[1] - fx[0], od = fz[1] - fz[0];
-      const sx = (c.w || ow) / ow, sz = (c.d || od) / od; const cx = (fx[0] + fx[1]) / 2, cz = (fz[0] + fz[1]) / 2;
+      const c = this.s.colSize(col.id, col); const fx = col.footprint.x, fz = col.footprint.z; const ow = fx[1] - fx[0], od = fz[1] - fz[0];
+      const sx = c.w / ow, sz = c.d / od; const cx = (fx[0] + fx[1]) / 2, cz = (fz[0] + fz[1]) / 2;
       rec.traverse((o) => {
         if (!o.isMesh || !(o.name === col.id || o.name.startsWith(col.id + '_'))) return;
         if (!o.userData.orig) o.userData.orig = { p: o.position.clone(), s: o.scale.clone() };
-        const op = o.userData.orig.p; o.position.set(cx + (op.x - cx) * sx + (c.dx || 0), op.y, cz + (op.z - cz) * sz + (c.dz || 0)); o.scale.set(o.userData.orig.s.x * sx, o.userData.orig.s.y, o.userData.orig.s.z * sz);
+        const op = o.userData.orig.p; o.position.set(cx + (op.x - cx) * sx + c.dx, op.y, cz + (op.z - cz) * sz + c.dz); o.scale.set(o.userData.orig.s.x * sx, o.userData.orig.s.y, o.userData.orig.s.z * sz);
       });
     }
   }
@@ -582,11 +582,11 @@ export class Editor {
     if (sel.kind === 'column') {
       const col = this.columns().find((x) => x.id === sel.id); const c = this.s.column(col.id); const sf = this.s.surface(col.id); const fx = col.footprint.x, fz = col.footprint.z;
       h(`<h4>기둥 ${col.num} <small>스캔 ${((fx[1] - fx[0]) * 100).toFixed(0)}×${((fz[1] - fz[0]) * 100).toFixed(0)} cm · ${esc(col.id)}</small></h4>`);
-      row('실측 가로(X)', num(Math.round((c.w || fx[1] - fx[0]) * 100), 1, (v) => { c.w = v / 100; commit('size'); }));
-      row('실측 세로(Z)', num(Math.round((c.d || fz[1] - fz[0]) * 100), 1, (v) => { c.d = v / 100; commit('size'); }));
+      const cs = this.s.colSize(col.id, col); row('실측 가로(X)', num(Math.round(cs.w * 100), 1, (v) => { c.w = v / 100; commit('size'); }));
+      row('실측 세로(Z)', num(Math.round(cs.d * 100), 1, (v) => { c.d = v / 100; commit('size'); }));
       row('위치 보정 X', num(Math.round((c.dx || 0) * 100), 1, (v) => { c.dx = v / 100; commit('size'); }));
       row('위치 보정 Z', num(Math.round((c.dz || 0) * 100), 1, (v) => { c.dz = v / 100; commit('size'); }));
-      box.appendChild(btn('스캔 치수로 되돌리기', () => { c.w = c.d = null; c.dx = c.dz = 0; commit('size'); }, 'ghost'));
+      box.appendChild(btn((this.meta.measured_columns || {})[col.id] ? '현장 실측 치수로 되돌리기' : '스캔 치수로 되돌리기', () => { c.w = c.d = null; c.dx = c.dz = 0; commit('size'); }, 'ghost'));
       row('4면 거울', check(c.mirror ?? (col.id === this.meta.central_wide_column), (v) => { c.mirror = v; commit('mirror'); }, '이 기둥에 거울'));
       row('거울 범위', selectEl([['바닥 위~거울 높이, 좌우 여백', 'frame'], ['띠(몰드) 위~천장, 좌우 꽉 차게', 'upper']], c.mirrorFit || 'frame', (v) => { c.mirrorFit = v; if (v === 'upper') c.mirror = true; commit('mirror'); }));
       const faces = document.createElement('span'); for (const [k, t] of [['xn', '서(−X)'], ['xp', '동(+X)'], ['zn', '북(−Z)'], ['zp', '남(+Z)']]) faces.appendChild(check(c.mirrorFaces.includes(k), (v) => { c.mirrorFaces = v ? [...new Set([...c.mirrorFaces, k])] : c.mirrorFaces.filter((x) => x !== k); commit('mirror'); }, t)); row('거울 면', faces);
