@@ -8,12 +8,14 @@ import { Editor } from './editor.js';
 import { encodeDesign, decodeDesign, shareCodeFromHash } from './share.js';
 import { Sync, DEFAULT_SYNC_URL } from './sync.js';
 import presetCPhone from './presets/c_phone_20261027.json';
-import { applyIkeaCorner, applyUpperMirrors, applyWindowCurtains, applyRealFloor, applyDullGreen, applyAirPanel, applyRegister, REGISTER_PLANS, applyPhotoEast } from './presets/ikea_corner.js';
+import { applyIkeaCorner, applyUpperMirrors, applyWindowCurtains, applyRealFloor, applyDullGreen, applyAirPanel, applyRegister, REGISTER_PLANS, applyPhotoEast, applyReception } from './presets/ikea_corner.js';
 
 // 저장소에 보관된 디자인 — 어느 기기에서든 불러올 수 있다. seedSlot: 그 안이 비어 있으면 처음 열 때 자동으로 채움
 const PRESETS = [{ id: 'c_phone_20261027', name: 'C안 (폰에서 만든 것, 10/27)', seedSlot: 'C', design: presetCPhone },
   // D안: C안을 바탕으로 주방 입구를 막고 이케아 느낌 코너(사이드보드·거울·흉상, 서랍에 소데커버·베레모). 버튼은 '지금 안에 코너만 더하기'
   { id: 'd_ikea_20261028', name: '이케아 코너 (주방 입구 막기 + 사이드보드·거울·흉상)', seedSlot: 'D', afterSync: true, apply: applyIkeaCorner, base: () => store.getSlot('C') || presetCPhone },
+  // E안: D안(없으면 C안+이케아 코너)을 바탕으로 레지 ② + 리셉션 알코브(ㄱ자 레드 벽·카펫·船場美術館 글씨)
+  { id: 'e_reception_20261108', name: '리셉션 알코브 (레지 ② + ㄱ자 레드 벽 · 카펫 · 船場美術館)', seedSlot: 'E', afterSync: true, apply: applyReception, base: () => store.getSlot('D') || applyIkeaCorner(store.getSlot('C') || presetCPhone), armText: (sl) => `${sl}안에 리셉션 알코브를 넣습니다(레지는 ②로 옮김). 다시 누르세요` },
   ...Object.entries(REGISTER_PLANS).map(([k, r]) => ({ id: 'register_' + k, name: r.name, apply: (d) => applyRegister(d, k), armText: (sl) => `${sl}안에 레지를 놓습니다(있던 레지는 옮김). 다시 누르세요` })),
   { id: 'photo_east', name: '포토 스폿 → 동쪽 벽(벽 1)', apply: applyPhotoEast, armText: (sl) => `${sl}안의 사이드보드·거울·흉상을 동쪽 벽으로 옮깁니다. 다시 누르세요` },
   { id: 'air_panel', name: '아래 벽 → エアサーモパネル(방법 ③)', apply: applyAirPanel, armText: (sl) => `지금 ${sl}안의 아래 벽을 판으로 덮습니다(띠까지). 다시 누르세요` },
@@ -165,10 +167,12 @@ function setupEditorUI() {
   for (const p of PRESETS) { const flag = 'kobe3d.seed.' + p.id; let seeded = false; try { seeded = !!localStorage.getItem(flag); } catch {}
     if (p.seedSlot && !p.afterSync && !seeded && !store.hasSlot(p.seedSlot)) { store.putSlot(p.seedSlot, p.design); try { localStorage.setItem(flag, '1'); } catch {} } }
   // 동기화로 최신 C안을 받은 뒤 채우는 안(D안) — 비어 있을 때 한 번만
+  // 이미 있는 안에 한 번만 더하는 수정(디자인 안에 표시가 남아 다른 기기에서 다시 하지 않음)
+  const runPatches = (slot) => { for (const pt of PATCHES) { if (slot && pt.slot !== slot) continue; const d = store.getSlot(pt.slot); if (!d || (d.patches || []).includes(pt.id)) continue; const nd = pt.apply(d, store); nd.patches = [...(d.patches || []), pt.id]; store.putSlot(pt.slot, nd); window.__sync?.touched(pt.slot); if (pt.slot === store.active) { editor.renderChips(); } toast(pt.msg); } };
   const seedAfterSync = () => { for (const p of PRESETS) { if (!p.afterSync) continue; const flag = 'kobe3d.seed.' + p.id; let seeded = false; try { seeded = !!localStorage.getItem(flag); } catch {}
-    if (seeded || store.hasSlot(p.seedSlot)) continue; store.putSlot(p.seedSlot, p.apply(p.base())); try { localStorage.setItem(flag, '1'); } catch {} window.__sync?.touched(p.seedSlot); renderSlotBar(); toast(`${p.seedSlot}안(${p.name.split(' (')[0]})을 만들었습니다 — 위쪽 ${p.seedSlot}안을 누르세요`); }
-    // 이미 있는 안에 한 번만 더하는 수정(디자인 안에 표시가 남아 다른 기기에서 다시 하지 않음)
-    for (const pt of PATCHES) { const d = store.getSlot(pt.slot); if (!d || (d.patches || []).includes(pt.id)) continue; const nd = pt.apply(d, store); nd.patches = [...(d.patches || []), pt.id]; store.putSlot(pt.slot, nd); window.__sync?.touched(pt.slot); if (pt.slot === store.active) { editor.renderChips(); } toast(pt.msg); } };
+    if (!seeded && !store.hasSlot(p.seedSlot)) { store.putSlot(p.seedSlot, p.apply(p.base())); try { localStorage.setItem(flag, '1'); } catch {} window.__sync?.touched(p.seedSlot); renderSlotBar(); toast(`${p.seedSlot}안(${p.name.split(' (')[0]})을 만들었습니다 — 위쪽 ${p.seedSlot}안을 누르세요`); }
+    runPatches(p.seedSlot); }   // 이 안의 수정을 끝낸 뒤 다음 안(E안은 D안을 바탕으로)
+    runPatches(); };
   for (const p of PRESETS) { const b = document.createElement('button'); b.className = 'ghost'; const label = p.apply ? `${p.name} → 지금 안에 더하기` : `${p.name} → 지금 안에 불러오기`; b.textContent = label;
     b.addEventListener('click', () => { if (!b.dataset.arm) { b.dataset.arm = '1'; b.textContent = p.armText ? p.armText(store.active) : p.apply ? `지금 ${store.active}안에 코너를 더합니다(그 자리 소품은 치움). 다시 누르세요` : `지금 ${store.active}안을 덮어씁니다. 다시 누르세요`; setTimeout(() => { delete b.dataset.arm; b.textContent = label; }, 4000); return; }
       delete b.dataset.arm; b.textContent = label; store.putSlot(store.active, p.apply ? p.apply(store.design) : p.design); editor.renderChips(); refreshBookmarks(); toast(`${p.name}을 ${store.active}안에 불러옴`); });
@@ -205,8 +209,10 @@ function setupEditorUI() {
   $('#syncOff').addEventListener('click', () => { sync.disconnect(); $('#syncToken').value = ''; toast('동기화 끔 (이 기기에는 그대로 남아 있습니다)'); });
   if (sync.enabled) { sync.setStatus('idle'); Promise.resolve(sync.pull()).catch(() => {}).finally(seedAfterSync); } else { sync.setStatus('off'); seedAfterSync(); }
   // 주방 입구 막기
-  const closeCb = $('#closeKitchen'); const syncClose = () => { closeCb.checked = !!store.design.closures?.kitchen; }; syncClose(); store.onChange(syncClose);
-  closeCb.addEventListener('change', () => { store.setClosure('kitchen', closeCb.checked); store.commit('closure'); toast(closeCb.checked ? '주방 입구를 벽으로 막았습니다 (벽 18 — 눌러서 칠·띠 설정)' : '주방 입구를 다시 열었습니다'); });
+  const cbox = $('#closureBoxes'); const closeCbs = [];
+  for (const c of meta.closures || []) { const l = document.createElement('label'); const cb = document.createElement('input'); cb.type = 'checkbox'; cb.id = 'close_' + c.id; l.append(cb, ' ' + (c.label || c.id)); cbox.appendChild(l); closeCbs.push([c, cb]);
+    cb.addEventListener('change', () => { store.setClosure(c.id, cb.checked); store.commit('closure'); toast(cb.checked ? `${c.label || c.id} — 벽을 세웠습니다 (벽을 눌러 칠·띠 설정)` : `${c.label || c.id} — 벽을 없앴습니다`); }); }
+  const syncClose = () => { for (const [c, cb] of closeCbs) cb.checked = !!store.design.closures?.[c.id]; }; syncClose(); store.onChange(syncClose);
   $('#exportDesign').addEventListener('click', async () => { const j = store.exportJSON(); $('#designJson').value = j; try { await navigator.clipboard.writeText(j); toast('디자인 JSON 복사됨 (아래 칸에도 표시)'); } catch { toast('아래 칸의 JSON 을 복사하세요'); } });
   $('#importDesign').addEventListener('click', () => { try { store.importJSON($('#designJson').value); editor.renderChips(); refreshBookmarks(); toast('디자인 불러옴'); } catch (e) { toast('불러오기 실패: ' + e.message); } });
   $('#resetDesign').addEventListener('click', () => { if ($('#resetDesign').dataset.arm) { store.reset(); editor.renderChips(); refreshBookmarks(); toast('초기화됨'); delete $('#resetDesign').dataset.arm; $('#resetDesign').textContent = '디자인 초기화'; } else { $('#resetDesign').dataset.arm = '1'; $('#resetDesign').textContent = '정말 초기화? (다시 클릭)'; setTimeout(() => { delete $('#resetDesign').dataset.arm; $('#resetDesign').textContent = '디자인 초기화'; }, 4000); } });

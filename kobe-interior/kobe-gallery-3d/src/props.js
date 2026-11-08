@@ -127,6 +127,23 @@ export function buildProp(p) {
       const st = buildProp({ id: p.id, type: 'stool', x: 0, z: -0.62, rot: 0, scale: 1.4, color: '#2a2a2a' }); st.name = 'sub'; g.add(st);   // 직원 스툴(높이 약 60 cm)
       break;
     }
+    case 'brand_sign': {    // 船場美術館 세로 금박 글씨(약 28×112 cm) — 벽에 붙임(+Z 가 앞). 높이는 '높이(y)'로
+      const cv = document.createElement('canvas'); cv.width = 512; cv.height = 2048; const c2 = cv.getContext('2d'); const chars = '船場美術館';
+      c2.font = '600 300px "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif CJK JP", "Noto Serif KR", serif'; c2.textAlign = 'center'; c2.textBaseline = 'middle';
+      chars.split('').forEach((ch, i) => { const y = 220 + i * 400; c2.fillStyle = 'rgba(40,10,10,0.9)'; c2.fillText(ch, 256 + 10, y + 12);   // 그림자(양각 느낌)
+        const gr = c2.createLinearGradient(100, y - 150, 420, y + 150); gr.addColorStop(0, '#fff2b0'); gr.addColorStop(0.45, '#d4af37'); gr.addColorStop(1, '#8c6a14'); c2.fillStyle = gr; c2.fillText(ch, 256, y);
+        c2.lineWidth = 4; c2.strokeStyle = '#5a4210'; c2.strokeText(ch, 256, y); });
+      const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+      const mat = new THREE.MeshStandardMaterial({ map: tex, transparent: true, alphaTest: 0.08, metalness: 0.55, roughness: 0.35, emissive: 0x3a2a08, emissiveIntensity: 0.35, side: THREE.DoubleSide });
+      const plane = new THREE.Mesh(new THREE.PlaneGeometry(0.28, 1.12), mat); plane.position.set(0, 0.56, 0.004); g.add(plane);
+      break;
+    }
+    case 'round_mirror': {  // 금테 원형 거울(지름 약 55 cm) — 중심 높이는 '높이(y)' + 0.27
+      const gold = std(c || 0xc9a24a, { metalness: 0.8, roughness: 0.3 });
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.265, 0.022, 12, 48), gold); ring.position.set(0, 0.27, 0.02); g.add(ring);
+      const disc = new THREE.Mesh(new THREE.CircleGeometry(0.255, 48), new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 1, roughness: 0.04, envMapIntensity: 1.3 })); disc.position.set(0, 0.27, 0.012); g.add(disc);
+      break;
+    }
     case 'wall_mirror': {   // 검은 틀 가로 거울(약 120×60 cm) — 중심 높이 1.55 m, 벽에 붙임
       const fr = std(c || 0x1a1a1a, { roughness: 0.5 }); const W = 1.2, H = 0.6, y = 1.55;
       g.add(box(W + 0.06, H + 0.06, 0.03, fr, 0, y, 0.015)); const m = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 1, roughness: 0.04, envMapIntensity: 1.3 }));

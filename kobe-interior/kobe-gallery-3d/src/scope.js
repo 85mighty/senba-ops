@@ -43,6 +43,7 @@ export function subtractRects(r, holes) {
 }
 
 // 디자인에서 켜는 '막기 벽'(예: 주방 입구). 꺼져 있으면 없는 벽으로 본다
-export const closureWallsAll = (meta) => (meta.closures || []).map((c) => c.wall);
-export const closureOn = (meta, design, wallId) => (meta.closures || []).some((c) => c.wall.id === wallId && !!design?.closures?.[c.id]);
-export const activeClosureWalls = (meta, design) => (meta.closures || []).filter((c) => !!design?.closures?.[c.id]).map((c) => c.wall);
+export const closureWalls = (c) => c.walls || (c.wall ? [c.wall] : []);
+export const closureWallsAll = (meta) => (meta.closures || []).flatMap(closureWalls);
+export const closureOn = (meta, design, wallId) => (meta.closures || []).some((c) => closureWalls(c).some((w) => w.id === wallId) && !!design?.closures?.[c.id]);
+export const activeClosureWalls = (meta, design) => (meta.closures || []).filter((c) => !!design?.closures?.[c.id]).flatMap(closureWalls);

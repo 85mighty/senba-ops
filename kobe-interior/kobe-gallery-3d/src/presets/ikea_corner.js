@@ -65,7 +65,7 @@ export function applyAirPanel(base) {
 // 1인용 레지 배치안(11/07 제안) — 소품 'register' 한 개를 놓는다(이미 있던 레지는 치움). 정면(+Z)이 손님 쪽
 export const REGISTER_PLANS = {
   r1: { name: '레지 ① 입구 왼쪽 구석 (추천)', x: -3.1, z: 1.25, rot: Math.PI / 2, why: '통로를 나오자마자 왼쪽, 정면이 통로 출구를 봄 — 인사·접수·결제, 동선 밖, 직원(벽 2 등짐)이 입구·홀 전체를 봄' },
-  r2: { name: '레지 ② 입구 정면 리셉션', x: -2.3, z: 0.8, rot: 0, why: '통로 정면 1 m — 첫눈에 보이는 안내 데스크. 대신 홀 쪽 동선을 조금 가림' },
+  r2: { name: '레지 ② 입구 정면 리셉션', x: -2.35, z: 0.75, rot: 0, why: '통로 정면 1 m — 첫눈에 보이는 안내 데스크. 대신 홀 쪽 동선을 조금 가림' },
   r3: { name: '레지 ③ 사이드보드 옆 · 직원 통로 앞', x: 0.62, z: 1.38, rot: Math.PI, why: '뒤 커튼 통로로 주방 재고·세면대 바로 — 직원이 편함. 입구에서 약 3 m, 포토 스폿과 붙어 줄이 사진에 걸릴 수 있음' },
 };
 export function applyRegister(base, key) {
@@ -83,5 +83,21 @@ export function applyPhotoEast(base) {
     if (!p) { p = { id: 'ik_' + type, type, scale: type === 'sculpture' ? 1.25 : 1, color: null }; d.props.push(p); } Object.assign(p, { x: +x.toFixed(3), z: +z.toFixed(3), rot: WEST }); if (y != null) p.y = y; };
   put('sideboard', EAST_FACE - 0.235, PZ); put('wall_mirror', EAST_FACE - 0.005, PZ);
   put('sculpture', EAST_FACE - 0.24, PZ - 0.42, 0.86); put('deco_set', EAST_FACE - 0.22, PZ + 0.45, 0.86);
+  d.editedAt = Date.now(); return d;
+}
+
+// E안 '리셉션 알코브'(11/08): 레지 ② + 뒤·오른쪽 ㄱ자 벽(안쪽 크림슨, 홀 쪽은 홀과 같은 ダルグリーン·판) + 자동문 안쪽부터 레지까지 레드 카펫
+// + 뒤 벽에 船場美術館 세로 금박 글씨와 금테 원형 거울. 경성미술관(서울) 레드 월 분위기
+export const CRIMSON = '#8a1f2b';
+export function applyReception(base) {
+  let d = applyRegister(base, 'r2'); d.surfaces = d.surfaces || {}; d.closures = { ...(d.closures || {}), reception: true };
+  const red = { paint: CRIMSON, zone: 'all', texture: false, molding: false, art: false, artCount: null, frame: 'gold', splits: 1,
+    trim: { rail: { color: CRIMSON, style: 'none' }, base: { color: CRIMSON, style: 'none' }, moldingColor: CRIMSON, lower: { paint: null, style: 'flat' } } };
+  for (const id of ['wall_rec_back_in', 'wall_rec_east_in']) d.surfaces[id] = { ...(d.surfaces[id] || {}), ...JSON.parse(JSON.stringify(red)) };
+  const hallGreen = d.surfaces.wall_x_1?.paint || d.surfaces.wall_z_14?.paint || DULL_GREEN;   // 홀 쪽 면은 홀 벽과 같은 색(띠·판은 전체 설정 따름)
+  for (const id of ['wall_rec_back_out', 'wall_rec_east_out']) d.surfaces[id] = { ...(d.surfaces[id] || {}), paint: hallGreen, zone: 'all', texture: false, molding: false, art: id === 'wall_rec_east_out' ? null : false, splits: 1 };
+  d.props = d.props.filter((p) => !['brand_sign', 'round_mirror'].includes(p.type));
+  d.props.push({ id: 'rec_sign', type: 'brand_sign', x: -1.98, y: 1.12, z: -0.494, rot: 0, scale: 1, color: null },
+               { id: 'rec_mirror', type: 'round_mirror', x: -2.62, y: 1.42, z: -0.494, rot: 0, scale: 1, color: null });
   d.editedAt = Date.now(); return d;
 }
