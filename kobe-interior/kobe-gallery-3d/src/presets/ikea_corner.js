@@ -65,7 +65,7 @@ export function applyAirPanel(base) {
 // 1인용 레지 배치안(11/07 제안) — 소품 'register' 한 개를 놓는다(이미 있던 레지는 치움). 정면(+Z)이 손님 쪽
 export const REGISTER_PLANS = {
   r1: { name: '레지 ① 입구 왼쪽 구석 (추천)', x: -3.1, z: 1.25, rot: Math.PI / 2, why: '통로를 나오자마자 왼쪽, 정면이 통로 출구를 봄 — 인사·접수·결제, 동선 밖, 직원(벽 2 등짐)이 입구·홀 전체를 봄' },
-  r2: { name: '레지 ② 입구 정면 리셉션', x: -2.35, z: 0.275, rot: 0, why: '통로 정면 1 m — 첫눈에 보이는 안내 데스크. 대신 홀 쪽 동선을 조금 가림' },
+  r2: { name: '레지 ② 입구 왼쪽 벽(벽 2)에 붙임', x: -3.554, z: 0.275, rot: 0, why: '통로 정면 1 m — 첫눈에 보이는 안내 데스크. 대신 홀 쪽 동선을 조금 가림' },
   r3: { name: '레지 ③ 사이드보드 옆 · 직원 통로 앞', x: 0.62, z: 1.38, rot: Math.PI, why: '뒤 커튼 통로로 주방 재고·세면대 바로 — 직원이 편함. 입구에서 약 3 m, 포토 스폿과 붙어 줄이 사진에 걸릴 수 있음' },
 };
 export function applyRegister(base, key) {
@@ -93,12 +93,12 @@ export function applyReception(base) {
   let d = applyRegister(base, 'r2'); d.surfaces = d.surfaces || {}; d.closures = { ...(d.closures || {}), reception: true };
   const red = { paint: CRIMSON, zone: 'all', texture: false, molding: false, art: false, artCount: null, frame: 'gold', splits: 1,
     trim: { rail: { color: CRIMSON, style: 'none' }, base: { color: CRIMSON, style: 'none' }, moldingColor: CRIMSON, lower: { paint: null, style: 'flat' } } };
-  for (const id of ['wall_rec_back_in', 'wall_rec_east_in']) d.surfaces[id] = { ...(d.surfaces[id] || {}), ...JSON.parse(JSON.stringify(red)) };
+  d.surfaces.wall_rec_back_in = { ...(d.surfaces.wall_rec_back_in || {}), ...JSON.parse(JSON.stringify(red)) };   // 뒤 벽만 크림슨
   const hallGreen = d.surfaces.wall_x_1?.paint || d.surfaces.wall_z_14?.paint || DULL_GREEN;   // 홀 쪽 면은 홀 벽과 같은 색(띠·판은 전체 설정 따름)
-  for (const id of ['wall_rec_back_out', 'wall_rec_east_out']) d.surfaces[id] = { ...(d.surfaces[id] || {}), paint: hallGreen, zone: 'all', texture: false, molding: false, art: id === 'wall_rec_east_out' ? null : false, splits: 1 };
+  for (const id of ['wall_rec_back_out', 'wall_rec_east_out', 'wall_rec_east_in']) { const { trim, ...rest } = d.surfaces[id] || {}; d.surfaces[id] = { ...rest, paint: hallGreen, zone: 'all', texture: false, molding: false, art: id === 'wall_rec_east_out' ? null : false, splits: 1 }; }   // 오른쪽 벽 양면·뒤 벽 홀 쪽 = 홀과 같은 초록(띠·판은 전체 설정)
   d.props = d.props.filter((p) => !['brand_sign', 'round_mirror'].includes(p.type));
-  d.props.push({ id: 'rec_sign', type: 'brand_sign', x: -1.98, y: 1.12, z: -0.494, rot: 0, scale: 1, color: null },
-               { id: 'rec_mirror', type: 'round_mirror', x: -2.62, y: 1.42, z: -0.494, rot: 0, scale: 1, color: null });
+  d.props.push({ id: 'rec_sign', type: 'brand_sign', x: -2.3, y: 1.12, z: -0.494, rot: 0, scale: 1, color: null },     // 입구 통로 정중앙(영상 구도)
+               { id: 'rec_mirror', type: 'round_mirror', x: -3.55, y: 1.42, z: -0.494, rot: 0, scale: 1, color: null }); // 레지 위
   d.editedAt = Date.now(); return d;
 }
 
@@ -120,3 +120,6 @@ export function applyRegisterGap(base) {
   const d = JSON.parse(JSON.stringify(base || {})); const r = (d.props || []).find((p) => p.type === 'register' && p.id === 'reg_r2');
   if (r) { r.z = REGISTER_PLANS.r2.z; r.x = REGISTER_PLANS.r2.x; } d.editedAt = Date.now(); return d;
 }
+
+// 11/08: 레지를 왼쪽 벽(벽 2)에 붙이고 오른쪽 벽은 초록, 글씨는 통로 정중앙·거울은 레지 위 — 이미 있는 E안에 적용
+export function applyRegisterLeft(base) { return applyReception(base); }
