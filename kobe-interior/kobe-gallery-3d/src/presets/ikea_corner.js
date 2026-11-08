@@ -65,7 +65,7 @@ export function applyAirPanel(base) {
 // 1인용 레지 배치안(11/07 제안) — 소품 'register' 한 개를 놓는다(이미 있던 레지는 치움). 정면(+Z)이 손님 쪽
 export const REGISTER_PLANS = {
   r1: { name: '레지 ① 입구 왼쪽 구석 (추천)', x: -3.1, z: 1.25, rot: Math.PI / 2, why: '통로를 나오자마자 왼쪽, 정면이 통로 출구를 봄 — 인사·접수·결제, 동선 밖, 직원(벽 2 등짐)이 입구·홀 전체를 봄' },
-  r2: { name: '레지 ② 입구 정면 리셉션', x: -2.35, z: 0.75, rot: 0, why: '통로 정면 1 m — 첫눈에 보이는 안내 데스크. 대신 홀 쪽 동선을 조금 가림' },
+  r2: { name: '레지 ② 입구 정면 리셉션', x: -2.35, z: 0.275, rot: 0, why: '통로 정면 1 m — 첫눈에 보이는 안내 데스크. 대신 홀 쪽 동선을 조금 가림' },
   r3: { name: '레지 ③ 사이드보드 옆 · 직원 통로 앞', x: 0.62, z: 1.38, rot: Math.PI, why: '뒤 커튼 통로로 주방 재고·세면대 바로 — 직원이 편함. 입구에서 약 3 m, 포토 스폿과 붙어 줄이 사진에 걸릴 수 있음' },
 };
 export function applyRegister(base, key) {
@@ -113,4 +113,10 @@ export function applyCoupleLayout(base) {
   const d = JSON.parse(JSON.stringify(base || {})); d.props = (d.props || []).filter((p) => p.type !== 'couple_set');
   for (const c of COUPLE_LAYOUT_3) d.props.push({ id: c.id, type: 'couple_set', x: c.x, z: c.z, rot: c.rot, scale: 1, color: null });
   d.editedAt = Date.now(); return d;
+}
+
+// 11/08: 레지 ②와 뒤 벽 사이 직원 공간 0.55 m (레지 뒷면 z 0.05, 벽 면 z −0.5)
+export function applyRegisterGap(base) {
+  const d = JSON.parse(JSON.stringify(base || {})); const r = (d.props || []).find((p) => p.type === 'register' && p.id === 'reg_r2');
+  if (r) { r.z = REGISTER_PLANS.r2.z; r.x = REGISTER_PLANS.r2.x; } d.editedAt = Date.now(); return d;
 }
