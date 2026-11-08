@@ -1,7 +1,7 @@
 // 디자인 상태 — 면별 마감/몰딩/액자, 기둥 실측·거울, 창·커튼, 랜드마크, 소품. localStorage 자동 저장 + 슬롯 + JSON.
 export const PALETTE_WALL = [
   ['현재 회색(스캔)', null], ['화이트', '#f3f1ec'], ['웜 화이트', '#efe6d6'], ['라이트 그레이', '#c9c7c1'], ['그레이지', '#b8ae9f'],
-  ['세이지', '#9aa58d'], ['ダルグリーン(STYLE)', '#39433a'], ['ダルグリーン 진하게', '#2c3529'], ['딥 그린(경성미술관)', '#3f5a52'], ['포레스트 그린', '#2f4a3f'], ['다크 틸', '#2b4a4c'], ['올리브', '#5a6240'],
+  ['세이지', '#9aa58d'], ['크림슨(경성미술관 레드)', '#8a1f2b'], ['ダルグリーン(STYLE)', '#39433a'], ['ダルグリーン 진하게', '#2c3529'], ['딥 그린(경성미술관)', '#3f5a52'], ['포레스트 그린', '#2f4a3f'], ['다크 틸', '#2b4a4c'], ['올리브', '#5a6240'],
   ['더스티 블루', '#8a9bab'], ['네이비', '#2f3a4f'], ['와인', '#7a2e2e'], ['테라코타', '#b8623f'], ['차콜', '#3a3a3a'], ['블랙', '#1c1c1c'],
 ];
 export const PALETTE_TRIM = [['블랙(현재)', '#1c1c1c'], ['원목(오크)', '#a98457'], ['원목(월넛)', '#6b4a2e'], ['다크 월넛', '#4a3220'], ['화이트', '#f3f1ec'], ['웜 화이트', '#efe6d6'], ['차콜', '#3a3a3a'], ['골드', '#c9a24a']];
@@ -17,12 +17,12 @@ export const FRAME_STYLES = [['골드', 'gold'], ['블랙', 'black'], ['화이�
 export const PROP_TYPES = [
   ['센바 커플 세팅(보드2+의자2+카트)', 'couple_set'], ['센바 작업 보드', 'board'], ['검은 의자', 'chair'], ['물감 카트', 'cart'],
   ['이젤', 'easel'], ['이젤+캔버스', 'easel_canvas'], ['작업 테이블', 'table'], ['스툴', 'stool'], ['벤치', 'bench'], ['전시 좌대', 'pedestal'],
-  ['1인용 레지 카운터', 'register'], ['사이드보드(유리문·서랍)', 'sideboard'], ['벽 거울(검은 틀)', 'wall_mirror'], ['조각상(흉상)', 'sculpture'], ['장식(조명·꽃병)', 'deco_set'],
+  ['1인용 레지 카운터', 'register'], ['船場美術館 세로 금박 글씨', 'brand_sign'], ['금테 원형 거울', 'round_mirror'], ['사이드보드(유리문·서랍)', 'sideboard'], ['벽 거울(검은 틀)', 'wall_mirror'], ['조각상(흉상)', 'sculpture'], ['장식(조명·꽃병)', 'deco_set'],
   ['화분', 'plant'], ['파티션', 'partition'], ['러그', 'rug'], ['접수 카운터', 'counter'], ['안내판', 'sign'], ['펜던트 조명', 'pendant'],
 ];
 
 export const STORAGE_KEY = 'kobe3d.design.v1';
-export const SLOTS = ['A', 'B', 'C', 'D'];
+export const SLOTS = ['A', 'B', 'C', 'D', 'E'];
 
 export function emptyDesign() {
   return { version: 1, surfaces: {}, columns: {}, windows: null, landmarks: {}, props: [], global: DEFAULT_GLOBAL() };

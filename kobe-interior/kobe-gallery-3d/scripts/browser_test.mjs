@@ -98,7 +98,7 @@ try {
     const ceilA = s.getSurface('ceiling').paint; window.__switchSlot('B'); s.surface('ceiling').paint = '#1c1c1c'; s.commit('paint'); window.__switchSlot('A');
     if (s.active !== 'A' || s.getSurface('ceiling').paint !== ceilA) throw new Error('안 전환 실패');
     window.__switchSlot('B'); if (s.getSurface('ceiling').paint !== '#1c1c1c') throw new Error('B안 저장 실패'); window.__switchSlot('A');
-    if (document.querySelectorAll('#slotBar button').length !== 4) throw new Error('안 버튼 4개 아님');
+    if (document.querySelectorAll('#slotBar button').length !== 5) throw new Error('안 버튼 5개 아님');
     // D안(이케아 코너): 처음 열 때 C안을 바탕으로 자동 생성 — 주방 입구 막기 + 사이드보드·거울·흉상·장식
     const dd = s.getSlot('D'); if (!dd?.closures?.kitchen || !['sideboard', 'wall_mirror', 'sculpture', 'deco_set'].every((t) => dd.props.some((p) => p.type === t))) throw new Error('D안 이케아 코너 없음');
     window.__switchSlot('D'); if (!e.walls().some((w) => w.id === 'wall_kitchen_close') || !e.closureG.children.length) throw new Error('주방 입구 막기 벽 없음');
@@ -119,6 +119,10 @@ try {
     // D안 아래 벽 방법 ③: 판이 띠까지 덮고 스캔 검은 띠는 숨김, 판 위 見切り材
     if (s.trimOf('wall_x_0').lower.style !== 'air_panel') throw new Error('D안 방법 ③ 아님'); let rail0 = null; window.__viewer.loaded.reconstructed.traverse((o) => { if (o.name === 'wall_x_0_chairrail') rail0 = o; });
     if (rail0?.visible) throw new Error('판 뒤 검은 띠가 보임'); let panels = 0; e.bands.traverse((o) => { if (o.isMesh && o.material?.map && o.userData.surface === 'wall_x_0') panels++; }); if (!panels) throw new Error('판 없음');
+    // E안 리셉션 알코브: 레지 ② + ㄱ자 벽 4면 + 카펫 + 船場美術館·원형 거울
+    const ee = s.getSlot('E'); if (!ee?.closures?.reception || !ee.props.some((p) => p.type === 'register' && p.id === 'reg_r2') || !['brand_sign', 'round_mirror'].every((t) => ee.props.some((p) => p.type === t))) throw new Error('E안 리셉션 알코브 없음');
+    window.__switchSlot('E'); const recWalls = e.walls().filter((w) => w.id.startsWith('wall_rec_')); let carpet = 0; e.closureG.traverse((o) => { if (o.isMesh && o.userData.surface === 'floor') carpet++; });
+    if (recWalls.length !== 4 || carpet < 2 || s.getSurface('wall_rec_back_in').paint !== '#8a1f2b') throw new Error('E안 ㄱ자 벽·카펫 이상 ' + recWalls.length + ' ' + carpet);
     window.__switchSlot('A'); if (cutOf()) throw new Error('A안에 옆 통로 구멍이 남음');
     if (e.walls().some((w) => w.id === 'wall_kitchen_close') || e.closureG.children.length) throw new Error('A안에 막기 벽이 남음');
     // 북쪽 창: 사진대로 큰 미닫이창 2세트

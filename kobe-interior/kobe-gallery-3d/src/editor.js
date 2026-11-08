@@ -4,7 +4,7 @@ import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { PALETTE_WALL, PALETTE_FLOOR, PALETTE_CEIL, PALETTE_CURTAIN, PALETTE_TRIM, PALETTE_LOWER, FRAME_STYLES, PROP_TYPES } from './design.js';
 import { buildProp, buildWindow, buildCurtain, measureLine } from './props.js';
 import { disposeTree } from './viewer.js';
-import { isFixtureWall, isExteriorWall, exteriorSpans, doorOpenings, openingOn, serviceOf, subtractRects, floorKept, inExterior, closureWallsAll, closureOn } from './scope.js';
+import { isFixtureWall, isExteriorWall, exteriorSpans, doorOpenings, openingOn, serviceOf, subtractRects, floorKept, inExterior, closureWallsAll, closureOn, closureWalls } from './scope.js';
 import { buildFixtures, cutWallOpening, buildPassCurtain } from './fixtures.js';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -88,6 +88,12 @@ export class Editor {
     const tex = new THREE.TextureLoader().load(`../assets/textures/floor_${paint.slice(4)}.jpg`); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = Math.min(8, this.v.renderer.capabilities.getMaxAnisotropy());
     const m = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5, metalness: 0, polygonOffset: true, polygonOffsetFactor: -1 }); m.userData.shared = true; return (this._floorTex[paint] = m);
   }
+  // 임의 사각 영역의 바닥 형상(0.1 m 복원 격자 기준) — 카펫 등
+  regionGeometry(r) {
+    const pos = this.floorTris(); if (!pos) return null; const out = [];
+    for (let i = 0; i < pos.length; i += 9) { const cx = (pos[i] + pos[i + 3] + pos[i + 6]) / 3, cz = (pos[i + 2] + pos[i + 5] + pos[i + 8]) / 3; if (cx >= r.x[0] && cx <= r.x[1] && cz >= r.z[0] && cz <= r.z[1]) for (let k = 0; k < 9; k++) out.push(pos[i + k]); }
+    if (!out.length) return null; const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(out, 3)); geo.computeVertexNormals(); return geo;
+  }
   tileOnFloor(tile) { if (!this.floorTris()) return true; tile.geo = this.tileGeometry(tile, tile.last || {}); return !!tile.geo; }
   itemById(id) { return this.items.find((x) => x.id === id); }
 
@@ -156,8 +162,10 @@ export class Editor {
   buildClosures() {
     if (!this.closureG) { this.closureG = new THREE.Group(); this.closureG.name = 'closures'; this.root.add(this.closureG); }
     disposeTree(this.closureG); this.closureG.visible = this.modelOn !== false; const mat = new THREE.MeshStandardMaterial({ color: 0xa9a59f, roughness: 0.9 });
-    const on = []; for (const c of this.meta.closures || []) { if (!this.s.design.closures?.[c.id]) continue; on.push(c.id); const w = c.wall, T = this.meta.wall_thickness_m || 0.1;
-      const m = new THREE.Mesh(new THREE.BoxGeometry(w.to - w.from, this.ceil, T), mat); m.userData.surface = w.id; this.placeOnWall(m, { ...w, sid: w.id }, (w.from + w.to) / 2, this.ceil / 2, -T / 2); this.closureG.add(m); }
+    const on = []; for (const c of this.meta.closures || []) { if (!this.s.design.closures?.[c.id]) continue; on.push(c.id); const T = this.meta.wall_thickness_m || 0.1;
+      for (const w of closureWalls(c)) { const m = new THREE.Mesh(new THREE.BoxGeometry(w.to - w.from, this.ceil, T), mat); m.userData.surface = w.id; this.placeOnWall(m, { ...w, sid: w.id }, (w.from + w.to) / 2, this.ceil / 2, -T / 2); this.closureG.add(m); }
+      // 바닥(카펫): 복원 바닥 삼각형 중 영역 안의 것만 — 바닥 칠 위(y 0.016)에 깐다
+      for (const r of c.floor || []) { const geo = new THREE.PlaneGeometry(r.x[1] - r.x[0], r.z[1] - r.z[0]); geo.rotateX(-Math.PI / 2); geo.translate((r.x[0] + r.x[1]) / 2, 0, (r.z[0] + r.z[1]) / 2); const f = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: r.color || '#6e1620', roughness: 0.97, polygonOffset: true, polygonOffsetFactor: -3 })); f.position.y = 0.016; f.userData.surface = 'floor'; this.closureG.add(f); } }
     this.curtainOpen = this.curtainOpen || {};
     for (const d of this.meta.door_openings || []) if (d.curtain && openingOn(d, this.s.design)) this.closureG.add(buildPassCurtain(d, !!this.curtainOpen[d.id], (open) => { this.curtainOpen[d.id] = open; }));
     const key = on.join(','); if (this._closureKey !== undefined && key !== this._closureKey) { this.buildItems(); this.buildPicks(); this.buildLabels(); this.renderChips?.(); } this._closureKey = key;
@@ -245,10 +253,11 @@ export class Editor {
         const sides = f.two_sided ? [f.inward, -f.inward] : [f.inward];
         for (const sd of sides) {
           if (g.lower.style === 'air_panel') { this.airPanel(f, sid, sd, g.lower.paint || '#8b5e3c', isCol); continue; }
-          if (g.base.style === 'molding') { strip(f, 0, base, 0.014, mk(g.base.color), sd, sid); strip(f, base - 0.02, base, 0.022, mk(g.base.color), sd, sid); }
+          if (g.base.style === 'none') {}   // 걸레받이 없음(알코브 레드 벽처럼 바닥까지 한 색)
+          else if (g.base.style === 'molding') { strip(f, 0, base, 0.014, mk(g.base.color), sd, sid); strip(f, base - 0.02, base, 0.022, mk(g.base.color), sd, sid); }
           else strip(f, 0, base, 0.012, mk(g.base.color), sd, sid);
           if (g.rail.style === 'molding') { strip(f, chair - railT, chair, 0.012, mk(g.rail.color), sd, sid); strip(f, chair - railT * 0.65, chair - railT * 0.35, 0.03, mk(g.rail.color), sd, sid); strip(f, chair - 0.006, chair, 0.02, mk(g.rail.color), sd, sid); }
-          else strip(f, chair - railT, chair, 0.012, mk(g.rail.color), sd, sid);
+          else if (g.rail.style !== 'none') strip(f, chair - railT, chair, 0.012, mk(g.rail.color), sd, sid);
         }
       }
     };
@@ -524,9 +533,9 @@ export class Editor {
     const selectEl = (opts, val, onChange) => { const sEl = document.createElement('select'); for (const [tx, v] of opts) { const o = document.createElement('option'); o.value = v; o.textContent = tx; if (v === val) o.selected = true; sEl.appendChild(o); } sEl.addEventListener('change', () => onChange(sEl.value)); return sEl; };
     const btn = (text, fn, cls = 'ghost') => { const b = document.createElement('button'); b.textContent = text; b.className = cls; b.addEventListener('click', fn); return b; };
     row('띠 색', this.palette(PALETTE_TRIM, t.rail.color, (hex) => { ed().rail.color = hex; commit(); }));
-    row('띠 형태', selectEl([['평면 띠', 'flat'], ['액자 몰드(단 있음)', 'molding']], t.rail.style, (v) => { ed().rail.style = v; commit(); }));
+    row('띠 형태', selectEl([['평면 띠', 'flat'], ['액자 몰드(단 있음)', 'molding'], ['없음', 'none']], t.rail.style, (v) => { ed().rail.style = v; commit(); }));
     row('걸레받이 색', this.palette(PALETTE_TRIM, t.base.color, (hex) => { ed().base.color = hex; commit(); }));
-    row('걸레받이 형태', selectEl([['평면', 'flat'], ['몰드', 'molding']], t.base.style, (v) => { ed().base.style = v; commit(); }));
+    row('걸레받이 형태', selectEl([['평면', 'flat'], ['몰드', 'molding'], ['없음', 'none']], t.base.style, (v) => { ed().base.style = v; commit(); }));
     row('흰 몰딩 색', this.palette([['화이트', '#f4f1ea'], ['웜 화이트', '#efe6d6'], ['원목', '#a98457'], ['월넛', '#6b4a2e'], ['골드', '#c9a24a'], ['블랙', '#1c1c1c']], t.moldingColor, (hex) => { ed().moldingColor = hex; commit(); }));
     row('하부 벽(띠 사이)', this.palette(PALETTE_LOWER, t.lower.paint, (hex) => { const e = ed(); e.lower.paint = hex; if (hex && /#a98457|#6b4a2e/.test(hex)) e.lower.style = 'wood_panel'; commit(); }));
     row('하부 형태', selectEl([['단색', 'flat'], ['원목 패널(세로 홈)', 'wood_panel'], ['エアサーモパネル · 띠까지 덮기(방법 ③)', 'air_panel']], t.lower.style, (v) => { ed().lower.style = v; commit(); }));

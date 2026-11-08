@@ -982,6 +982,92 @@
         "virtual": true,
         "openings": []
       }
+    },
+    {
+      "id": "reception",
+      "label": "리셉션 알코브 (레지 ② 뒤 ㄱ자 벽 + 레드 카펫)",
+      "status": "design",
+      "note": "입구 통로 정면 레지 뒤·오른쪽에 ㄱ자 벽. 안쪽 면 크림슨, 홀 쪽 면은 홀 벽과 같게. 바닥은 자동문 안쪽부터 레지까지 레드 카펫. 서쪽(벽 2 쪽) 0.95 m 는 홀로 들어가는 통로",
+      "walls": [
+        {
+          "id": "wall_rec_back_in",
+          "type": "wall",
+          "axis": "z",
+          "offset": -0.5,
+          "inward": 1.0,
+          "from": -3.0,
+          "to": -1.66,
+          "two_sided": false,
+          "virtual": true,
+          "openings": [],
+          "face": "알코브 안(남쪽) — 船場美術館"
+        },
+        {
+          "id": "wall_rec_back_out",
+          "type": "wall",
+          "axis": "z",
+          "offset": -0.6,
+          "inward": -1.0,
+          "from": -3.0,
+          "to": -1.66,
+          "two_sided": false,
+          "virtual": true,
+          "openings": [],
+          "face": "홀 쪽(북쪽)"
+        },
+        {
+          "id": "wall_rec_east_in",
+          "type": "wall",
+          "axis": "x",
+          "offset": -1.76,
+          "inward": -1.0,
+          "from": -0.6,
+          "to": 1.75,
+          "two_sided": false,
+          "virtual": true,
+          "openings": [],
+          "face": "알코브 안(서쪽)"
+        },
+        {
+          "id": "wall_rec_east_out",
+          "type": "wall",
+          "axis": "x",
+          "offset": -1.66,
+          "inward": 1.0,
+          "from": -0.6,
+          "to": 1.75,
+          "two_sided": false,
+          "virtual": true,
+          "openings": [],
+          "face": "홀 쪽(동쪽)"
+        }
+      ],
+      "floor": [
+        {
+          "x": [
+            -2.85,
+            -1.76
+          ],
+          "z": [
+            1.75,
+            3.06
+          ],
+          "color": "#6e1620",
+          "note": "입구 통로"
+        },
+        {
+          "x": [
+            -3.0,
+            -1.76
+          ],
+          "z": [
+            -0.5,
+            1.75
+          ],
+          "color": "#6e1620",
+          "note": "알코브"
+        }
+      ]
     }
   ],
   "measured_20261107": {
