@@ -101,3 +101,16 @@ export function applyReception(base) {
                { id: 'rec_mirror', type: 'round_mirror', x: -2.62, y: 1.42, z: -0.494, rot: 0, scale: 1, color: null });
   d.editedAt = Date.now(); return d;
 }
+
+// 2인 세트(보드 2·의자 2·카트, 공간 2.657 × 1.935 m) 최대 배치(11/08): 창 벽에 2팀 + 동쪽 벽(벽 1)에 1팀 = 3팀 6명.
+// 기준: 세트 뒤는 벽에서 3 cm, 기둥은 사람 뒤 통로 쪽에만 걸림, 가운데 2.4 × 2 m 와 화장실 길(벽 1 남쪽) 비움
+export const COUPLE_LAYOUT_3 = [
+  { id: 'cs_n1', x: -2.60, z: -4.72, rot: 0, note: '창 벽 서쪽' },
+  { id: 'cs_n2', x: 0.087, z: -4.72, rot: 0, note: '창 벽 동쪽' },
+  { id: 'cs_e1', x: 2.237, z: -1.50, rot: -Math.PI / 2, note: '동쪽 벽(벽 1) — 보드가 벽, 사람은 서쪽을 등짐' },
+];
+export function applyCoupleLayout(base) {
+  const d = JSON.parse(JSON.stringify(base || {})); d.props = (d.props || []).filter((p) => p.type !== 'couple_set');
+  for (const c of COUPLE_LAYOUT_3) d.props.push({ id: c.id, type: 'couple_set', x: c.x, z: c.z, rot: c.rot, scale: 1, color: null });
+  d.editedAt = Date.now(); return d;
+}
