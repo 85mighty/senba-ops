@@ -137,7 +137,7 @@ export function buildProp(p) {
       g.add(box(0.08, 0.03, 0.15, std(0x2a2a2a), -0.18, H + 0.03, 0.02));                   // 카드 단말
       g.add(cyl(0.04, 0.05, 0.03, std(0xc9a24a, { metalness: 0.7, roughness: 0.3 }), -0.32, H + 0.033, 0.1, 16));   // 호출 벨
       g.add(box(0.12, 0.09, 0.06, std(0xf3f1ec), 0.32, H + 0.06, 0.12));                    // 명함·쿠폰 꽂이
-      const st = buildProp({ id: p.id, type: 'stool', x: 0, z: -0.62, rot: 0, scale: 1.4, color: '#2a2a2a' }); st.name = 'sub'; g.add(st);   // 직원 스툴(높이 약 60 cm)
+      const st = buildProp({ id: p.id, type: 'stool', x: 0, z: -0.48, rot: 0, scale: 1.4, color: '#2a2a2a' }); st.name = 'sub'; g.add(st);   // 직원 스툴(높이 약 60 cm)
       break;
     }
     case 'brand_sign': {    // 船場美術館 세로 금박 글씨(약 28×112 cm) — 벽에 붙임(+Z 가 앞). 높이는 '높이(y)'로
