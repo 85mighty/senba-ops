@@ -8,7 +8,7 @@ import { Editor } from './editor.js';
 import { encodeDesign, decodeDesign, shareCodeFromHash } from './share.js';
 import { Sync, DEFAULT_SYNC_URL } from './sync.js';
 import presetCPhone from './presets/c_phone_20261027.json';
-import { applyIkeaCorner, applyUpperMirrors, applyWindowCurtains, applyRealFloor, applyDullGreen, applyAirPanel, applyRegister, REGISTER_PLANS, applyPhotoEast, applyReception } from './presets/ikea_corner.js';
+import { applyIkeaCorner, applyUpperMirrors, applyWindowCurtains, applyRealFloor, applyDullGreen, applyAirPanel, applyRegister, REGISTER_PLANS, applyPhotoEast, applyReception, applyCoupleLayout } from './presets/ikea_corner.js';
 
 // 저장소에 보관된 디자인 — 어느 기기에서든 불러올 수 있다. seedSlot: 그 안이 비어 있으면 처음 열 때 자동으로 채움
 const PRESETS = [{ id: 'c_phone_20261027', name: 'C안 (폰에서 만든 것, 10/27)', seedSlot: 'C', design: presetCPhone },
@@ -17,6 +17,7 @@ const PRESETS = [{ id: 'c_phone_20261027', name: 'C안 (폰에서 만든 것, 10
   // E안: D안(없으면 C안+이케아 코너)을 바탕으로 레지 ② + 리셉션 알코브(ㄱ자 레드 벽·카펫·船場美術館 글씨)
   { id: 'e_reception_20261108', name: '리셉션 알코브 (레지 ② + ㄱ자 레드 벽 · 카펫 · 船場美術館)', seedSlot: 'E', afterSync: true, apply: applyReception, base: () => store.getSlot('D') || applyIkeaCorner(store.getSlot('C') || presetCPhone), armText: (sl) => `${sl}안에 리셉션 알코브를 넣습니다(레지는 ②로 옮김). 다시 누르세요` },
   ...Object.entries(REGISTER_PLANS).map(([k, r]) => ({ id: 'register_' + k, name: r.name, apply: (d) => applyRegister(d, k), armText: (sl) => `${sl}안에 레지를 놓습니다(있던 레지는 옮김). 다시 누르세요` })),
+  { id: 'couple3', name: '2인 세트 3팀 배치 (창 벽 2 + 동쪽 벽 1)', apply: applyCoupleLayout, armText: (sl) => `${sl}안의 2인 세트를 3팀 배치로 바꿉니다(있던 세트는 치움). 다시 누르세요` },
   { id: 'photo_east', name: '포토 스폿 → 동쪽 벽(벽 1)', apply: applyPhotoEast, armText: (sl) => `${sl}안의 사이드보드·거울·흉상을 동쪽 벽으로 옮깁니다. 다시 누르세요` },
   { id: 'air_panel', name: '아래 벽 → エアサーモパネル(방법 ③)', apply: applyAirPanel, armText: (sl) => `지금 ${sl}안의 아래 벽을 판으로 덮습니다(띠까지). 다시 누르세요` },
   { id: 'dull_green', name: '벽 초록 → ダルグリーン(STYLE)', apply: applyDullGreen, armText: (sl) => `지금 ${sl}안의 초록 벽·띠를 ダルグリーン으로 바꿉니다. 다시 누르세요` }];
@@ -25,6 +26,7 @@ const PATCHES = [{ id: 'd_upper_mirrors_20261028', slot: 'D', apply: applyUpperM
   { id: 'd_window_curtains_20261028', slot: 'D', apply: applyWindowCurtains, msg: 'D안: 창 두 곳에 커튼을 달았습니다 (누르면 걷힘/쳐짐)' },
   { id: 'd_real_floor_20261028', slot: 'D', apply: applyRealFloor, msg: 'D안: 바닥을 실제 원목 마루(사진) 느낌으로 바꿨습니다' },
   { id: 'd_dull_green_20261106', slot: 'D', apply: applyDullGreen, msg: 'D안: 벽 초록을 STYLE ダルグリーン 느낌으로 바꿨습니다' },
+  { id: 'e_couple3_20261108', slot: 'E', apply: applyCoupleLayout, msg: 'E안: 2인 세트를 3팀(창 벽 2 + 동쪽 벽 1)으로 배치했습니다' },
   { id: 'd_air_panel_20261106', slot: 'D', apply: applyAirPanel, msg: 'D안: 아래 벽을 エアサーモパネル로 띠까지 덮었습니다(방법 ③)' }];
 
 const $ = (s) => document.querySelector(s);

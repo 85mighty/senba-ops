@@ -21,6 +21,18 @@ function basket(w, h, d, x, y, z) {
   g.add(box(w * 0.32, h * 0.18, 0.004, std(0x4a3a26), 0, h * 0.25, d / 2 + 0.002)); g.position.set(x, y, z); return g;
 }
 
+// 2인 세트가 실제로 차지하는 공간(사용자 지정 11/08): 보드 뒤 ~ 사람 뒤까지 세로 1.935 m, 가로 2.657 m. 보드 뒤(벽 쪽) = 로컬 z −0.05
+export const COUPLE_ZONE = { w: 2.657, d: 1.935, back: -0.05 };
+function zoneOutline(w, d, z0, text) {
+  const g = new THREE.Group(); g.name = 'zone';
+  const fill = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshBasicMaterial({ color: 0x4fd8ff, transparent: true, opacity: 0.1, depthWrite: false, side: THREE.DoubleSide }));
+  fill.rotation.x = -Math.PI / 2; fill.position.set(0, 0.021, z0 + d / 2); g.add(fill);
+  const pts = [[-w / 2, z0], [w / 2, z0], [w / 2, z0 + d], [-w / 2, z0 + d], [-w / 2, z0]].map(([x, z]) => new THREE.Vector3(x, 0.024, z));
+  const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineDashedMaterial({ color: 0x4fd8ff, dashSize: 0.08, gapSize: 0.05 })); line.computeLineDistances(); g.add(line);
+  const lp = labelPlate(text, 0.9, 0.11, '#0f2a33', '#9fe9ff'); lp.rotation.x = -Math.PI / 2; lp.position.set(0, 0.026, z0 + d - 0.12); g.add(lp);
+  g.traverse((o) => { o.userData.zone = true; }); return g;
+}
+
 export function buildProp(p) {
   const g = new THREE.Group(); g.name = 'prop'; g.userData.prop = p;
   const c = p.color ? new THREE.Color(p.color) : null; const wood = std(c || WOOD); const dark = std(c || DARK);
@@ -60,6 +72,7 @@ export function buildProp(p) {
         g.add(mkBoard(-0.75)); g.add(mkBoard(0.75));
         for (const [x, z, r] of [[-0.75, 0.75, 0.15], [0.75, 0.75, -0.15]]) { const ch = buildProp({ id: p.id, type: 'chair', x, z, rot: Math.PI + r, scale: 1, color: null }); ch.name = 'sub'; g.add(ch); }
         const cart = buildProp({ id: p.id, type: 'cart', x: 0, z: 0.55, rot: 0, scale: 1, color: null }); cart.name = 'sub'; g.add(cart);
+        g.add(zoneOutline(COUPLE_ZONE.w, COUPLE_ZONE.d, COUPLE_ZONE.back, '2인 세트 공간 2.657 × 1.935 m'));
       }
       break;
     }

@@ -198,7 +198,7 @@ export class Editor {
   frontHit(ev) {
     const r = this.v.renderer.domElement.getBoundingClientRect(); const p = new THREE.Vector2(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
     const rc = new THREE.Raycaster(); rc.setFromCamera(p, this.v.camera);
-    const shown = (o) => { for (let q = o; q; q = q.parent) if (!q.visible || q === this.picks || q === this.labels || q === this.hl) return false; return true; };
+    const shown = (o) => { if (o.userData.zone) return false; for (let q = o; q; q = q.parent) if (!q.visible || q === this.picks || q === this.labels || q === this.hl) return false; return true; };
     const objs = []; this.v.scene.traverse((o) => { if (o.isMesh && shown(o)) objs.push(o); });
     const cut = this.v.clipPlane?.constant ?? Infinity;
     return rc.intersectObjects(objs, false).find((h) => h.point.y <= cut + 1e-3) || null;
@@ -452,7 +452,7 @@ export class Editor {
       }
     }
   }
-  buildProps() { disposeTree(this.props); for (const p of this.s.design.props) { const g = buildProp(p); g.userData.pick = { kind: 'prop', id: p.id }; this.props.add(g); } }
+  buildProps() { disposeTree(this.props); for (const p of this.s.design.props) { const g = buildProp(p); g.userData.pick = { kind: 'prop', id: p.id }; g.traverse((o) => { if (o.name === 'zone') o.visible = this.enabled; }); this.props.add(g); } }
   buildMarks() {
     disposeTree(this.marks); const lm = { ...(this.meta.landmarks || {}), ...(this.s.design.landmarks || {}) }; this.meta.landmarks = lm;
     const names = { entrance: '입구', kitchen: '주방', toilet: '화장실', windows: '창가', main: '메인' };
@@ -475,7 +475,7 @@ export class Editor {
   }
 
   // ---------------- 선택
-  setEnabled(on) { this.enabled = on; this.marks.visible = on; if (!on) { this.select(null); this.tc.detach(); this.placing = null; } $('#editorPanel').classList.toggle('on', on); }
+  setEnabled(on) { this.enabled = on; this.marks.visible = on; this.props.traverse((o) => { if (o.name === 'zone') o.visible = on; }); if (!on) { this.select(null); this.tc.detach(); this.placing = null; } $('#editorPanel').classList.toggle('on', on); }
   onClick(ev) {
     if (!this.enabled) return false;
     if (this.placing) { const p = this.floorPoint(ev); if (p) { const prop = this.s.addProp({ type: this.placing, x: +p.x.toFixed(2), z: +p.z.toFixed(2), rot: 0, scale: 1, color: null }); this.placing = null; $('#placingHint').textContent = ''; this.s.commit('prop'); this.select({ kind: 'prop', id: prop.id }); this.toast('놓았습니다 — 길게 누른 채 끌어 옮기고, 아래 버튼으로 회전·복제·삭제'); } return true; }
@@ -485,7 +485,7 @@ export class Editor {
   pickAll(ev) {
     const r = this.v.renderer.domElement.getBoundingClientRect(); const p = new THREE.Vector2(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
     const rc = new THREE.Raycaster(); rc.setFromCamera(p, this.v.camera); const objs = [];
-    for (const g of [this.props, this.marks, this.windows]) g.traverse((o) => { if (o.isMesh) objs.push(o); });
+    for (const g of [this.props, this.marks, this.windows]) g.traverse((o) => { if (o.isMesh && !o.userData.zone) objs.push(o); });
     this.picks.traverse((o) => { if (o.isMesh) objs.push(o); });
     const hits = rc.intersectObjects(objs, false).filter((h) => h.object.visible !== false);
     for (const h of hits) { let o = h.object; while (o && !o.userData.pick) o = o.parent; if (o) return o; }
