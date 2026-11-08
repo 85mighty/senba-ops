@@ -123,3 +123,12 @@ export function applyRegisterGap(base) {
 
 // 11/08: 레지를 왼쪽 벽(벽 2)에 붙이고 오른쪽 벽은 초록, 글씨는 통로 정중앙·거울은 레지 위 — 이미 있는 E안에 적용
 export function applyRegisterLeft(base) { return applyReception(base); }
+
+// 포토 스폿 2(11/08): 알코브 뒤 벽의 홀 쪽 면(벽 2 ~ 기둥 1 사이 1.5 m) — 큰 금테 액자 + 좌대 위 흉상. 앞 2.4 × 2 m 가운데 공간에서 찍는다
+export function applyPhotoSpot2(base) {
+  const d = JSON.parse(JSON.stringify(base || {})); d.props = (d.props || []).filter((p) => !['ph2_frame', 'ph2_pedestal', 'ph2_bust'].includes(p.id));
+  d.props.push({ id: 'ph2_frame', type: 'big_frame', x: -3.1, y: 1.05, z: -0.606, rot: Math.PI, scale: 1, color: null },
+               { id: 'ph2_pedestal', type: 'pedestal', x: -3.72, z: -0.9, rot: 0, scale: 1, color: null },
+               { id: 'ph2_bust', type: 'sculpture', x: -3.72, y: 1.02, z: -0.9, rot: Math.PI, scale: 1.1, color: null });
+  d.editedAt = Date.now(); return d;
+}

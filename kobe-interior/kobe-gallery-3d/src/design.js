@@ -17,7 +17,7 @@ export const FRAME_STYLES = [['골드', 'gold'], ['블랙', 'black'], ['화이�
 export const PROP_TYPES = [
   ['센바 커플 세팅(보드2+의자2+카트)', 'couple_set'], ['센바 작업 보드', 'board'], ['검은 의자', 'chair'], ['물감 카트', 'cart'],
   ['이젤', 'easel'], ['이젤+캔버스', 'easel_canvas'], ['작업 테이블', 'table'], ['스툴', 'stool'], ['벤치', 'bench'], ['전시 좌대', 'pedestal'],
-  ['1인용 레지 카운터', 'register'], ['船場美術館 세로 금박 글씨', 'brand_sign'], ['금테 원형 거울', 'round_mirror'], ['사이드보드(유리문·서랍)', 'sideboard'], ['벽 거울(검은 틀)', 'wall_mirror'], ['조각상(흉상)', 'sculpture'], ['장식(조명·꽃병)', 'deco_set'],
+  ['1인용 레지 카운터', 'register'], ['船場美術館 세로 금박 글씨', 'brand_sign'], ['금테 원형 거울', 'round_mirror'], ['큰 금테 액자', 'big_frame'], ['사이드보드(유리문·서랍)', 'sideboard'], ['벽 거울(검은 틀)', 'wall_mirror'], ['조각상(흉상)', 'sculpture'], ['장식(조명·꽃병)', 'deco_set'],
   ['화분', 'plant'], ['파티션', 'partition'], ['러그', 'rug'], ['접수 카운터', 'counter'], ['안내판', 'sign'], ['펜던트 조명', 'pendant'],
 ];
 
