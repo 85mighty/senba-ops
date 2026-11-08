@@ -157,6 +157,17 @@ export function buildProp(p) {
       const disc = new THREE.Mesh(new THREE.CircleGeometry(0.255, 48), new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 1, roughness: 0.04, envMapIntensity: 1.3 })); disc.position.set(0, 0.27, 0.012); g.add(disc);
       break;
     }
+    case 'big_frame': {     // 큰 금테 액자(약 110×85 cm, 안쪽 그림은 자리표시) — 벽에 붙임(+Z 가 앞), 높이는 '높이(y)' = 액자 아래 끝
+      const gold = std(c || 0xc9a24a, { metalness: 0.75, roughness: 0.32 }); const W = 1.1, H = 0.85, B = 0.07;
+      g.add(box(W, B, 0.05, gold, 0, H - B / 2, 0.025)); g.add(box(W, B, 0.05, gold, 0, B / 2, 0.025)); g.add(box(B, H, 0.05, gold, -W / 2 + B / 2, H / 2, 0.025)); g.add(box(B, H, 0.05, gold, W / 2 - B / 2, H / 2, 0.025));
+      g.add(box(W - 0.1, H - 0.1, 0.02, std(0xe9e2d2), 0, H / 2, 0.012));                       // 매트
+      const cv = document.createElement('canvas'); cv.width = 512; cv.height = 400; const c2 = cv.getContext('2d');
+      const gr = c2.createLinearGradient(0, 0, 512, 400); gr.addColorStop(0, '#6c7f70'); gr.addColorStop(0.5, '#c9b58a'); gr.addColorStop(1, '#3f4a3f'); c2.fillStyle = gr; c2.fillRect(0, 0, 512, 400);
+      c2.fillStyle = 'rgba(255,240,200,0.45)'; c2.beginPath(); c2.ellipse(300, 150, 120, 80, 0.4, 0, Math.PI * 2); c2.fill(); c2.fillStyle = 'rgba(60,40,30,0.5)'; c2.fillRect(0, 300, 512, 100);
+      const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+      const pic = new THREE.Mesh(new THREE.PlaneGeometry(W - 0.24, H - 0.24), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8 })); pic.position.set(0, H / 2, 0.023); g.add(pic);
+      break;
+    }
     case 'wall_mirror': {   // 검은 틀 가로 거울(약 120×60 cm) — 중심 높이 1.55 m, 벽에 붙임
       const fr = std(c || 0x1a1a1a, { roughness: 0.5 }); const W = 1.2, H = 0.6, y = 1.55;
       g.add(box(W + 0.06, H + 0.06, 0.03, fr, 0, y, 0.015)); const m = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 1, roughness: 0.04, envMapIntensity: 1.3 }));
