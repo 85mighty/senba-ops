@@ -157,6 +157,17 @@ export function buildProp(p) {
       const disc = new THREE.Mesh(new THREE.CircleGeometry(0.255, 48), new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 1, roughness: 0.04, envMapIntensity: 1.3 })); disc.position.set(0, 0.27, 0.012); g.add(disc);
       break;
     }
+    case 'elegant_chair': {  // 엘레강트 의자 — 루이 16세풍: 둥근 등받이·금색 틀·벨벳(기본 딥 그린) 좌판, 가늘어지는 금색 다리. 정면 +Z
+      const velvet = std(c || 0x2f4a3f, { roughness: 0.85 }), gold = std(0xc9a24a, { metalness: 0.75, roughness: 0.3 });
+      for (const [dx, dz] of [[-0.21, -0.2], [0.21, -0.2], [-0.21, 0.2], [0.21, 0.2]]) { const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.022, 0.44, 10), gold); leg.position.set(dx, 0.22, dz); g.add(leg); }
+      g.add(box(0.5, 0.035, 0.5, gold, 0, 0.455, 0));                                                                   // 좌판 틀
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(0.47, 0.07, 0.47), velvet); seat.position.set(0, 0.505, 0); g.add(seat);
+      const backFrame = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.016, 10, 40), gold); backFrame.scale.set(1.1, 1.35, 1); backFrame.position.set(0, 0.82, -0.235); backFrame.rotation.x = 0.1; g.add(backFrame);
+      const backPad = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.035, 40), velvet); backPad.scale.set(1.1, 1, 1.35); backPad.rotation.x = Math.PI / 2 + 0.1; backPad.position.set(0, 0.82, -0.235); g.add(backPad);
+      for (const sx of [-1, 1]) { const post = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.014, 0.3, 8), gold); post.position.set(sx * 0.2, 0.62, -0.235); post.rotation.x = 0.1; g.add(post); }
+      g.add(box(0.14, 0.02, 0.08, gold, 0, 1.085, -0.26));                                                               // 등받이 꼭대기 장식
+      break;
+    }
     case 'big_frame': {     // 큰 금테 액자(약 110×85 cm, 안쪽 그림은 자리표시) — 벽에 붙임(+Z 가 앞), 높이는 '높이(y)' = 액자 아래 끝
       const gold = std(c || 0xc9a24a, { metalness: 0.75, roughness: 0.32 }); const W = 1.1, H = 0.85, B = 0.07;
       g.add(box(W, B, 0.05, gold, 0, H - B / 2, 0.025)); g.add(box(W, B, 0.05, gold, 0, B / 2, 0.025)); g.add(box(B, H, 0.05, gold, -W / 2 + B / 2, H / 2, 0.025)); g.add(box(B, H, 0.05, gold, W / 2 - B / 2, H / 2, 0.025));
