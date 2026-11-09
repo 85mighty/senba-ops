@@ -65,7 +65,7 @@ export function applyAirPanel(base) {
 // 1인용 레지 배치안(11/07 제안) — 소품 'register' 한 개를 놓는다(이미 있던 레지는 치움). 정면(+Z)이 손님 쪽
 export const REGISTER_PLANS = {
   r1: { name: '레지 ① 입구 왼쪽 구석 (추천)', x: -3.1, z: 1.25, rot: Math.PI / 2, why: '통로를 나오자마자 왼쪽, 정면이 통로 출구를 봄 — 인사·접수·결제, 동선 밖, 직원(벽 2 등짐)이 입구·홀 전체를 봄' },
-  r2: { name: '레지 ② 입구 왼쪽 벽(벽 2)에 붙임', x: -3.554, z: 0.275, rot: 0, why: '통로 정면 1 m — 첫눈에 보이는 안내 데스크. 대신 홀 쪽 동선을 조금 가림' },
+  r2: { name: '레지 ② 입구 왼쪽 벽(벽 2)에 붙임', x: -3.554, z: 0.535, rot: 0, why: '통로 정면 1 m — 첫눈에 보이는 안내 데스크. 대신 홀 쪽 동선을 조금 가림' },
   r3: { name: '레지 ③ 사이드보드 옆 · 직원 통로 앞', x: 0.62, z: 1.38, rot: Math.PI, why: '뒤 커튼 통로로 주방 재고·세면대 바로 — 직원이 편함. 입구에서 약 3 m, 포토 스폿과 붙어 줄이 사진에 걸릴 수 있음' },
 };
 export function applyRegister(base, key) {
@@ -97,8 +97,8 @@ export function applyReception(base) {
   const hallGreen = d.surfaces.wall_x_1?.paint || d.surfaces.wall_z_14?.paint || DULL_GREEN;   // 홀 쪽 면은 홀 벽과 같은 색(띠·판은 전체 설정 따름)
   for (const id of ['wall_rec_back_out', 'wall_rec_east_out', 'wall_rec_east_in']) { const { trim, ...rest } = d.surfaces[id] || {}; d.surfaces[id] = { ...rest, paint: hallGreen, zone: 'all', texture: false, molding: false, art: id === 'wall_rec_east_out' ? null : false, splits: 1 }; }   // 오른쪽 벽 양면·뒤 벽 홀 쪽 = 홀과 같은 초록(띠·판은 전체 설정)
   d.props = d.props.filter((p) => !['brand_sign', 'round_mirror'].includes(p.type));
-  d.props.push({ id: 'rec_sign', type: 'brand_sign', x: -2.3, y: 1.12, z: -0.494, rot: 0, scale: 1, color: null },     // 입구 통로 정중앙(영상 구도)
-               { id: 'rec_mirror', type: 'round_mirror', x: -3.55, y: 1.42, z: -0.494, rot: 0, scale: 1, color: null }); // 레지 위
+  d.props.push({ id: 'rec_sign', type: 'brand_sign', x: -2.3, y: 1.12, z: -0.234, rot: 0, scale: 1, color: null },     // 입구 통로 정중앙(영상 구도) — 벽 안쪽 면 z −0.24
+               { id: 'rec_mirror', type: 'round_mirror', x: -3.55, y: 1.42, z: -0.234, rot: 0, scale: 1, color: null }); // 레지 위
   d.editedAt = Date.now(); return d;
 }
 
@@ -127,8 +127,17 @@ export function applyRegisterLeft(base) { return applyReception(base); }
 // 포토 스폿 2(11/08): 알코브 뒤 벽의 홀 쪽 면(벽 2 ~ 기둥 1 사이 1.5 m) — 큰 금테 액자 + 좌대 위 흉상. 앞 2.4 × 2 m 가운데 공간에서 찍는다
 export function applyPhotoSpot2(base) {
   const d = JSON.parse(JSON.stringify(base || {})); d.props = (d.props || []).filter((p) => !['ph2_frame', 'ph2_pedestal', 'ph2_bust'].includes(p.id));
-  d.props.push({ id: 'ph2_frame', type: 'big_frame', x: -3.1, y: 1.05, z: -0.606, rot: Math.PI, scale: 1, color: null },
-               { id: 'ph2_pedestal', type: 'pedestal', x: -3.72, z: -0.9, rot: 0, scale: 1, color: null },
-               { id: 'ph2_bust', type: 'sculpture', x: -3.72, y: 1.02, z: -0.9, rot: Math.PI, scale: 1.1, color: null });
+  d.props.push({ id: 'ph2_frame', type: 'big_frame', x: -3.1, y: 1.05, z: -0.346, rot: Math.PI, scale: 1, color: null },   // 벽 홀 쪽 면 z −0.34
+               { id: 'ph2_pedestal', type: 'pedestal', x: -3.72, z: -0.64, rot: 0, scale: 1, color: null },
+               { id: 'ph2_bust', type: 'sculpture', x: -3.72, y: 1.02, z: -0.64, rot: Math.PI, scale: 1.1, color: null });
+  d.editedAt = Date.now(); return d;
+}
+
+// 11/09: 뒤 벽을 입구 쪽으로 0.26 m 당김(홀 쪽 통로 0.6 m) + 오른쪽 벽 삭제 — 벽에 붙은 것들(레지·글씨·거울·액자·좌대)도 같이 이동
+export function applyWallPull(base) {
+  const d = JSON.parse(JSON.stringify(base || {}));
+  const Z = { reg_r2: 0.535, rec_sign: -0.234, rec_mirror: -0.234, ph2_frame: -0.346, ph2_pedestal: -0.64, ph2_bust: -0.64 };   // 절대값으로(새 기기에서 두 번 밀리지 않게)
+  for (const p of d.props || []) if (p.id in Z) p.z = Z[p.id];
+  for (const id of ['wall_rec_east_in', 'wall_rec_east_out']) delete (d.surfaces || {})[id];
   d.editedAt = Date.now(); return d;
 }
