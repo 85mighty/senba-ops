@@ -141,3 +141,11 @@ export function applyWallPull(base) {
   for (const id of ['wall_rec_east_in', 'wall_rec_east_out']) delete (d.surfaces || {})[id];
   d.editedAt = Date.now(); return d;
 }
+
+// 11/09: 사진 코너(사이드보드) 앞에 엘레강트 의자 2개 — 홀 쪽을 보고 살짝 마주 보게. 서랍은 그대로 열 수 있는 거리(0.35 m)
+export function applyElegantChairs(base) {
+  const d = JSON.parse(JSON.stringify(base || {})); d.props = (d.props || []).filter((p) => !['ik_chair_l', 'ik_chair_r'].includes(p.id));
+  d.props.push({ id: 'ik_chair_l', type: 'elegant_chair', x: -1.33, z: 0.95, rot: Math.PI - 0.35, scale: 1, color: null },
+               { id: 'ik_chair_r', type: 'elegant_chair', x: -0.15, z: 0.95, rot: Math.PI + 0.35, scale: 1, color: null });
+  d.editedAt = Date.now(); return d;
+}
