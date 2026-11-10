@@ -203,10 +203,11 @@ export class Viewer {
 
   // ---------------- 치수
   textSprite(text, color = '#ffd27a') {
-    const cv = document.createElement('canvas'); const ctx = cv.getContext('2d'); cv.width = 512; cv.height = 128;
-    ctx.font = 'bold 56px -apple-system, sans-serif'; ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(0, 0, 512, 128);
-    ctx.fillStyle = color; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, 256, 64);
-    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false })); sp.scale.set(1.6, 0.4, 1); return sp;
+    // 긴 글은 캔버스를 넓혀 잘리지 않게(512 기준 스케일 유지)
+    const cv = document.createElement('canvas'); const ctx = cv.getContext('2d'); ctx.font = 'bold 56px -apple-system, sans-serif'; const W = Math.max(512, Math.ceil(ctx.measureText(text).width + 60)); cv.width = W; cv.height = 128;
+    ctx.font = 'bold 56px -apple-system, sans-serif'; ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(0, 0, W, 128);
+    ctx.fillStyle = color; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, W / 2, 64);
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false })); sp.scale.set(1.6 * W / 512, 0.4, 1); sp.userData.aspect = W / 128; return sp;
   }
   buildDims() {
     disposeTree(this.dims); const box = this.roomBox(); const s = box.getSize(new THREE.Vector3()); const h = this.meta.ceiling_height_m || s.y;

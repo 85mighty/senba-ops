@@ -43,7 +43,10 @@ export function subtractRects(r, holes) {
 }
 
 // 디자인에서 켜는 '막기 벽'(예: 주방 입구). 꺼져 있으면 없는 벽으로 본다
-export const closureWalls = (c) => c.walls || (c.wall ? [c.wall] : []);
-export const closureWallsAll = (meta) => (meta.closures || []).flatMap(closureWalls);
+// design.closureShift[id] = 벽을 법선 방향(axis z 벽이면 z)으로 옮긴 거리(m). 벽 면·문·카펫 계산이 모두 같은 값을 쓴다
+export const closureShift = (design, id) => +(design?.closureShift?.[id] || 0);
+export const closureWalls = (c, design) => { const s = closureShift(design, c.id); return (c.walls || (c.wall ? [c.wall] : [])).map((w) => (s ? { ...w, offset: w.offset + s } : w)); };
+export const closureWallsAll = (meta, design) => (meta.closures || []).flatMap((c) => closureWalls(c, design));
 export const closureOn = (meta, design, wallId) => (meta.closures || []).some((c) => closureWalls(c).some((w) => w.id === wallId) && !!design?.closures?.[c.id]);
-export const activeClosureWalls = (meta, design) => (meta.closures || []).filter((c) => !!design?.closures?.[c.id]).flatMap(closureWalls);
+export const closureOf = (meta, wallId) => (meta.closures || []).find((c) => closureWalls(c).some((w) => w.id === wallId)) || null;
+export const activeClosureWalls = (meta, design) => (meta.closures || []).filter((c) => !!design?.closures?.[c.id]).flatMap((c) => closureWalls(c, design));
