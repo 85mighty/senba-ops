@@ -123,6 +123,11 @@ try {
     const ee = s.getSlot('E'); if (!ee?.closures?.reception || !ee.props.some((p) => p.type === 'register' && p.id === 'reg_r2') || !['brand_sign', 'round_mirror'].every((t) => ee.props.some((p) => p.type === t))) throw new Error('E안 리셉션 알코브 없음');
     window.__switchSlot('E'); const recWalls = e.walls().filter((w) => w.id.startsWith('wall_rec_')); let carpet = 0; e.closureG.traverse((o) => { if (o.isMesh && o.userData.surface === 'floor') carpet++; });
     if (recWalls.length !== 2 || carpet < 2 || s.getSurface('wall_rec_back_in').paint !== '#8a1f2b') throw new Error('E안 ㄱ자 벽·카펫 이상 ' + recWalls.length + ' ' + carpet);
+    // 막기 벽 앞뒤 이동 + 거리 표시
+    const z0 = e.walls().find((w) => w.id === 'wall_rec_back_in').offset; s.design.closureShift = { reception: 0.2 }; s.commit('closure');
+    const z1 = e.walls().find((w) => w.id === 'wall_rec_back_in').offset; if (Math.abs(z1 - z0 - 0.2) > 1e-6) throw new Error('막기 벽 이동 안 됨 ' + z0 + ' ' + z1);
+    e.setEnabled(true); let gaps = 0; e.closureDims.traverse((o) => { if (o.isSprite) gaps++; }); if (gaps < 2) throw new Error('벽 거리 표시 없음 ' + gaps);
+    s.design.closureShift = {}; s.commit('closure');
     window.__switchSlot('A'); if (cutOf()) throw new Error('A안에 옆 통로 구멍이 남음');
     if (e.walls().some((w) => w.id === 'wall_kitchen_close') || e.closureG.children.length) throw new Error('A안에 막기 벽이 남음');
     // 북쪽 창: 사진대로 큰 미닫이창 2세트
