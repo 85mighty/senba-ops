@@ -168,6 +168,23 @@ export function buildProp(p) {
       g.add(box(0.14, 0.02, 0.08, gold, 0, 1.085, -0.26));                                                               // 등받이 꼭대기 장식
       break;
     }
+    case 'spot_light': {   // 천장 스포트라이트 — 바닥 자리(x,z)에 놓으면 천장(2.38 m)에 달리고 정면(+Z) 쪽 벽을 비춘다. 'aim' = 비추는 거리(m), 'warm' 색
+      const ceilH = 2.38, aim = p.aim ?? 1.6; const black = std(0x1c1c1c, { roughness: 0.5 }), warm = std(0x222222, { emissive: 0xffc98a, emissiveIntensity: 1.2 });
+      g.add(box(0.06, 0.03, 0.12, black, 0, ceilH - 0.015, 0));                                                                        // 트랙 어댑터
+      const arm = cyl(0.012, 0.012, 0.1, black, 0, ceilH - 0.08, 0); g.add(arm);
+      const head = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.055, 0.16, 14), black); head.position.set(0, ceilH - 0.17, 0.05); head.rotation.x = Math.PI / 2 - Math.atan2(ceilH - 1.3, aim); g.add(head);   // 벽 쪽으로 기울임
+      const lens = new THREE.Mesh(new THREE.CircleGeometry(0.05, 14), warm); lens.position.set(0, ceilH - 0.17 - Math.sin(head.rotation.x) * 0.085, 0.05 + Math.cos(head.rotation.x) * 0.085); lens.rotation.x = head.rotation.x - Math.PI / 2; g.add(lens);
+      const light = new THREE.SpotLight(0xffd9a8, 7, 5.5, Math.PI / 7, 0.55, 1.3); light.position.set(0, ceilH - 0.2, 0.05); light.target.position.set(0, 1.25, aim); g.add(light, light.target);
+      break;
+    }
+    case 'rug_small': {    // 작은 러그(1.5 × 1.0 m) — 짙은 와인에 베이지 테두리, 가운데 다이아 무늬. 사진 코너 앞 '앉는 자리' 표시
+      const W = 1.5, D = 1.0; const base = std(c || 0x5a1f28, { roughness: 1, side: THREE.DoubleSide }); const trim = std(0xcdb28a, { roughness: 1, side: THREE.DoubleSide });
+      const r = new THREE.Mesh(new THREE.PlaneGeometry(W, D), trim); r.rotation.x = -Math.PI / 2; r.position.y = 0.018; g.add(r);
+      const inner = new THREE.Mesh(new THREE.PlaneGeometry(W - 0.14, D - 0.14), base); inner.rotation.x = -Math.PI / 2; inner.position.y = 0.0195; g.add(inner);
+      const dia = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.42), trim); dia.rotation.x = -Math.PI / 2; dia.rotation.z = Math.PI / 4; dia.position.y = 0.021; g.add(dia);
+      const core = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.3), base); core.rotation.x = -Math.PI / 2; core.rotation.z = Math.PI / 4; core.position.y = 0.0225; g.add(core);
+      break;
+    }
     case 'big_frame': {     // 큰 금테 액자(약 110×85 cm, 안쪽 그림은 자리표시) — 벽에 붙임(+Z 가 앞), 높이는 '높이(y)' = 액자 아래 끝
       const gold = std(c || 0xc9a24a, { metalness: 0.75, roughness: 0.32 }); const W = 1.1, H = 0.85, B = 0.07;
       g.add(box(W, B, 0.05, gold, 0, H - B / 2, 0.025)); g.add(box(W, B, 0.05, gold, 0, B / 2, 0.025)); g.add(box(B, H, 0.05, gold, -W / 2 + B / 2, H / 2, 0.025)); g.add(box(B, H, 0.05, gold, W / 2 - B / 2, H / 2, 0.025));
