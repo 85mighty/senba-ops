@@ -149,3 +149,15 @@ export function applyElegantChairs(base) {
                { id: 'ik_chair_r', type: 'elegant_chair', x: -0.15, z: 0.95, rot: Math.PI + 0.35, scale: 1, color: null });
   d.editedAt = Date.now(); return d;
 }
+
+// 11/10: 가운데 빈 공간은 비워 두고, 조명 + 러그로 채운다 — 사진 코너(사이드보드) 위 스포트 2 + 포토 스폿 2(액자) 위 스포트 1, 의자 아래 작은 러그
+export function applyLightsRug(base) {
+  const d = JSON.parse(JSON.stringify(base || {})); d.props = (d.props || []).filter((p) => !String(p.id).startsWith('lr_'));
+  d.props.push(
+    { id: 'lr_spot_a', type: 'spot_light', x: -1.2, z: 0.2, rot: 0, aim: 1.5, scale: 1, color: null },          // 사이드보드 왼쪽(흉상) 쪽
+    { id: 'lr_spot_b', type: 'spot_light', x: -0.3, z: 0.2, rot: 0, aim: 1.5, scale: 1, color: null },          // 사이드보드 오른쪽(거울·장식) 쪽
+    { id: 'lr_spot_c', type: 'spot_light', x: -3.1, z: -1.7, rot: Math.PI, aim: 1.3, scale: 1, color: null },   // 포토 스폿 2 액자 (−Z 방향으로 비춤)
+    { id: 'lr_rug', type: 'rug_small', x: -0.745, z: 0.95, rot: 0, scale: 1, color: null },                      // 의자 2개 아래
+  );
+  d.editedAt = Date.now(); return d;
+}
