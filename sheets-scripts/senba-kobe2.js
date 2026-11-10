@@ -1,5 +1,6 @@
-// 「고베 2호점」 탭 — ヒライビル 3F 확정 물건 · 알바 주6일(화 휴무) 체제 손익 (2026-08-28 상담분)
-// 기존 수기 탭을 대체: 물건 개요·초기비용은 상담 내용 그대로 이전, 손익은 알바 체제(본점과 동일 근무시간)로 재계산
+// 「고베 2호점」 탭 — ヒライビル 3F 확정 물건 · 알바 1인 체제(본점 아이미짱 시프트와 동일) 손익 (2026-11-10 개정)
+// 물건 개요·초기비용은 2026-08-28 상담 내용 그대로, 손익은 본점 확정 시프트(토일월화목 · 예약 기준 출근 · 없으면 3h · 1,200엔)로 재계산
+// 알바비 13만 = 본점 「인건비 시뮬」 10월 실측 128,700 (22일 107h) 반올림 · 주말 오전(10:45~)까지 열면 142,200 → 14.2만
 const path = require('path');
 const { google } = require(path.join('/opt/senba-sales-sync/node_modules/googleapis'));
 
@@ -9,9 +10,11 @@ const NCOL = 6;
 
 const MARGIN = 0.834197, TICKET = 3300;      // 세후 마진율(소비세 간이 4.55% 포함) · 객단가(본점 8월 실측 3,279)
 const RENT = 148500, SHOP = 9000, UTIL = 25000, MKT = 20000;   // 야칭 · 상점가비(쓰레기 포함) · 공과금 가정 · 마케팅
-const DAYS = 26;                              // 주6일 (화요일만 휴무) = 4.33주 × 6일
-const ALBA_MIN = DAYS * 4800, ALBA_MAX = DAYS * 7200;   // 본점과 동일: 기본 4h=4,800/일 · 최대 6h=7,200/일 (시급 1,200)
-const COMMUTE = 780 * DAYS;                   // 사장 직접 시 통근: 石橋阪大前↔神戸三宮 편도 390 × 왕복 × 26일 (정기권이면 절감)
+const DAYS = 22;                              // 주5일 (토일월화목 · 수금 휴무) = 4.33주 × 5일
+const ALBA_MIN = 130000, ALBA_MAX = 142000;   // 아이미짱 시프트 1인 체제 월 알바비(1,200) · 주말 오전 영업까지 포함 시
+const ALBA_H = 107, ALBA_H_MAX = 118;         // 월 근무시간 (10월 실측 기준)
+const COMMUTE = 780 * DAYS;                   // 사장 직접 시 통근: 石橋阪大前↔神戸三宮 편도 390 × 왕복 × 22일 (정기권이면 절감)
+const HON_BE = Math.ceil((300000 + 44500 + ALBA_MIN) / MARGIN / 1000) * 1000;   // 본점 손익분기 (야칭 30만 + 마케팅 4.45만 + 알바 13만)
 const BASE = RENT + SHOP + UTIL + MKT;
 const FIXED_OWN = BASE + COMMUTE;
 const FIXED_MIN = BASE + ALBA_MIN, FIXED_MAX = BASE + ALBA_MAX;
@@ -27,7 +30,7 @@ const push = r => { rows.push(r); return rows.length - 1; };
 const blank = () => push([]);
 
 const iTitle = push(['센바미술관 고베 2호점 — ヒライビル 3F']);
-const iSub = push(['상담 2026-08-28 (イーアールホームズ·大橋) · 주6일(화 휴무) 영업 — 사장 직접 vs 알바(본점 동일 근무시간) 비교 · 소비세 4.55% 반영(세후) · 舊 산노미야 후보 탭 통합']);
+const iSub = push(['상담 2026-08-28 (イーアールホームズ·大橋) · 주5일(토일월화목 · 수금 휴무) — 사장 직접 vs 알바 1인 체제(본점 아이미짱 시프트 동일) 비교 · 소비세 4.55% 반영(세후) · 2026-11-10 개정']);
 blank();
 
 const iSec1 = push(['■ 물건 개요·초기비용 (상담 확정치)']);
@@ -40,53 +43,53 @@ const o5 = push(['초기비용 합계', INIT, '', '비고', '첫달 야칭 포�
 const o6 = push(['조건', 'A간판 1곳 가능 · 협상 원칙불가 · 프리렌트는 신청 시 희망 전달', '', '링크', 'https://www.athome.co.jp/rent_store/1191889824/']);
 blank();
 
-const iSec2 = push(['■ 운영 전제 — 주6일 (화요일만 휴무) = 월 26일']);
-const p1 = push(['사장 직접', '통근 石橋阪大前↔神戸三宮 왕복 780(편도 390) × 26일 = 20,280/월 · 정기권 구입 시 절감 가능']);
-const p2 = push(['알바 체제', '본점과 동일 시간: 기본 4h(13:30~17:30) 4,800/일 · 최대 6h(12:30~18:30) 7,200/일 · 시급 1,200']);
+const iSec2 = push(['■ 운영 전제 — 주5일 (토일월화목 · 수금 정기휴무) = 월 22일']);
+const p1 = push(['사장 직접', `통근 石橋阪大前↔神戸三宮 왕복 780(편도 390) × 22일 = ${yen(COMMUTE)}/월 · 정기권 구입 시 절감 가능`]);
+const p2 = push(['알바 1인 체제', `본점 아이미짱 시프트와 동일: 예약 있으면 첫 예약 15분 전 출근(평일 12:45~ · 주말 12:15~) ~ 마지막 종료 +15분(최대 18:15), 예약 없으면 13:30~16:30 3h · 시급 1,200 · 월 약 ${ALBA_H}h = ${yen(ALBA_MIN)} / 주말 오전(10:45~)까지 열면 약 ${ALBA_H_MAX}h = ${yen(ALBA_MAX)}`]);
 const p3 = push(['공과금(가정)', UTIL, '', '마케팅', MKT]);
 const p4 = push(['객단가', TICKET, '', '마진율(세후)', Number(MARGIN.toFixed(6))]);
 blank();
 
 const iSec3 = push(['■ 월 고정비']);
-const h3 = push(['구분', '사장 직접(주6일)', '알바 기본(4h)', '알바 최대(6h)']);
+const h3 = push(['구분', '사장 직접(주5일)', '알바 1인 체제', '알바 1인 + 주말 오전']);
 push(['야칭+상점가비', RENT + SHOP, RENT + SHOP, RENT + SHOP]);
 push(['공과금(가정)', UTIL, UTIL, UTIL]);
 push(['마케팅', MKT, MKT, MKT]);
-push(['통근비 (26일 왕복)', COMMUTE, 0, 0]);
-push(['알바비 (26일)', 0, ALBA_MIN, ALBA_MAX]);
+push(['통근비 (22일 왕복)', COMMUTE, 0, 0]);
+push(['알바비 (22일 · 1,200)', 0, ALBA_MIN, ALBA_MAX]);
 const t3 = push(['합계', FIXED_OWN, FIXED_MIN, FIXED_MAX]);
 blank();
 
 const iSec4 = push(['■ 손익분기']);
-const h4 = push(['구분', '사장 직접(주6일)', '알바 기본(4h)', '알바 최대(6h)']);
+const h4 = push(['구분', '사장 직접(주5일)', '알바 1인 체제', '알바 1인 + 주말 오전']);
 push(['월 매출', be(FIXED_OWN), be(FIXED_MIN), be(FIXED_MAX)]);
-push(['하루 매출 (26일)', Math.round(be(FIXED_OWN) / DAYS), Math.round(be(FIXED_MIN) / DAYS), Math.round(be(FIXED_MAX) / DAYS)]);
+push(['하루 매출 (22일)', Math.round(be(FIXED_OWN) / DAYS), Math.round(be(FIXED_MIN) / DAYS), Math.round(be(FIXED_MAX) / DAYS)]);
 const r4ppl = push(['하루 필요 인원', ppl(be(FIXED_OWN)) + '명', ppl(be(FIXED_MIN)) + '명', ppl(be(FIXED_MAX)) + '명']);
 const r4own = push(['(참고) 주4일(금~월) 스타트 시', 260000, '사장 직접·통근 포함 — 초기 축소 운영안']);
-const r4hon = push(['(참고) 본점 손익분기', 518000, '야칭 30만·마케팅 5만·알바 17일 기본 — 고베 알바 체제가 약 ' + Math.round((518000 - be(FIXED_MIN)) / 10000) + '만엔 낮음']);
+const r4hon = push(['(참고) 본점 손익분기', HON_BE, '야칭 30만·마케팅 4.45만·알바 13만(같은 시프트) — 고베 알바 체제가 약 ' + Math.round((HON_BE - be(FIXED_MIN)) / 10000) + '만엔 낮음']);
 blank();
 
 const iSec5 = push(['■ 매출별 월 순수익 (세전) · 초기비용 회수']);
-const h5 = push(['월 매출', '하루 평균 인원', '사장 직접(주6일)', '알바 기본(4h)', '알바 최대(6h)', '초기 118.8만 회수 (사장 직접)']);
+const h5 = push(['월 매출', '하루 평균 인원', '사장 직접(주5일)', '알바 1인 체제', '알바 1인 + 주말 오전', '초기 118.8만 회수 (알바 1인)']);
 const refStart = rows.length;
 for (const R of [300000, 400000, 450000, 500000, 600000, 700000, 800000, 900000, 1000000])
-  push([R, ppl(R) + '명', net(R, FIXED_OWN), net(R, FIXED_MIN), net(R, FIXED_MAX), payback(net(R, FIXED_OWN))]);
+  push([R, ppl(R) + '명', net(R, FIXED_OWN), net(R, FIXED_MIN), net(R, FIXED_MAX), payback(net(R, FIXED_MIN))]);
 const refEnd = rows.length;
 blank();
 
 const iSec6 = push(['■ 페이즈 플랜 · 체크리스트 (상담분 이전)']);
 const h6 = push(['항목', '내용']);
-const k1 = push(['오픈~2027-02', '사장 직접 운영(알바 0) · 금토일 3일 시작 → 예약 보며 월요일 추가 (손익분기 약 26만)']);
+const k1 = push(['오픈~2027-02', `사장 직접 운영(알바 0) · 금토일 3일 시작 → 예약 보며 요일 추가 (주5일 직접 운영 손익분기 약 ${Math.round(be(FIXED_OWN) / 10000)}만)`]);
 const k2 = push(['2026-11', '알바 공고 게시(타운워크) — 1~2월 채용 리드타임 확보']);
-const k3 = push(['2027-03~', '알바 전환 → 이 탭의 주6일 체제 수치 적용 · 근태봇/시프트 크론 고베 복제']);
-const k4 = push(['알바 주6일 체제', '1명 단독이면 병결 시 휴업 — 2명 채용해 분할 권장 (본점과 동일 근태봇으로 관리)']);
+const k3 = push(['2027-03~', '알바 전환 → 이 탭의 1인 체제 수치 적용 · 근태봇/근무 안내(shift-rules) 고베 복제 — 본점과 같은 규칙이라 그대로 복사 가능']);
+const k4 = push(['알바 1인 체제', '1명 단독이면 병결 시 사장님 대체 또는 휴업 — 본점처럼 보드 &aimioff=1 로 사장님 대체 안내. 주말 오전(10:45~)을 열면 알바비 +1.2만, 6시간 초과일 45분 휴게 필요']);
 const k5 = push(['신청 전 확인', '프리렌트 희망 개월 수 명기 · A간판 설치 위치 실물 확인(1층 노출이 핵심) · 음식 제공 범위 보건소 사전 상담']);
 const k6 = push(['계약 조건', '해약 예고 기간 · 원상회복 범위 · 화재보험 견적 확인 · 소음·물사용(석고) 제한 확인']);
 const k7 = push(['3층·엘리베이터 없음', '고객 접근성 감점 + 석고·캔버스 재료 운반 부담. 1층 입간판·아케이드 유도 사인 허가를 임대인에게 반드시 확인']);
 const k8 = push(['쇼텐가이 입지', '평일 유동인구 확보에 유리. 산노미야 관광객 → 인스타 외국인 집객과 궁합 좋음']);
 const k9 = push(['오픈 시기', '1~2월 오픈 → 2~3월 성수기(본점 작년 2월 100만·3월 147만)를 바로 타는 흐름이 안전']);
 blank();
-const iN = push(['※ 조건 바꿔 계산은 「2호점 시뮬레이션」 탭 (야칭+공과금 182,500 · 주6일 입력) · 이 탭은 senba-kobe2.js 로 재생성']);
+const iN = push(['※ 알바비 13만·14.2만은 본점 「인건비 시뮬」 10월 실측(1인 체제 128,700 / 주말 오전 영업 142,200)을 반올림한 값 · 고베 예약 패턴이 다르면 달라짐 · 조건 바꿔 계산은 「2호점 시뮬레이션」 탭 · 이 탭은 senba-kobe2.js 로 재생성']);
 
 (async () => {
   const auth = new google.auth.GoogleAuth({ keyFile: '/opt/senba-sales-sync/service-account.json', scopes: ['https://www.googleapis.com/auth/spreadsheets'] });
