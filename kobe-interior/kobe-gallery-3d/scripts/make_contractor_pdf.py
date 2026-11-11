@@ -222,7 +222,7 @@ def page_plan(pdf, m, walls, cols):
     ax.text(w4["offset"] + 0.12, (ks["from"] + ks["to"]) / 2 + 0.3, f"O1 {ks['to'] - ks['from']:.2f}×H{ks['y1']:.2f}\n+커튼", fontsize=5.5, color=RED, va="center", zorder=7, weight="bold")
     # 바닥: 레드 카펫
     for r in rc["floor"]: ax.add_patch(Rectangle((r["x"][0], r["z"][0]), r["x"][1] - r["x"][0], r["z"][1] - r["z"][0], fc="#c9a3a8", ec=RED, lw=0.6, zorder=2))
-    ax.text(-2.3, 2.45, "F1 레드 카펫\n約3.6 ㎡", ha="center", va="center", fontsize=6, color=RED, zorder=7, weight="bold")
+    ax.text(-2.3, 2.45, "F1 레드 카펫\n約2.7 ㎡", ha="center", va="center", fontsize=6, color=RED, zorder=7, weight="bold")
     # 고정 가구: 레지, 사이드보드, 좌대, 러그
     def box(x, z, w, d, rot, label, fc="#e8dcc8", lw=0.8):
         cs, sn = math.cos(rot), math.sin(rot); pts = [(x + (dx * cs - dz * sn), z + (dx * sn + dz * cs)) for dx, dz in [(-w / 2, -d / 2), (w / 2, -d / 2), (w / 2, d / 2), (-w / 2, d / 2)]]
