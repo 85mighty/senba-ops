@@ -213,8 +213,8 @@ export const WASHROOM_PAINT = { wall: '#e4d8c3', rail: '#ece2d0', railY: 0.92, r
 export function buildWashroomTile(meta, region, ceilH = 2.38) {
   const g = new THREE.Group(); g.name = 'washroom_tile'; const mat = leafMosaicMaterial(); const T = mat.userData.tileM; const off = 0.03;   // 홀 마감(판 0.017 + 見切り 0.025)보다 앞에 붙여 그 위를 덮는다
   const paintM = std(new THREE.Color(WASHROOM_PAINT.wall).getHex(), { roughness: 0.85, metalness: 0, polygonOffset: true, polygonOffsetFactor: -2 }), railM = std(new THREE.Color(WASHROOM_PAINT.rail).getHex(), { roughness: 0.7, metalness: 0 });
-  const quad = (w, h, pos, rotY, kind = 'tile') => {
-    const geo = new THREE.PlaneGeometry(w, h); const uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w / T, uv.getY(i) * h / T);
+  const quad = (w, h, pos, rotY, kind = 'tile', u0 = 0) => {   // u0: 조각의 길이방향 시작(월드) — 조각끼리 무늬가 이어지도록 UV 를 월드 기준으로
+    const geo = new THREE.PlaneGeometry(w, h); const uv = geo.attributes.uv; const y0 = pos.y - h / 2; for (let i = 0; i < uv.count; i++) uv.setXY(i, (u0 + uv.getX(i) * w) / T, (y0 + uv.getY(i) * h) / T);
     const mm = new THREE.Mesh(geo, kind === 'tile' ? mat : paintM); mm.position.copy(pos); mm.rotation.y = rotY; mm.userData.surface = kind === 'tile' ? 'washroom_tile' : 'washroom_paint'; g.add(mm);
     if (kind !== 'tile') {   // 체어레일·걸레받이: 면 법선 쪽으로 튀어나온 상자(구멍 구간은 사각형 분할에서 이미 빠짐)
       const P = WASHROOM_PAINT; const nrm = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), rotY); const y0 = pos.y - h / 2, y1 = pos.y + h / 2;
@@ -225,10 +225,24 @@ export function buildWashroomTile(meta, region, ceilH = 2.38) {
     }
   };
   const faces = { w: { len: [region.z[0], region.z[1]], at: region.x[0] + off, rot: Math.PI / 2 }, e: { len: [region.z[0], region.z[1]], at: region.x[1] - off, rot: -Math.PI / 2 }, s: { len: [region.x[0], region.x[1]], at: region.z[0] + off, rot: 0 }, n: { len: [region.x[0], region.x[1]], at: region.z[1] - off, rot: Math.PI } };
+  // 아치 출입구가 있는 구간: 아치 모양으로 도려낸 한 장(ShapeGeometry). hole {face, shape:'arch', from, to, spring}
+  const archPiece = (key, f, h, kind) => {
+    const sgn = (key === 's' || key === 'e') ? 1 : -1;   // 회전 뒤 로컬 +x 가 월드 길이방향과 같은지
+    const W = h.to - h.from, r = W / 2, sp = h.spring || 1.62; const sh = new THREE.Shape();
+    const P = (u, y) => sh.lineTo(sgn * u, y); sh.moveTo(sgn * h.from, 0); P(h.from, sp);
+    for (let i = 0; i <= 24; i++) { const a = Math.PI - (i / 24) * Math.PI; P(h.from + r + Math.cos(a) * r, sp + Math.sin(a) * r); }   // 반원(왼쪽→오른쪽)
+    P(h.to, 0); P(h.to, ceilH); P(h.from, ceilH); sh.closePath();
+    const geo = new THREE.ShapeGeometry(sh, 4); const uv = geo.attributes.uv, ps = geo.attributes.position; for (let i = 0; i < uv.count; i++) uv.setXY(i, sgn * ps.getX(i) / T, ps.getY(i) / T);
+    const m = kind === 'tile' ? mat : paintM; const mm = new THREE.Mesh(geo, kind === 'tile' ? (() => { const c = m.clone(); c.side = THREE.DoubleSide; c.userData.shared = true; return c; })() : paintM);
+    mm.rotation.y = f.rot; if (key === 'w' || key === 'e') mm.position.set(f.at, 0, 0); else mm.position.set(0, 0, f.at); mm.userData.surface = kind === 'tile' ? 'washroom_tile' : 'washroom_paint'; g.add(mm);
+  };
   for (const [key, f] of Object.entries(faces)) {
-    const holes = (region.holes || []).filter((h) => h.face === key).map((h) => [h.from - 0.02, h.to + 0.02, -1, h.y1 + 0.02]); const len = (region.span || {})[key] || f.len;   // span: 그 면 중 일부만(아치 자리 제외 등)
+    const kind = (region.finish || {})[key] || 'tile'; const all = (region.holes || []).filter((h) => h.face === key);
+    const arches = all.filter((h) => h.shape === 'arch'); for (const h of arches) archPiece(key, f, h, kind);
+    const holes = all.filter((h) => h.shape !== 'arch').map((h) => [h.from - 0.02, h.to + 0.02, -1, h.y1 + 0.02]).concat(arches.map((h) => [h.from, h.to, -1, ceilH + 1]));
+    const len = (region.span || {})[key] || f.len;   // span: 그 면 중 일부만
     for (const [a, b, c0, c1] of subtractRects([len[0], len[1], 0, ceilH], holes)) {
-      const mid = (a + b) / 2, y = (c0 + c1) / 2; const pos = (key === 'w' || key === 'e') ? new THREE.Vector3(f.at, y, mid) : new THREE.Vector3(mid, y, f.at); quad(b - a, c1 - c0, pos, f.rot, (region.finish || {})[key] || 'tile');
+      const mid = (a + b) / 2, y = (c0 + c1) / 2; const pos = (key === 'w' || key === 'e') ? new THREE.Vector3(f.at, y, mid) : new THREE.Vector3(mid, y, f.at); quad(b - a, c1 - c0, pos, f.rot, kind, a);
     }
   }
   return g;
