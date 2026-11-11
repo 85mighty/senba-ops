@@ -8,7 +8,7 @@ import { Editor } from './editor.js';
 import { encodeDesign, decodeDesign, shareCodeFromHash } from './share.js';
 import { Sync, DEFAULT_SYNC_URL } from './sync.js';
 import presetCPhone from './presets/c_phone_20261027.json';
-import { applyIkeaCorner, applyUpperMirrors, applyWindowCurtains, applyRealFloor, applyDullGreen, applyAirPanel, applyRegister, REGISTER_PLANS, applyPhotoEast, applyReception, applyCoupleLayout, applyRegisterGap, applyRegisterLeft, applyPhotoSpot2, applyWallPull, applyElegantChairs, applyLightsRug, applyWings, applyArchDemolish, applyHallArch, applyWashroomPhoto, applyBigRug } from './presets/ikea_corner.js';
+import { applyIkeaCorner, applyUpperMirrors, applyWindowCurtains, applyRealFloor, applyDullGreen, applyAirPanel, applyRegister, REGISTER_PLANS, applyPhotoEast, applyReception, applyCoupleLayout, applyRegisterGap, applyRegisterLeft, applyPhotoSpot2, applyWallPull, applyElegantChairs, applyLightsRug, applyWings, applyArchDemolish, applyHallArch, applyWashroomPhoto, applyBigRug, applyMeasured1110 } from './presets/ikea_corner.js';
 
 // 저장소에 보관된 디자인 — 어느 기기에서든 불러올 수 있다. seedSlot: 그 안이 비어 있으면 처음 열 때 자동으로 채움
 const PRESETS = [{ id: 'c_phone_20261027', name: 'C안 (폰에서 만든 것, 10/27)', seedSlot: 'C', design: presetCPhone },
@@ -23,6 +23,7 @@ const PRESETS = [{ id: 'c_phone_20261027', name: 'C안 (폰에서 만든 것, 10
   { id: 'arch_demolish', name: '세면실 아치 출입구 + 기둥 1·3 철거 계획', apply: applyArchDemolish, armText: (sl) => `${sl}안에 아치와 기둥 철거를 적용합니다. 다시 누르세요` },
   { id: 'wings', name: '날개벽 ①② + 화장실 가림벽 ③', apply: applyWings, armText: (sl) => `${sl}안에 벽 3개를 세웁니다. 다시 누르세요` },
   { id: 'lights_rug', name: '조명 + 러그 (사진 코너 스포트 3 · 작은 러그)', apply: applyLightsRug, armText: (sl) => `${sl}안에 스포트라이트 3개와 러그를 더합니다. 다시 누르세요` },
+  { id: 'measured_1110', name: '실측 위치 (11/10) — 뒤 벽 4.72 m · 레지 세로', apply: applyMeasured1110, armText: (sl) => `${sl}안 레지 뒤 벽·레지를 11/10 실측 위치로 옮깁니다. 다시 누르세요` },
   { id: 'big_rug', name: '큰 러그 (사진 코너 1.8 × 1.2)', apply: applyBigRug, armText: (sl) => `${sl}안 사진 코너 러그를 큰 러그로 바꿉니다. 다시 누르세요` },
   { id: 'elegant_chairs', name: '엘레강트 의자 2개 → 사진 코너 앞', apply: applyElegantChairs, armText: (sl) => `${sl}안 사진 코너 앞에 의자 2개를 놓습니다. 다시 누르세요` },
   { id: 'photo2', name: '포토 스폿 2 → 알코브 뒤 벽 홀 쪽 (액자 + 흉상)', apply: applyPhotoSpot2, armText: (sl) => `${sl}안에 포토 스폿 2를 더합니다. 다시 누르세요` },
@@ -49,6 +50,7 @@ const PATCHES = [{ id: 'd_upper_mirrors_20261028', slot: 'D', apply: applyUpperM
   { id: 'e_washroom_finish_20261111', slot: 'E', apply: applyWashroomPhoto, msg: 'E안: 화장실 앞 포토 스폿 — 거울 벽만 리프 타일, 문 쪽·양옆 벽은 크림 페인트 + 다크 월넛 체어레일, 문은 다크 월넛 패널 문' },
   { id: 'e_washroom_plain_20261111', slot: 'E', apply: applyWashroomPhoto, msg: 'E안: 문 쪽 벽을 참고 사진처럼 무지 크림(체어레일도 같은 톤), 문은 적갈색 월넛 + 니켈 레버로' },
   { id: 'e_washroom_arch_tile_20261111', slot: 'E', apply: applyWashroomPhoto, msg: 'E안: 거울 벽 옆 아치 벽(포토 스폿 쪽 면)도 같은 리프 타일로' },
+  { id: 'e_measured_1110_20261111', slot: 'E', apply: applyMeasured1110, msg: 'E안: 11/10 실측대로 — 레지 뒤 벽을 창 벽에서 4.72 m 로, 레지는 110×45.5 세로(벽 2 에서 1.05), 홀 입구 아치 0.74' },
   { id: 'e_big_rug_20261111', slot: 'E', apply: applyBigRug, msg: 'E안: 사진 코너 러그를 큰 러그(1.8 × 1.2)로 — 날개벽 사이를 채우고 홀 쪽으로 조금 나옴' },
   { id: 'd_air_panel_20261106', slot: 'D', apply: applyAirPanel, msg: 'D안: 아래 벽을 エアサーモパネル로 띠까지 덮었습니다(방법 ③)' }];
 

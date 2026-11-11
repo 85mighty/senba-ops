@@ -135,6 +135,7 @@ try {
     // 세면실 포토 스폿: 타일 벽 + 타원 거울 + 안여닫이 문(열림 각 +)
     if (!s.design.closures?.washroom_tile || !s.design.props.some((p) => p.type === 'oval_mirror')) throw new Error('E안 세면실 포토 스폿 없음');
     if (!s.design.props.some((p) => p.id === 'lr_rug' && p.type === 'rug_large')) throw new Error('E안 큰 러그 없음');
+    { const r = s.design.props.find((p) => p.type === 'register'); if (!r || Math.abs(r.x + 3.132) > 1e-3 || Math.abs(r.z - 1.45) > 1e-3 || Math.abs(Math.abs(r.rot) - Math.PI / 2) > 1e-3) throw new Error('E안 레지 실측 위치 아님 ' + JSON.stringify(r)); if (s.design.closureXform && Object.keys(s.design.closureXform).length) throw new Error('closureXform 남음'); }
     let tiles = 0, paints = 0, rails = 0; e.closureG.traverse((o) => { if (!o.isMesh) return; if (o.userData.surface === 'washroom_tile') tiles++; if (o.userData.surface === 'washroom_paint') paints++; if (o.userData.surface === 'washroom_rail') rails++; }); if (tiles < 2 || paints < 3 || rails < 3) throw new Error(`포토 스폿 마감 부족 tile ${tiles} paint ${paints} rail ${rails}`);
     { let tz = null; e.closureG.traverse((o) => { if (o.isMesh && o.userData.surface === 'washroom_tile') tz = o.position.z; }); if (tz === null || Math.abs(tz - 1.593) > 0.01) throw new Error('타일이 거울 벽(가림벽 ③ 안쪽 면)에만 있어야 함 z=' + tz); }
     { let panels = 0; e.fixtures.traverse((o) => { if (o.name === 'toilet_door_leaf') panels = o.children.length; }); if (panels < 8) throw new Error('화장실 문 패널 없음 ' + panels); }

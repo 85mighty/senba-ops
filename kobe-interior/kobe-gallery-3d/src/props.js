@@ -121,13 +121,13 @@ export function buildProp(p) {
       }
       break;
     }
-    case 'register': {      // 1인용 레지 카운터(약 80×45×100 cm): 손님 쪽 = +Z(정면 안내판), 직원 쪽 = −Z(태블릿 POS·카드 단말·선반·스툴)
+    case 'register': {      // 1인용 레지 카운터(110×45.5×100 cm, 11/11 실측 치수): 손님 쪽 = +Z(정면 안내판), 직원 쪽 = −Z(태블릿 POS·카드 단말·선반·스툴)
       const body = std(c || 0x39433a, { roughness: 0.8 }), oak = std(0x9b7650, { roughness: 0.55 }), blk = std(0x1a1a1a, { roughness: 0.5 });
-      const W = 0.8, D = 0.45, H = 1.0;
+      const W = 1.1, D = 0.455, H = 1.0;
       g.add(box(W, 0.06, D - 0.04, blk, 0, 0.03, -0.01));                                   // 걸레받이
       g.add(box(W, H - 0.09, 0.03, body, 0, 0.06 + (H - 0.09) / 2, D / 2 - 0.015));         // 손님 쪽 앞판
       for (const sx of [-1, 1]) g.add(box(0.03, H - 0.09, D, body, sx * (W / 2 - 0.015), 0.06 + (H - 0.09) / 2, 0));
-      for (let k = -2; k <= 2; k++) g.add(box(0.006, H - 0.2, 0.004, std(0x2c3329), k * 0.14, 0.52, D / 2 + 0.001));   // 세로 홈(판 느낌)
+      for (let k = -3; k <= 3; k++) g.add(box(0.006, H - 0.2, 0.004, std(0x2c3329), k * 0.14, 0.52, D / 2 + 0.001));   // 세로 홈(판 느낌)
       g.add(box(W + 0.06, 0.035, D + 0.06, oak, 0, H, 0.01));                               // 오크 상판
       g.add(box(W - 0.06, 0.02, D - 0.1, oak, 0, 0.72, -0.04)); g.add(box(W - 0.06, 0.02, D - 0.1, oak, 0, 0.35, -0.04));   // 직원 쪽 선반(가방·봉투)
       const sign = labelPlate('RECEPTION\n受付 · 접수', 0.36, 0.14, '#2b2118', '#e9d9b6'); sign.position.set(0, 0.82, D / 2 + 0.002); g.add(sign);

@@ -65,7 +65,7 @@ export function applyAirPanel(base) {
 // 1인용 레지 배치안(11/07 제안) — 소품 'register' 한 개를 놓는다(이미 있던 레지는 치움). 정면(+Z)이 손님 쪽
 export const REGISTER_PLANS = {
   r1: { name: '레지 ① 입구 왼쪽 구석 (추천)', x: -3.1, z: 1.25, rot: Math.PI / 2, why: '통로를 나오자마자 왼쪽, 정면이 통로 출구를 봄 — 인사·접수·결제, 동선 밖, 직원(벽 2 등짐)이 입구·홀 전체를 봄' },
-  r2: { name: '레지 ② 입구 왼쪽 벽(벽 2)에 붙임', x: -3.554, z: 0.535, rot: 0, why: '통로 정면 1 m — 첫눈에 보이는 안내 데스크. 대신 홀 쪽 동선을 조금 가림' },
+  r2: { name: '레지 ② 왼쪽(벽 2 쪽) 세로 — 11/11 실측 위치', x: -3.132, z: 1.45, rot: Math.PI / 2, why: '벽 2 와 평행하게 세로로(1.10 × 0.455). 손님 쪽(동쪽) 면이 벽 2 에서 1.05, 벽 2 와의 사이 0.6 m 가 직원 자리. 남쪽 끝을 남쪽 벽에 붙이고 뒤 벽과의 사이 0.88 m 로 직원이 드나듦' },
   r3: { name: '레지 ③ 사이드보드 옆 · 직원 통로 앞', x: 0.62, z: 1.38, rot: Math.PI, why: '뒤 커튼 통로로 주방 재고·세면대 바로 — 직원이 편함. 입구에서 약 3 m, 포토 스폿과 붙어 줄이 사진에 걸릴 수 있음' },
 };
 export function applyRegister(base, key) {
@@ -159,6 +159,15 @@ export function applyLightsRug(base) {
     { id: 'lr_spot_c', type: 'spot_light', x: -3.1, z: -1.7, rot: Math.PI, aim: 1.3, scale: 1, color: null },   // 포토 스폿 2 액자 (−Z 방향으로 비춤)
     { id: 'lr_rug', type: 'rug_small', x: -0.745, z: 0.95, rot: 0, scale: 1, color: null },                      // 의자 2개 아래
   );
+  d.editedAt = Date.now(); return d;
+}
+
+// 11/11: 실측(11/10 캡처) 반영 — 뒤 벽 N2 를 창 벽에서 4.72 m(홀 면 z −0.08)로, 레지는 1.10 × 0.455 세로(동쪽 면 x −2.90, 남쪽 벽에 붙임), 뒤 벽에 붙은 것들 같이 이동, 끌어서 옮긴 벽 위치는 실측 기본값으로
+export function applyMeasured1110(base) {
+  let d = applyRegister(base, 'r2');
+  const Z = { rec_sign: 0.026, rec_mirror: 0.026, ph2_frame: -0.086, ph2_pedestal: -0.38, ph2_bust: -0.38 };
+  for (const p of d.props || []) if (p.id in Z) p.z = Z[p.id];
+  d.closureXform = {}; d.closureShift = {};
   d.editedAt = Date.now(); return d;
 }
 
