@@ -22,6 +22,8 @@ export function exteriorSpans(meta, w) {
 export function isExteriorWall(meta, w) { return exteriorSpans(meta, w).reduce((s, [a, b]) => s + (b - a), 0) >= (w.to - w.from) - 0.05; }
 export function inExterior(meta, x, z) { return (meta.exterior_zones || []).some((r) => x >= r.x[0] && x <= r.x[1] && z >= r.z[0] && z <= r.z[1]); }
 // 바닥 칠을 하지 않는 곳: 입구 밖 + 주방·화장실 바닥(실제는 아이보리 장판)
+// 매장 밖(스캔 잡음 바닥·천장): 벽 1 동쪽 등 — 바닥·천장을 아예 그리지 않는다
+export function inOutside(meta, x, z) { return (meta.outside_zones || []).some((r) => x >= r.x[0] && x <= r.x[1] && z >= r.z[0] && z <= r.z[1]); }
 export function floorKept(meta, x, z) { return inExterior(meta, x, z) || (meta.service_floors || []).some((r) => x >= r.x[0] && x <= r.x[1] && z >= r.z[0] && z <= r.z[1]); }
 
 // 사각형 r=[t0,t1,y0,y1] 에서 구멍들을 뺀 나머지 사각형들

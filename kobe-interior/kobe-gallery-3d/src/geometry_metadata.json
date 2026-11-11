@@ -1220,7 +1220,47 @@
     }
   },
   "removed_elements": [
-    "thin_column_23"
+    "thin_column_23",
+    "wall_x_7"
   ],
-  "removed_rec_walls_note": "wall_rec_east_in/out 은 11/09 삭제"
+  "removed_rec_walls_note": "wall_rec_east_in/out 은 11/09 삭제",
+  "removed_notes": {
+    "thin_column_23": "기둥 5 — 실측 X",
+    "wall_x_7": "벽 8 — 벽 1 바깥(동쪽) 스캔 잡음, 11/11 삭제"
+  },
+  "outside_zones": [
+    {
+      "x": [
+        2.354,
+        9
+      ],
+      "z": [
+        -9,
+        9
+      ],
+      "note": "벽 1 바깥(동쪽)"
+    },
+    {
+      "x": [
+        2.2,
+        9
+      ],
+      "z": [
+        2.45,
+        9
+      ],
+      "note": "세면실 동쪽 벽(벽 17) 바깥"
+    },
+    {
+      "x": [
+        0.9,
+        9
+      ],
+      "z": [
+        4.77,
+        9
+      ],
+      "note": "세면실 남쪽 벽(벽 13) 바깥"
+    }
+  ]
 }
