@@ -46,6 +46,7 @@ const PATCHES = [{ id: 'd_upper_mirrors_20261028', slot: 'D', apply: applyUpperM
   { id: 'e_washroom_photo_20261111', slot: 'E', apply: applyWashroomPhoto, msg: 'E안: 화장실 앞 공간을 리프 모자이크 타일 + 금테 타원 거울 포토 스폿으로, 문은 안여닫이로 바꿨습니다' },
   { id: 'e_washroom_photo_fix_20261111', slot: 'E', apply: applyWashroomPhoto, msg: 'E안: 포토 스폿을 세면실 안이 아니라 화장실 문 앞 공간으로 옮겼습니다' },
   { id: 'e_washroom_finish_20261111', slot: 'E', apply: applyWashroomPhoto, msg: 'E안: 화장실 앞 포토 스폿 — 거울 벽만 리프 타일, 문 쪽·양옆 벽은 크림 페인트 + 다크 월넛 체어레일, 문은 다크 월넛 패널 문' },
+  { id: 'e_washroom_plain_20261111', slot: 'E', apply: applyWashroomPhoto, msg: 'E안: 문 쪽 벽을 참고 사진처럼 무지 크림(체어레일도 같은 톤), 문은 적갈색 월넛 + 니켈 레버로' },
   { id: 'd_air_panel_20261106', slot: 'D', apply: applyAirPanel, msg: 'D안: 아래 벽을 エアサーモパネル로 띠까지 덮었습니다(방법 ③)' }];
 
 const $ = (s) => document.querySelector(s);

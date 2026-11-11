@@ -74,7 +74,7 @@ export function buildFixtures(meta) {
     const g = new THREE.Group(); g.name = 'toilet_door'; root.add(g); g.userData.surface = 'toilet';
     // 교체 문(디자인): 다크 월넛 패널 문 — 참고 사진의 거울에 비친 문. finish 'steel' 이면 기존 회색 철문
     const wood = d.finish !== 'steel';
-    const frameM = wood ? std(0x3e2a1f, { roughness: 0.55, metalness: 0.05 }) : std(0x8b8e90, { metalness: 0.3, roughness: 0.45 }), leafM = wood ? std(0x4a3226, { roughness: 0.5, metalness: 0.05 }) : std(0x63666a, { metalness: 0.45, roughness: 0.38 }), steel = wood ? std(0xc9a85c, { metalness: 0.8, roughness: 0.3 }) : std(0xc3c6c8, { metalness: 0.7, roughness: 0.3 });
+    const frameM = wood ? std(0x4a2418, { roughness: 0.5, metalness: 0.05 }) : std(0x8b8e90, { metalness: 0.3, roughness: 0.45 }), leafM = wood ? std(0x5a2d1f, { roughness: 0.45, metalness: 0.05 }) : std(0x63666a, { metalness: 0.45, roughness: 0.38 }), steel = wood ? std(0xb8bbbd, { metalness: 0.85, roughness: 0.28 }) : std(0xc3c6c8, { metalness: 0.7, roughness: 0.3 });   // 월넛(적갈색) + 새틴 니켈 레버 — 참고 사진
     const z0 = wall.offset - 0.07, z1 = wall.offset + 0.07, jt = 0.035;
     boxAt(g, [d.from, d.from + jt], [0, d.y1], [z0, z1], frameM); boxAt(g, [d.to - jt, d.to], [0, d.y1], [z0, z1], frameM); boxAt(g, [d.from, d.to], [d.y1 - jt, d.y1], [z0, z1], frameM);
     // 문짝: 경첩 쪽(from)에서 방 쪽으로 열림(기본 열린 상태). 닫으면 문틀 안에 들어간다
@@ -83,7 +83,7 @@ export function buildFixtures(meta) {
     const hs = d.hinge === 'to' ? -1 : 1; const pivot = new THREE.Group(); pivot.position.set(hs > 0 ? d.from + jt : d.to - jt, 0, side < 0 ? z0 : z1); g.add(pivot); const lz = -side * t / 2;
     const leaf = new THREE.Mesh(new THREE.BoxGeometry(lw, lh, t), leafM); leaf.position.set(hs * lw / 2, 0.01 + lh / 2, lz); pivot.add(leaf);
     if (wood) {   // 양면 2단 패널(위 길게·아래 짧게): 몰딩 테두리 + 안쪽 오목 판
-      const panM = std(0x2f1f17, { roughness: 0.6 }), inM = std(0x56392b, { roughness: 0.55 }); const pw = lw - 0.2;
+      const panM = std(0x3a1a11, { roughness: 0.55 }), inM = std(0x663626, { roughness: 0.5 }); const pw = lw - 0.2;
       for (const [y0, y1] of [[0.18, 0.78], [0.95, lh - 0.1]]) for (const sz of [-1, 1]) {
         const rim = new THREE.Mesh(new THREE.BoxGeometry(pw, y1 - y0, 0.012), panM); rim.position.set(hs * lw / 2, (y0 + y1) / 2, lz + sz * (t / 2 + 0.006)); pivot.add(rim);
         const inn = new THREE.Mesh(new THREE.BoxGeometry(pw - 0.07, y1 - y0 - 0.07, 0.014), inM); inn.position.set(hs * lw / 2, (y0 + y1) / 2, lz + sz * (t / 2 + 0.007)); pivot.add(inn);
@@ -208,11 +208,11 @@ export function leafMosaicMaterial() {
   const mt = new THREE.MeshStandardMaterial({ map: leafTex, roughness: 0.3, metalness: 0.05, polygonOffset: true, polygonOffsetFactor: -2 }); mt.userData.shared = true; mt.userData.tileM = 0.2; return mt;
 }
 // 상자 영역의 네 안쪽 면을 타일로 덮는다(문 자리는 비움). region: {x, z, holes:[{face, from, to, y1}], span:{face:[a,b]}}. face: w=x0면 e=x1면 s=z0면 n=z1면
-// region.finish: {face: 'tile' | 'paint'} — 기본 tile. 'paint' = 크림색 페인트 벽 + 다크 월넛 체어레일(H 0.92) + 다크 월넛 걸레받이(참고 사진의 거울에 비친 문 쪽 벽)
-export const WASHROOM_PAINT = { wall: '#e9dcc6', rail: 0x3e2a1f, railY: 0.92, railH: 0.055, railD: 0.022, baseH: 0.10, baseD: 0.012 };
+// region.finish: {face: 'tile' | 'paint'} — 기본 tile. 'paint' = 무지 크림색 페인트 벽 + 같은 크림 톤 체어레일(H 0.92)·걸레받이(참고 사진의 거울에 비친 문 쪽 벽)
+export const WASHROOM_PAINT = { wall: '#e4d8c3', rail: '#ece2d0', railY: 0.92, railH: 0.045, railD: 0.018, baseH: 0.10, baseD: 0.012 };   // 11/11: 참고 사진처럼 무지 크림 벽, 체어레일·걸레받이도 같은 크림 톤(조금 밝게)
 export function buildWashroomTile(meta, region, ceilH = 2.38) {
   const g = new THREE.Group(); g.name = 'washroom_tile'; const mat = leafMosaicMaterial(); const T = mat.userData.tileM; const off = 0.03;   // 홀 마감(판 0.017 + 見切り 0.025)보다 앞에 붙여 그 위를 덮는다
-  const paintM = std(new THREE.Color(WASHROOM_PAINT.wall).getHex(), { roughness: 0.85, metalness: 0, polygonOffset: true, polygonOffsetFactor: -2 }), railM = std(WASHROOM_PAINT.rail, { roughness: 0.5, metalness: 0.05 });
+  const paintM = std(new THREE.Color(WASHROOM_PAINT.wall).getHex(), { roughness: 0.85, metalness: 0, polygonOffset: true, polygonOffsetFactor: -2 }), railM = std(new THREE.Color(WASHROOM_PAINT.rail).getHex(), { roughness: 0.7, metalness: 0 });
   const quad = (w, h, pos, rotY, kind = 'tile') => {
     const geo = new THREE.PlaneGeometry(w, h); const uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w / T, uv.getY(i) * h / T);
     const mm = new THREE.Mesh(geo, kind === 'tile' ? mat : paintM); mm.position.copy(pos); mm.rotation.y = rotY; mm.userData.surface = kind === 'tile' ? 'washroom_tile' : 'washroom_paint'; g.add(mm);
