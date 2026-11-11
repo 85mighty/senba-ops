@@ -162,6 +162,13 @@ export function applyLightsRug(base) {
   d.editedAt = Date.now(); return d;
 }
 
+// 11/11: 작은 러그 → 큰 러그(1.8 × 1.2). 날개벽 사이(x −1.66~0.264)를 채우고, 사이드보드 앞(z 1.50)에서 홀 쪽 z 0.30 까지
+export function applyBigRug(base) {
+  const d = JSON.parse(JSON.stringify(base || {})); d.props = (d.props || []).filter((p) => p.id !== 'lr_rug');
+  d.props.push({ id: 'lr_rug', type: 'rug_large', x: -0.698, z: 0.9, rot: 0, scale: 1, color: null });
+  d.editedAt = Date.now(); return d;
+}
+
 // 11/11: 사진 코너 양쪽 날개벽 ①② (각 1.10 m) + 화장실 문 가림벽 ③ (1.13 m, 문에서 0.80). 모든 면 홀과 같은 초록(띠·판은 전체 설정)
 export function applyWings(base) {
   const d = JSON.parse(JSON.stringify(base || {})); d.surfaces = d.surfaces || {}; d.closures = { ...(d.closures || {}), photo_wing_w: true, photo_wing_e: true, toilet_screen: true };
