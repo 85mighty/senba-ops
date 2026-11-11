@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { disposeTree } from './viewer.js';
-import { isFixtureWall, isExteriorWall, exteriorSpans, doorOpenings, serviceOf, activeClosureWalls } from './scope.js';
+import { isFixtureWall, isExteriorWall, exteriorSpans, doorOpenings, serviceOf, activeClosureWalls, isDemolished } from './scope.js';
 
 const WHITE = 0xf4f1ea, GOLD = 0xc9a24a, BLACK = 0x1c1c1c, WINE = 0x7a2e2e;
 const FRAME_BAR = 0.045, FRAME_DEPTH = 0.018, FRAME_W_TARGET = 0.9, FRAME_GAP = 0.14, CORNER_MARGIN = 0.18, OPEN_MARGIN = 0.12;
@@ -24,7 +24,7 @@ export class InteriorA {
   get base() { return this.meta.baseboard_height_m || 0.10; }
   // 꾸밀 수 있는 벽: 설비 면(싱크대 앞면)·입구 밖 벽 제외
   walls() { const gone = new Set(this.meta.removed_elements || []); return (this.meta.elements || []).filter((e) => e.type === 'wall' && !gone.has(e.id) && !isFixtureWall(this.meta, e.id) && !isExteriorWall(this.meta, e)).concat(activeClosureWalls(this.meta, this.store?.design)); }
-  columns() { const gone = new Set(this.meta.removed_elements || []); return (this.meta.elements || []).filter((e) => ['wide_column', 'thin_column'].includes(e.type) && !gone.has(e.id)); }
+  columns() { const gone = new Set(this.meta.removed_elements || []); return (this.meta.elements || []).filter((e) => ['wide_column', 'thin_column'].includes(e.type) && !gone.has(e.id) && !isDemolished(this.store?.design, e.id)); }
   blockers() { return (this.meta.elements || []).filter((e) => e.footprint); }
   central() { return (this.meta.elements || []).find((e) => e.id === this.opts.central); }
   sf(id) { return this.store ? this.store.getSurface(id) : {}; }

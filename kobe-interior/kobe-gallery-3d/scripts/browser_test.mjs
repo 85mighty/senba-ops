@@ -128,6 +128,10 @@ try {
     const z1 = e.walls().find((w) => w.id === 'wall_rec_back_in').offset; if (Math.abs(z1 - z0 - 0.2) > 1e-6) throw new Error('막기 벽 이동 안 됨 ' + z0 + ' ' + z1);
     e.setEnabled(true); let gaps = 0; e.closureDims.traverse((o) => { if (o.isSprite) gaps++; }); if (gaps < 2) throw new Error('벽 거리 표시 없음 ' + gaps);
     s.design.closureShift = {}; s.commit('closure');
+    // 아치 출입구 + 기둥 1·3 철거 계획
+    if (!s.design.closures?.toilet_arch || !['thin_column_4', 'thin_column_18'].every((k) => s.design.demolished?.[k])) throw new Error('E안 아치·철거 없음');
+    if (e.columns().some((c) => c.id === 'thin_column_4')) throw new Error('철거 기둥이 목록에 남음'); { let c4 = null; window.__viewer.loaded.reconstructed.traverse((o) => { if (o.name === 'thin_column_4') c4 = o; }); if (c4?.visible) throw new Error('철거 기둥 메쉬가 보임'); }
+    let arch = 0; e.closureG.traverse((o) => { if (o.isMesh && o.userData.surface === 'toilet_arch') arch++; }); if (!arch) throw new Error('아치 메쉬 없음');
     e.nudgeClosure('toilet_screen', 0, 0, 1); const rot = e.walls().filter((w) => w.id.startsWith('wall_tscreen')); if (rot.length !== 2 || rot[0].axis !== 'x' || Math.abs((rot[0].to - rot[0].from) - 1.13) > 1e-6) throw new Error('막기 벽 회전 실패 ' + JSON.stringify(rot.map((w) => [w.axis, w.offset, w.from, w.to])));
     e.nudgeClosure('toilet_screen', 0.1, 0, 0); const mv = e.walls().find((w) => w.id === 'wall_tscreen_s'); if (Math.abs(mv.offset - rot[0].offset - 0.1) > 1e-6) throw new Error('막기 벽 옆 이동 실패');
     s.design.closureXform = {}; s.commit('closure');

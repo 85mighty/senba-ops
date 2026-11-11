@@ -4,7 +4,7 @@ import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { PALETTE_WALL, PALETTE_FLOOR, PALETTE_CEIL, PALETTE_CURTAIN, PALETTE_TRIM, PALETTE_LOWER, FRAME_STYLES, PROP_TYPES } from './design.js';
 import { buildProp, buildWindow, buildCurtain, measureLine } from './props.js';
 import { disposeTree } from './viewer.js';
-import { isFixtureWall, isExteriorWall, exteriorSpans, doorOpenings, openingOn, serviceOf, subtractRects, floorKept, inExterior, closureWallsAll, closureOn, closureWalls, closureOf, closureShift, closureXform, inOutside } from './scope.js';
+import { isFixtureWall, isExteriorWall, exteriorSpans, doorOpenings, openingOn, serviceOf, subtractRects, floorKept, inExterior, closureWallsAll, closureOn, closureWalls, closureOf, closureShift, closureXform, inOutside, isDemolished } from './scope.js';
 import { buildFixtures, cutWallOpening, buildPassCurtain, cutRegion } from './fixtures.js';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -45,14 +45,15 @@ export class Editor {
   allWalls() { return (this.meta.elements || []).filter((e) => e.type === 'wall').concat(closureWallsAll(this.meta, this.s.design)); }
   // 꾸밀 수 있는 벽 — 싱크대 앞면처럼 벽이 아닌 면, 입구 밖 벽은 뺀다(번호는 그대로 유지)
   walls() { const gone = new Set(this.meta.removed_elements || []); return this.allWalls().filter((e) => !gone.has(e.id) && !isFixtureWall(this.meta, e.id) && !isExteriorWall(this.meta, e) && (!e.virtual || closureOn(this.meta, this.s.design, e.id))); }
-  columns() { const gone = new Set(this.meta.removed_elements || []); return (this.meta.elements || []).filter((e) => ['wide_column', 'thin_column'].includes(e.type) && !gone.has(e.id)); }   // 실측에서 없다고 확인한 기둥 제외
+  allColumns() { const gone = new Set(this.meta.removed_elements || []); return (this.meta.elements || []).filter((e) => ['wide_column', 'thin_column'].includes(e.type) && !gone.has(e.id)); }   // 실측에서 없다고 확인한 기둥 제외
+  columns() { return this.allColumns().filter((e) => !isDemolished(this.s.design, e.id)); }   // 철거 계획 기둥은 디자인에서 뺌
 
   // ---------------- 번호 매긴 항목
   buildItems() {
     this.items = []; let n = 0;
     const deco = new Set(this.walls().map((w) => w.id));
     for (const w of this.allWalls()) { n++; w.num = n; if (deco.has(w.id)) this.items.push({ kind: 'wall', id: w.id, label: `벽 ${n}`, el: w }); }
-    let c = 0; for (const col of this.columns()) { c++; col.num = c; this.items.push({ kind: 'column', id: col.id, label: `기둥 ${c}${col.id === this.meta.central_wide_column ? ' (넓은 가벽)' : ''}`, el: col }); }
+    let c = 0; for (const col of this.allColumns()) { c++; col.num = c; if (isDemolished(this.s.design, col.id)) continue; this.items.push({ kind: 'column', id: col.id, label: `기둥 ${c}${col.id === this.meta.central_wide_column ? ' (넓은 가벽)' : ''}`, el: col }); }
     // 천장/바닥 타일: 바닥 bbox 를 TILE 격자로
     const b = this.meta.bounds_world_m; const x0 = b.min[0], z0 = b.min[2]; const nx = Math.ceil((b.max[0] - x0) / TILE), nz = Math.ceil((b.max[2] - z0) / TILE);
     this.tiles = []; let t = 0;
@@ -167,6 +168,15 @@ export class Editor {
     disposeTree(this.closureG); this.closureG.visible = this.modelOn !== false; const mat = new THREE.MeshStandardMaterial({ color: 0xa9a59f, roughness: 0.9 });
     const on = []; for (const c of this.meta.closures || []) { if (!this.s.design.closures?.[c.id]) continue; const xf = closureXform(this.s.design, c.id); on.push(`${c.id}:${xf.dx},${xf.dz},${xf.rot}`); const T = this.meta.wall_thickness_m || 0.1;
       const cg = new THREE.Group(); cg.name = 'closure'; cg.userData.pick = { kind: 'closure', id: c.id, axis: closureWalls(c, this.s.design)[0].axis }; this.closureG.add(cg);   // 길게 눌러 끌면 앞뒤로 옮겨진다(현재 방향 기준)
+      if (c.arch) { const ws = closureWalls(c, this.s.design); const w = ws[0]; const W = w.to - w.from, spring = c.arch.spring || 1.62, r = W / 2;   // 아치 출입구: 위쪽 스팬드럴만 벽(반원 구멍)
+        const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.lineTo(W, 0); sh.lineTo(W, this.ceil); sh.lineTo(0, this.ceil); sh.closePath();
+        const hole = new THREE.Path(); hole.moveTo(0, 0); hole.lineTo(W, 0); hole.lineTo(W, spring); hole.absarc(r, spring, r, 0, Math.PI, false); hole.lineTo(0, 0); sh.holes.push(hole);
+        const geo = new THREE.ExtrudeGeometry(sh, { depth: T, bevelEnabled: false }); const paint = this.s.getSurface(c.id).paint || this.s.getSurface('wall_x_1').paint || '#39433a';
+        const am = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: paint, roughness: 0.9 })); am.userData.surface = c.id;
+        const trimM = new THREE.Mesh(new THREE.TorusGeometry(r + 0.01, 0.018, 8, 40, Math.PI), new THREE.MeshStandardMaterial({ color: '#c9a24a', metalness: 0.6, roughness: 0.4 })); trimM.position.set(r, spring, T / 2);   // 금색 아치 몰딩
+        const zmin = Math.min(...ws.map((x) => x.offset)), xmin = Math.min(...ws.map((x) => x.offset));
+        if (w.axis === 'z') { am.position.set(w.from, 0, zmin); am.add(trimM); } else { am.rotation.y = -Math.PI / 2; am.position.set(xmin, 0, w.from); am.add(trimM); }
+        cg.add(am); continue; }
       for (const w of closureWalls(c, this.s.design)) { const m = new THREE.Mesh(new THREE.BoxGeometry(w.to - w.from, this.ceil, T), mat); m.userData.surface = w.id; this.placeOnWall(m, { ...w, sid: w.id }, (w.from + w.to) / 2, this.ceil / 2, -T / 2); cg.add(m); }
       // 바닥(카펫): 복원 바닥 삼각형 중 영역 안의 것만 — 바닥 칠 위(y 0.016)에 깐다
       for (const r of c.floor || []) { const geo = new THREE.PlaneGeometry(r.x[1] - r.x[0], r.z[1] - r.z[0]); geo.rotateX(-Math.PI / 2); geo.translate((r.x[0] + r.x[1]) / 2, 0, (r.z[0] + r.z[1]) / 2); const f = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: r.color || '#6e1620', roughness: 0.97, polygonOffset: true, polygonOffsetFactor: -3 })); f.position.y = 0.016; f.userData.surface = 'floor'; this.closureG.add(f); } }
@@ -207,6 +217,7 @@ export class Editor {
     const hideIds = [...Object.keys(this.meta.fixture_walls || {}), ...Object.keys(this.meta.hidden_scan_blobs || {}), ...(this.meta.removed_elements || [])];
     const ext = this.allWalls().filter((w) => isExteriorWall(this.meta, w)).map((w) => w.id);
     const owner = (name, ids) => ids.find((id) => name === id || name.startsWith(id + '_'));
+    const demo = this.allColumns().map((c) => c.id); rec.traverse((o) => { if (o.isMesh && owner(o.name, demo)) o.userData.keepVisible = !isDemolished(this.s.design, owner(o.name, demo)); });   // 철거 계획 기둥 숨김(되돌리면 보임)
     if (!this._outsideCut && this.meta.outside_zones?.length) { this._outsideCut = true; const inside = (x, z) => inOutside(this.meta, x, z); const xmax = Math.min(...this.meta.outside_zones.map((r) => r.x[0]));
       rec.traverse((o) => { if (!o.isMesh) return; if (o.name === 'floor' || o.name === 'ceiling') cutRegion(o, inside);
         else if (o.name === 'floor_tex' || o.name === 'ceiling_tex') { const ms = Array.isArray(o.material) ? o.material : [o.material]; for (const mm of ms) mm.clippingPlanes = [new THREE.Plane(new THREE.Vector3(-1, 0, 0), xmax)]; } }); }
@@ -356,7 +367,7 @@ export class Editor {
       if (o.userData.windowOf) { o.visible = !this.isHidden(o.userData.windowOf); return; }
       o.visible = !this.isHidden(sid) && (o.userData.keepVisible ?? true);
     };
-    if (rec) rec.traverse(visit); this.i.root.traverse(visit); this.overlays.traverse(visit); this.windows.traverse((o) => { if (o.isMesh) { const w = o.userData.windowOf; o.visible = !(w && this.isHidden(w)); } });
+    if (rec) rec.traverse(visit); this.i.root.traverse(visit); this.overlays.traverse(visit); this.bands.traverse(visit); if (this.closureG) this.closureG.traverse((o) => { if (o.isMesh && o.userData.surface && !o.userData.swing && !o.userData.doorPivot) visit(o); }); this.windows.traverse((o) => { if (o.isMesh) { const w = o.userData.windowOf; o.visible = !(w && this.isHidden(w)); } });
     if (this.intCeil) this.intCeil.visible = this.modelOn !== false && !scan && !ceilHidden && !this.v.clipping;
     this.renderHiddenChips?.();
   }
@@ -587,6 +598,7 @@ export class Editor {
     const box = $('#hiddenChips'); if (!box) return; box.innerHTML = '';
     const label = (id) => { const it = this.itemById(id); return it ? it.label : id; };
     for (const id of this.hidden) { const b = document.createElement('button'); b.className = 'chip'; b.textContent = `${label(id)} ✕`; b.title = '다시 보이기'; b.addEventListener('click', () => this.setHidden(id, false)); box.appendChild(b); }
+    for (const col of this.allColumns()) if (isDemolished(this.s.design, col.id)) { const b = document.createElement('button'); b.className = 'chip'; b.textContent = `기둥 ${col.num} 철거됨 ↩`; b.title = '철거 취소'; b.addEventListener('click', () => { this.s.design.demolished = { ...(this.s.design.demolished || {}), [col.id]: false }; this.s.commit('demolish'); this.buildItems(); this.buildPicks(); this.buildLabels(); this.renderChips(); }); box.appendChild(b); }
     for (const id of this._autoHidden) if (!this.hidden.has(id)) { const b = document.createElement('button'); b.className = 'chip auto'; b.textContent = `${label(id)} (자동)`; b.disabled = true; box.appendChild(b); }
     if (!box.children.length) box.innerHTML = '<span class="hint">숨긴 면 없음</span>';
   }
@@ -642,6 +654,7 @@ export class Editor {
       row('위치 보정 X', num(Math.round((c.dx || 0) * 100), 1, (v) => { c.dx = v / 100; commit('size'); }));
       row('위치 보정 Z', num(Math.round((c.dz || 0) * 100), 1, (v) => { c.dz = v / 100; commit('size'); }));
       box.appendChild(btn((this.meta.measured_columns || {})[col.id] ? '현장 실측 치수로 되돌리기' : '스캔 치수로 되돌리기', () => { c.w = c.d = null; c.dx = c.dz = 0; commit('size'); }, 'ghost'));
+      row('철거 계획', check(isDemolished(this.s.design, col.id), (v) => { this.s.design.demolished = { ...(this.s.design.demolished || {}), [col.id]: v }; commit('demolish'); this.buildItems(); this.buildPicks(); this.buildLabels(); this.renderChips(); }, '이 기둥 없애기 (구조 확인 필요)'));
       row('4면 거울', check(c.mirror ?? (col.id === this.meta.central_wide_column), (v) => { c.mirror = v; commit('mirror'); }, '이 기둥에 거울'));
       row('거울 범위', selectEl([['바닥 위~거울 높이, 좌우 여백', 'frame'], ['띠(몰드) 위~천장, 좌우 꽉 차게', 'upper']], c.mirrorFit || 'frame', (v) => { c.mirrorFit = v; if (v === 'upper') c.mirror = true; commit('mirror'); }));
       const faces = document.createElement('span'); for (const [k, t] of [['xn', '서(−X)'], ['xp', '동(+X)'], ['zn', '북(−Z)'], ['zp', '남(+Z)']]) faces.appendChild(check(c.mirrorFaces.includes(k), (v) => { c.mirrorFaces = v ? [...new Set([...c.mirrorFaces, k])] : c.mirrorFaces.filter((x) => x !== k); commit('mirror'); }, t)); row('거울 면', faces);

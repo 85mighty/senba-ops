@@ -169,3 +169,11 @@ export function applyWings(base) {
   for (const id of ['wall_wing_w_in', 'wall_wing_w_out', 'wall_wing_e_in', 'wall_wing_e_out', 'wall_tscreen_s', 'wall_tscreen_n']) { const { trim, ...rest } = d.surfaces[id] || {}; d.surfaces[id] = { ...rest, paint: hallGreen, zone: 'all', texture: false, art: false, splits: 1 }; }
   d.editedAt = Date.now(); return d;
 }
+
+// 11/11: 가림벽 ③ 을 벽 1 에 붙이고 날개벽 ②와의 사이에 아치 출입구, 기둥 1·3 철거 계획
+export function applyArchDemolish(base) {
+  const d = JSON.parse(JSON.stringify(base || {})); d.closures = { ...(d.closures || {}), toilet_arch: true };
+  d.demolished = { ...(d.demolished || {}), thin_column_4: true, thin_column_18: true };
+  if (d.closureXform) delete d.closureXform.toilet_screen;   // 가림벽 새 위치(벽 1 에 붙임)는 메타에서
+  d.editedAt = Date.now(); return d;
+}
