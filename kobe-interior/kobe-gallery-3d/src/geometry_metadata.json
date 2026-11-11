@@ -1180,6 +1180,42 @@
           "openings": []
         }
       ]
+    },
+    {
+      "id": "hall_arch",
+      "label": "아치 출입구 2 (레지 뒤 벽 ~ 날개벽 ① 사이 0.90 m, 홀 입구)",
+      "status": "design",
+      "arch": {
+        "spring": 1.62,
+        "note": "반원 아치, 폭 0.90 → 꼭대기 2.07 m. 리셉션에서 홀로 들어가는 입구"
+      },
+      "note": "11/11: 레지 뒤 벽(N2) 동쪽 끝(z −0.24)과 날개벽 ①(z 0.661) 사이, x −1.76~−1.66 선",
+      "walls": [
+        {
+          "id": "wall_harch_w",
+          "type": "wall",
+          "axis": "x",
+          "offset": -1.76,
+          "inward": -1.0,
+          "from": -0.24,
+          "to": 0.661,
+          "two_sided": false,
+          "virtual": true,
+          "openings": []
+        },
+        {
+          "id": "wall_harch_e",
+          "type": "wall",
+          "axis": "x",
+          "offset": -1.66,
+          "inward": 1.0,
+          "from": -0.24,
+          "to": 0.661,
+          "two_sided": false,
+          "virtual": true,
+          "openings": []
+        }
+      ]
     }
   ],
   "measured_20261107": {

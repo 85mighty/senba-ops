@@ -177,3 +177,6 @@ export function applyArchDemolish(base) {
   if (d.closureXform) delete d.closureXform.toilet_screen;   // 가림벽 새 위치(벽 1 에 붙임)는 메타에서
   d.editedAt = Date.now(); return d;
 }
+
+// 11/11: 리셉션 → 홀 입구(레지 뒤 벽 ~ 날개벽 ① 사이 0.90 m)도 아치로
+export function applyHallArch(base) { const d = JSON.parse(JSON.stringify(base || {})); d.closures = { ...(d.closures || {}), hall_arch: true }; d.editedAt = Date.now(); return d; }
