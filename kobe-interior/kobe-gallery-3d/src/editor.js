@@ -174,7 +174,10 @@ export class Editor {
         const hole = new THREE.Path(); hole.moveTo(0, 0); hole.lineTo(W, 0); hole.lineTo(W, spring); hole.absarc(r, spring, r, 0, Math.PI, false); hole.lineTo(0, 0); sh.holes.push(hole);
         const geo = new THREE.ExtrudeGeometry(sh, { depth: T, bevelEnabled: false }); const paint = this.s.getSurface(c.id).paint || this.s.getSurface('wall_x_1').paint || '#39433a';
         const am = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: paint, roughness: 0.9 })); am.userData.surface = c.id;
-        const trimM = new THREE.Mesh(new THREE.TorusGeometry(r + 0.01, 0.018, 8, 40, Math.PI), new THREE.MeshStandardMaterial({ color: '#c9a24a', metalness: 0.6, roughness: 0.4 })); trimM.position.set(r, spring, T / 2);   // 금색 아치 몰딩
+        // 금색 아치 몰딩: 벽 두께 안에 묻지 않고 양쪽 면 바깥에 붙인다(비스듬히 봐도 반원이 끊기지 않게) + 개구부 안쪽 가는 테
+        const goldM = new THREE.MeshStandardMaterial({ color: '#c9a24a', metalness: 0.6, roughness: 0.4 }); const trimM = new THREE.Group();
+        for (const zz of [-0.014, T + 0.014]) { const ring = new THREE.Mesh(new THREE.TorusGeometry(r + 0.035, 0.03, 10, 48, Math.PI), goldM); ring.position.set(r, spring, zz); trimM.add(ring); }
+        { const inner = new THREE.Mesh(new THREE.TorusGeometry(r + 0.004, 0.012, 8, 48, Math.PI), goldM); inner.position.set(r, spring, T / 2); inner.scale.z = (T / 2) / 0.012; trimM.add(inner); }
         const zmin = Math.min(...ws.map((x) => x.offset)), xmin = Math.min(...ws.map((x) => x.offset));
         if (w.axis === 'z') { am.position.set(w.from, 0, zmin); am.add(trimM); } else { am.rotation.y = Math.PI / 2; am.position.set(xmin, 0, w.to); am.add(trimM); }   // 로컬 +x→월드 −z, 로컬 +z→월드 +x
         cg.add(am); continue; }
