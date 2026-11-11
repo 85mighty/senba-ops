@@ -161,3 +161,11 @@ export function applyLightsRug(base) {
   );
   d.editedAt = Date.now(); return d;
 }
+
+// 11/11: 사진 코너 양쪽 날개벽 ①② (각 1.10 m) + 화장실 문 가림벽 ③ (1.13 m, 문에서 0.80). 모든 면 홀과 같은 초록(띠·판은 전체 설정)
+export function applyWings(base) {
+  const d = JSON.parse(JSON.stringify(base || {})); d.surfaces = d.surfaces || {}; d.closures = { ...(d.closures || {}), photo_wing_w: true, photo_wing_e: true, toilet_screen: true };
+  const hallGreen = d.surfaces.wall_x_1?.paint || DULL_GREEN;
+  for (const id of ['wall_wing_w_in', 'wall_wing_w_out', 'wall_wing_e_in', 'wall_wing_e_out', 'wall_tscreen_s', 'wall_tscreen_n']) { const { trim, ...rest } = d.surfaces[id] || {}; d.surfaces[id] = { ...rest, paint: hallGreen, zone: 'all', texture: false, art: false, splits: 1 }; }
+  d.editedAt = Date.now(); return d;
+}

@@ -1042,6 +1042,108 @@
           "note": "레지 앞"
         }
       ]
+    },
+    {
+      "id": "photo_wing_w",
+      "label": "① 사진 코너 서쪽 날개벽 1.10 m",
+      "status": "design",
+      "note": "11/11 지정: 길이 110 cm. W15 북면(z 1.761)에서 북쪽으로. 사이드보드 서쪽 끝 옆, 두께 0.10",
+      "walls": [
+        {
+          "id": "wall_wing_w_in",
+          "type": "wall",
+          "axis": "x",
+          "offset": -1.66,
+          "inward": 1.0,
+          "from": 0.661,
+          "to": 1.761,
+          "two_sided": false,
+          "virtual": true,
+          "openings": [],
+          "face": "동(사이드보드 쪽)"
+        },
+        {
+          "id": "wall_wing_w_out",
+          "type": "wall",
+          "axis": "x",
+          "offset": -1.76,
+          "inward": -1.0,
+          "from": 0.661,
+          "to": 1.761,
+          "two_sided": false,
+          "virtual": true,
+          "openings": [],
+          "face": "서(레지 쪽)"
+        }
+      ]
+    },
+    {
+      "id": "photo_wing_e",
+      "label": "② 사진 코너 동쪽 날개벽 1.10 m",
+      "status": "design",
+      "note": "11/11 지정: 길이 110 cm. 주방 동쪽 벽 W4 북쪽 끝(z 1.769)에서 북쪽으로, 두께 0.10",
+      "walls": [
+        {
+          "id": "wall_wing_e_in",
+          "type": "wall",
+          "axis": "x",
+          "offset": 0.264,
+          "inward": -1.0,
+          "from": 0.669,
+          "to": 1.769,
+          "two_sided": false,
+          "virtual": true,
+          "openings": [],
+          "face": "서(사이드보드 쪽)"
+        },
+        {
+          "id": "wall_wing_e_out",
+          "type": "wall",
+          "axis": "x",
+          "offset": 0.364,
+          "inward": 1.0,
+          "from": 0.669,
+          "to": 1.769,
+          "two_sided": false,
+          "virtual": true,
+          "openings": [],
+          "face": "동(화장실 앞)"
+        }
+      ]
+    },
+    {
+      "id": "toilet_screen",
+      "label": "③ 화장실 문 가림벽 1.13 m (문에서 0.80)",
+      "status": "design",
+      "note": "11/11 지정: 길이 113 cm, 화장실 문과 80 cm. 서쪽 끝은 W4 선에 맞춤(가정) — 끌어서 조정 가능",
+      "walls": [
+        {
+          "id": "wall_tscreen_s",
+          "type": "wall",
+          "axis": "z",
+          "offset": 1.563,
+          "inward": 1.0,
+          "from": 0.364,
+          "to": 1.494,
+          "two_sided": false,
+          "virtual": true,
+          "openings": [],
+          "face": "남(화장실 문 쪽)"
+        },
+        {
+          "id": "wall_tscreen_n",
+          "type": "wall",
+          "axis": "z",
+          "offset": 1.463,
+          "inward": -1.0,
+          "from": 0.364,
+          "to": 1.494,
+          "two_sided": false,
+          "virtual": true,
+          "openings": [],
+          "face": "북(홀 쪽)"
+        }
+      ]
     }
   ],
   "measured_20261107": {
