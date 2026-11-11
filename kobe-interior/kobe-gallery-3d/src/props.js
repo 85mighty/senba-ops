@@ -73,6 +73,12 @@ export function buildProp(p) {
         for (const [x, z, r] of [[-0.75, 0.75, 0.15], [0.75, 0.75, -0.15]]) { const ch = buildProp({ id: p.id, type: 'chair', x, z, rot: Math.PI + r, scale: 1, color: null }); ch.name = 'sub'; g.add(ch); }
         const cart = buildProp({ id: p.id, type: 'cart', x: 0, z: 0.55, rot: 0, scale: 1, color: null }); cart.name = 'sub'; g.add(cart);
         g.add(zoneOutline(COUPLE_ZONE.w, COUPLE_ZONE.d, COUPLE_ZONE.back, '2인 세트 공간 2.657 × 1.935 m'));
+        if (p.spot) {   // 체험 스폿 번호(11/11): 바닥 표지판 + 앞 오른쪽 모서리에 작은 번호 스탠드
+          const num = '①②③④⑤⑥⑦⑧⑨'[p.spot - 1] || String(p.spot); const zf = COUPLE_ZONE.back + COUPLE_ZONE.d;
+          const fl = labelPlate(`체험 스폿 ${num}`, 0.9, 0.26, '#1f1a14', '#ffd27a'); fl.rotation.x = -Math.PI / 2; fl.position.set(0, 0.028, zf - 0.45); g.add(fl);
+          const post = cyl(0.012, 0.012, 0.95, std(0x2a2a2a), COUPLE_ZONE.w / 2 - 0.15, 0.475, zf - 0.15); g.add(post); g.add(cyl(0.09, 0.09, 0.012, std(0x2a2a2a), COUPLE_ZONE.w / 2 - 0.15, 0.006, zf - 0.15));
+          const sp = labelPlate(num, 0.22, 0.22, '#1f1a14', '#ffd27a'); sp.position.set(COUPLE_ZONE.w / 2 - 0.15, 1.05, zf - 0.15); sp.rotation.y = Math.PI; g.add(sp);
+        }
       }
       break;
     }

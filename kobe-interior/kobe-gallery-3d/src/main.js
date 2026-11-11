@@ -7,8 +7,9 @@ import { DesignStore, PROP_TYPES, SLOTS } from './design.js';
 import { Editor } from './editor.js';
 import { encodeDesign, decodeDesign, shareCodeFromHash } from './share.js';
 import { Sync, DEFAULT_SYNC_URL } from './sync.js';
+import { TOUR_E, tourAt, playTour, tourDuration } from './tour.js';
 import presetCPhone from './presets/c_phone_20261027.json';
-import { applyIkeaCorner, applyUpperMirrors, applyWindowCurtains, applyRealFloor, applyDullGreen, applyAirPanel, applyRegister, REGISTER_PLANS, applyPhotoEast, applyReception, applyCoupleLayout, applyRegisterGap, applyRegisterLeft, applyPhotoSpot2, applyWallPull, applyElegantChairs, applyLightsRug, applyWings, applyArchDemolish, applyHallArch, applyWashroomPhoto, applyBigRug, applyMeasured1110 } from './presets/ikea_corner.js';
+import { applyIkeaCorner, applyUpperMirrors, applyWindowCurtains, applyRealFloor, applyDullGreen, applyAirPanel, applyRegister, REGISTER_PLANS, applyPhotoEast, applyReception, applyCoupleLayout, applyRegisterGap, applyRegisterLeft, applyPhotoSpot2, applyWallPull, applyElegantChairs, applyLightsRug, applyWings, applyArchDemolish, applyHallArch, applyWashroomPhoto, applyBigRug, applyMeasured1110, applySpots } from './presets/ikea_corner.js';
 
 // 저장소에 보관된 디자인 — 어느 기기에서든 불러올 수 있다. seedSlot: 그 안이 비어 있으면 처음 열 때 자동으로 채움
 const PRESETS = [{ id: 'c_phone_20261027', name: 'C안 (폰에서 만든 것, 10/27)', seedSlot: 'C', design: presetCPhone },
@@ -24,6 +25,7 @@ const PRESETS = [{ id: 'c_phone_20261027', name: 'C안 (폰에서 만든 것, 10
   { id: 'wings', name: '날개벽 ①② + 화장실 가림벽 ③', apply: applyWings, armText: (sl) => `${sl}안에 벽 3개를 세웁니다. 다시 누르세요` },
   { id: 'lights_rug', name: '조명 + 러그 (사진 코너 스포트 3 · 작은 러그)', apply: applyLightsRug, armText: (sl) => `${sl}안에 스포트라이트 3개와 러그를 더합니다. 다시 누르세요` },
   { id: 'measured_1110', name: '실측 위치 (11/10) — 뒤 벽 4.72 m · 레지 세로', apply: applyMeasured1110, armText: (sl) => `${sl}안 레지 뒤 벽·레지를 11/10 실측 위치로 옮깁니다. 다시 누르세요` },
+  { id: 'spots', name: '체험 스폿 번호 ①~④ (2인 세트 4팀)', apply: applySpots, armText: (sl) => `${sl}안 2인 세트에 체험 스폿 번호를 붙입니다(4팀 미만이면 ② 추가). 다시 누르세요` },
   { id: 'big_rug', name: '큰 러그 (사진 코너 1.8 × 1.2)', apply: applyBigRug, armText: (sl) => `${sl}안 사진 코너 러그를 큰 러그로 바꿉니다. 다시 누르세요` },
   { id: 'elegant_chairs', name: '엘레강트 의자 2개 → 사진 코너 앞', apply: applyElegantChairs, armText: (sl) => `${sl}안 사진 코너 앞에 의자 2개를 놓습니다. 다시 누르세요` },
   { id: 'photo2', name: '포토 스폿 2 → 알코브 뒤 벽 홀 쪽 (액자 + 흉상)', apply: applyPhotoSpot2, armText: (sl) => `${sl}안에 포토 스폿 2를 더합니다. 다시 누르세요` },
@@ -51,6 +53,7 @@ const PATCHES = [{ id: 'd_upper_mirrors_20261028', slot: 'D', apply: applyUpperM
   { id: 'e_washroom_plain_20261111', slot: 'E', apply: applyWashroomPhoto, msg: 'E안: 문 쪽 벽을 참고 사진처럼 무지 크림(체어레일도 같은 톤), 문은 적갈색 월넛 + 니켈 레버로' },
   { id: 'e_washroom_arch_tile_20261111', slot: 'E', apply: applyWashroomPhoto, msg: 'E안: 거울 벽 옆 아치 벽(포토 스폿 쪽 면)도 같은 리프 타일로' },
   { id: 'e_measured_1110_20261111', slot: 'E', apply: applyMeasured1110, msg: 'E안: 11/10 실측대로 — 레지 뒤 벽을 창 벽에서 4.72 m 로, 레지는 110×45.5 세로(벽 2 에서 1.05), 홀 입구 아치 0.74' },
+  { id: 'e_spots_20261111', slot: 'E', apply: applySpots, msg: 'E안: 체험 스폿 번호 ①~④ 표시(벽 2 쪽 가운데에 세트 ② 추가)' },
   { id: 'e_big_rug_20261111', slot: 'E', apply: applyBigRug, msg: 'E안: 사진 코너 러그를 큰 러그(1.8 × 1.2)로 — 날개벽 사이를 채우고 홀 쪽으로 조금 나옴' },
   { id: 'd_air_panel_20261106', slot: 'D', apply: applyAirPanel, msg: 'D안: 아래 벽을 エアサーモパネル로 띠까지 덮었습니다(방법 ③)' }];
 
@@ -65,7 +68,16 @@ window.addEventListener('unhandledrejection', (e) => showError(`Promise: ${e.rea
 if (!meta.elements) showError('geometry_metadata.json 에 elements 가 없습니다. scripts/inspect_scan.py → clean_scan.py → reconstruct_room.py 를 먼저 실행하세요.');
 
 const viewer = new Viewer($('#c'), meta, { onError: showError, onProgress: (p) => { $('#loading .bar i').style.width = `${Math.round(p * 100)}%`; } });
-window.__viewer = viewer;
+window.__viewer = viewer; window.__THREE = THREE;   // 테스트·진단용
+// 둘러보기 투어: 영상 캡처(scripts/make_walkthrough.mjs)와 화면의 '둘러보기' 버튼이 같은 경로를 쓴다
+window.__tourAt = (t) => { const k = tourAt(t); viewer.camera.position.set(...k.pos); viewer.controls.target.set(...k.tgt); viewer.camera.lookAt(viewer.controls.target); return k.label; };
+window.__tourDuration = tourDuration(TOUR_E); window.__tourKeys = TOUR_E;
+let tourStop = null;
+// 투어 중에는 위치 핀·세트 영역 점선·거리 표시를 숨긴다(영상용). 끝나면 되돌림
+window.__tourPresentation = (on) => { if (viewer.highlight) viewer.highlight.visible = !on; if (!editor) return; editor.marks.visible = !on; if (editor.labels) editor.labels.visible = !on; editor.props.traverse((o) => { if (o.userData.zone) o.visible = !on; }); if (editor.closureDims) editor.closureDims.visible = !on && editor.enabled; };
+window.__startTour = () => { if (tourStop) { tourStop(); return; } document.body.classList.add('touring'); window.__tourPresentation(true);
+  tourStop = playTour(viewer, { onLabel: (l) => { if (l) toast(`둘러보기 — ${l} (화면을 누르면 중지)`); }, onEnd: () => { tourStop = null; document.body.classList.remove('touring'); window.__tourPresentation(false); if (editor?.autoHide) editor.runAutoHide(); } }); };
+viewer.renderer.domElement.addEventListener('pointerdown', () => { if (tourStop) tourStop(); }, { capture: true });
 const store = new DesignStore(meta); window.__store = store;
 const interior = new InteriorA(viewer, store); window.__interior = interior;
 let editor = null; // 모델 로드 후 생성 (바닥 타일 판정에 복원 바닥 메쉬 필요)
@@ -169,6 +181,7 @@ function setupEditorUI() {
   $('#editMode').addEventListener('change', (e) => { editor.setEnabled(e.target.checked); if (e.target.checked && viewer.mode !== 'interior' && viewer.mode !== 'reconstructed') setMode('interior'); });
   $('#showLabels').addEventListener('change', (e) => editor.setLabels(e.target.checked));
   $('#showTileLabels').addEventListener('change', (e) => editor.setTileLabels(e.target.checked));
+  $('#tourBtn').addEventListener('click', () => { if (editor.enabled) toast('편집 모드에서는 둘러보기를 쓸 수 없습니다 — 편집을 끝내고 누르세요'); else window.__startTour(); });
   $('#autoHide').checked = editor.autoHide; if (editor.autoHide) editor.runAutoHide();   // 기본 켬 — 끄거나 켠 상태를 기억
   $('#autoHide').addEventListener('change', (e) => editor.setAutoHide(e.target.checked));
   $('#showAll').addEventListener('click', () => { editor.showAll(); toast('모든 면 보이기'); });

@@ -109,6 +109,17 @@ export const COUPLE_LAYOUT_3 = [
   { id: 'cs_n2', x: 0.087, z: -4.72, rot: 0, note: '창 벽 동쪽' },
   { id: 'cs_e1', x: 2.237, z: -1.50, rot: -Math.PI / 2, note: '동쪽 벽(벽 1) — 보드가 벽, 사람은 서쪽을 등짐' },
 ];
+// 11/11: 체험 스폿 번호 ①~④ — 서쪽 열(x < −1.3) 북→남, 동쪽 열 북→남. 4번째 세트(②)는 벽 2 쪽 가운데(보드가 벽 2)
+export const COUPLE_SET_W2 = { id: 'cs_w2', x: -2.95, z: -1.62, rot: Math.PI / 2, note: '벽 2 쪽 가운데 — 보드가 벽 2, 리셉션 뒤 벽 북쪽' };
+export function assignSpots(props) {
+  const sets = (props || []).filter((p) => p.type === 'couple_set'); const west = sets.filter((p) => p.x < -1.3).sort((a, b) => a.z - b.z), east = sets.filter((p) => p.x >= -1.3).sort((a, b) => a.z - b.z);
+  [...west, ...east].forEach((p, i) => { p.spot = i + 1; }); return props;
+}
+export function applySpots(base) {
+  const d = JSON.parse(JSON.stringify(base || {})); d.props = d.props || [];
+  if (d.props.filter((p) => p.type === 'couple_set').length < 4) d.props.push({ id: COUPLE_SET_W2.id, type: 'couple_set', x: COUPLE_SET_W2.x, z: COUPLE_SET_W2.z, rot: COUPLE_SET_W2.rot, scale: 1, color: null });
+  assignSpots(d.props); d.editedAt = Date.now(); return d;
+}
 export function applyCoupleLayout(base) {
   const d = JSON.parse(JSON.stringify(base || {})); d.props = (d.props || []).filter((p) => p.type !== 'couple_set');
   for (const c of COUPLE_LAYOUT_3) d.props.push({ id: c.id, type: 'couple_set', x: c.x, z: c.z, rot: c.rot, scale: 1, color: null });
