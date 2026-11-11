@@ -4,8 +4,8 @@ import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { PALETTE_WALL, PALETTE_FLOOR, PALETTE_CEIL, PALETTE_CURTAIN, PALETTE_TRIM, PALETTE_LOWER, FRAME_STYLES, PROP_TYPES } from './design.js';
 import { buildProp, buildWindow, buildCurtain, measureLine } from './props.js';
 import { disposeTree } from './viewer.js';
-import { isFixtureWall, isExteriorWall, exteriorSpans, doorOpenings, openingOn, serviceOf, subtractRects, floorKept, inExterior, closureWallsAll, closureOn, closureWalls, closureOf, closureShift, closureXform } from './scope.js';
-import { buildFixtures, cutWallOpening, buildPassCurtain } from './fixtures.js';
+import { isFixtureWall, isExteriorWall, exteriorSpans, doorOpenings, openingOn, serviceOf, subtractRects, floorKept, inExterior, closureWallsAll, closureOn, closureWalls, closureOf, closureShift, closureXform, inOutside } from './scope.js';
+import { buildFixtures, cutWallOpening, buildPassCurtain, cutRegion } from './fixtures.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -44,7 +44,7 @@ export class Editor {
   get base() { return this.meta.baseboard_height_m || 0.1; }
   allWalls() { return (this.meta.elements || []).filter((e) => e.type === 'wall').concat(closureWallsAll(this.meta, this.s.design)); }
   // 꾸밀 수 있는 벽 — 싱크대 앞면처럼 벽이 아닌 면, 입구 밖 벽은 뺀다(번호는 그대로 유지)
-  walls() { return this.allWalls().filter((e) => !isFixtureWall(this.meta, e.id) && !isExteriorWall(this.meta, e) && (!e.virtual || closureOn(this.meta, this.s.design, e.id))); }
+  walls() { const gone = new Set(this.meta.removed_elements || []); return this.allWalls().filter((e) => !gone.has(e.id) && !isFixtureWall(this.meta, e.id) && !isExteriorWall(this.meta, e) && (!e.virtual || closureOn(this.meta, this.s.design, e.id))); }
   columns() { const gone = new Set(this.meta.removed_elements || []); return (this.meta.elements || []).filter((e) => ['wide_column', 'thin_column'].includes(e.type) && !gone.has(e.id)); }   // 실측에서 없다고 확인한 기둥 제외
 
   // ---------------- 번호 매긴 항목
@@ -68,7 +68,10 @@ export class Editor {
     if (this._floorTris !== undefined) return this._floorTris; this._floorTris = null;
     let src = null; this.v.loaded?.reconstructed?.traverse((o) => { if (o.isMesh && o.name === 'floor') src = o; }); if (!src) return null;
     src.updateWorldMatrix(true, false); const g = src.geometry.index ? src.geometry.toNonIndexed() : src.geometry.clone(); g.applyMatrix4(src.matrixWorld);
-    this._floorTris = g.attributes.position.array; return this._floorTris;
+    const p = g.attributes.position.array; const keep = [];
+    for (let i = 0; i < p.length; i += 9) if (!inOutside(this.meta, (p[i] + p[i + 3] + p[i + 6]) / 3, (p[i + 2] + p[i + 5] + p[i + 8]) / 3)) keep.push(i);   // 매장 밖 바닥은 뺌
+    const out = new Float32Array(keep.length * 9); keep.forEach((i, k) => out.set(p.subarray(i, i + 9), k * 9));
+    this._floorTris = out; return this._floorTris;
   }
   tileGeometry(tile, last, paintOnly = false) {
     const pos = this.floorTris(); if (!pos) return null; const out = [];
@@ -204,6 +207,9 @@ export class Editor {
     const hideIds = [...Object.keys(this.meta.fixture_walls || {}), ...Object.keys(this.meta.hidden_scan_blobs || {}), ...(this.meta.removed_elements || [])];
     const ext = this.allWalls().filter((w) => isExteriorWall(this.meta, w)).map((w) => w.id);
     const owner = (name, ids) => ids.find((id) => name === id || name.startsWith(id + '_'));
+    if (!this._outsideCut && this.meta.outside_zones?.length) { this._outsideCut = true; const inside = (x, z) => inOutside(this.meta, x, z); const xmax = Math.min(...this.meta.outside_zones.map((r) => r.x[0]));
+      rec.traverse((o) => { if (!o.isMesh) return; if (o.name === 'floor' || o.name === 'ceiling') cutRegion(o, inside);
+        else if (o.name === 'floor_tex' || o.name === 'ceiling_tex') { const ms = Array.isArray(o.material) ? o.material : [o.material]; for (const mm of ms) mm.clippingPlanes = [new THREE.Plane(new THREE.Vector3(-1, 0, 0), xmax)]; } }); }
     rec.traverse((o) => {
       if (!o.isMesh) return;
       if (owner(o.name, hideIds)) { o.userData.keepVisible = false; return; }
@@ -362,9 +368,9 @@ export class Editor {
     let src = null; rec.traverse((o) => { if (o.isMesh && o.name === 'ceiling') src = o; }); if (!src) return;
     src.updateWorldMatrix(true, false);
     let geo = src.geometry.clone().applyMatrix4(src.matrixWorld);
-    if (this.meta.exterior_zones?.length) {   // 입구 밖(계단참) 천장은 칠하지 않는다
+    if (this.meta.exterior_zones?.length || this.meta.outside_zones?.length) {   // 입구 밖(계단참)·매장 밖 천장은 그리지 않는다
       const g = geo.index ? geo.toNonIndexed() : geo; const p = g.attributes.position.array; const keep = [];
-      for (let i = 0; i < p.length; i += 9) if (!inExterior(this.meta, (p[i] + p[i + 3] + p[i + 6]) / 3, (p[i + 2] + p[i + 5] + p[i + 8]) / 3)) keep.push(i);
+      for (let i = 0; i < p.length; i += 9) { const cx = (p[i] + p[i + 3] + p[i + 6]) / 3, cz = (p[i + 2] + p[i + 5] + p[i + 8]) / 3; if (!inExterior(this.meta, cx, cz) && !inOutside(this.meta, cx, cz)) keep.push(i); }
       const out = new Float32Array(keep.length * 9); keep.forEach((i, k) => out.set(p.subarray(i, i + 9), k * 9));
       if (g !== geo) g.dispose(); geo.dispose(); geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(out, 3));
     }

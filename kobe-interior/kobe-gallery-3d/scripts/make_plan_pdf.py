@@ -40,7 +40,7 @@ def wall_xy(w):
 
 def page_plan(pdf, m, walls, cols, zoom=None):
     fig = plt.figure(figsize=A3); ax = fig.add_axes([0.03, 0.05, 0.66, 0.85])
-    fixture, ext = set(m.get("fixture_walls", {})), {"wall_z_11"}
+    fixture, ext = set(m.get("fixture_walls", {})) | set(m.get("removed_elements", [])), {"wall_z_11"}
     svc = m.get("service_walls", {})
     # 1 m 격자
     for v in range(-5, 6): ax.axvline(v, color="#eee", lw=0.6, zorder=0); ax.axhline(v, color="#eee", lw=0.6, zorder=0)

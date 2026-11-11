@@ -137,7 +137,8 @@ try {
     const nw = Object.entries(s.design.windows).find(([k]) => k === e.walls().find((x) => x.axis === 'z' && Math.abs(x.offset + 4.8) < 0.15)?.id)?.[1] || [];
     if (nw.length !== 2 || !nw.every((x) => x.style === 'jp_sliding' && x.valance)) throw new Error('북쪽 창 2세트 아님 ' + JSON.stringify(nw.map((x) => [x.from, x.to, x.style])));
     // 범위·설비: 싱크대 앞면은 벽 목록에서 빠지고, 입구 밖 벽은 꾸미지 않으며, 주방·화장실 문이 있다
-    const ids = e.walls().map((w) => w.id); if (ids.includes('wall_z_15')) throw new Error('싱크대 앞면이 벽으로 남음'); if (ids.includes('wall_z_11')) throw new Error('입구 밖 벽이 꾸밈 대상에 포함');
+    const ids = e.walls().map((w) => w.id); if (ids.includes('wall_z_15')) throw new Error('싱크대 앞면이 벽으로 남음'); if (ids.includes('wall_x_7')) throw new Error('벽 8(바깥 잡음)이 남음');
+    { let w8 = null; window.__viewer.loaded.reconstructed.traverse((o) => { if (o.name === 'wall_x_7') w8 = o; }); if (w8?.visible) throw new Error('벽 8 메쉬가 보임'); const ft = e.floorTris(); let outside = 0; for (let i = 0; i < ft.length; i += 9) if ((ft[i] + ft[i + 3] + ft[i + 6]) / 3 > 2.4) outside++; if (outside) throw new Error('매장 밖 바닥 삼각형 ' + outside); } if (ids.includes('wall_z_11')) throw new Error('입구 밖 벽이 꾸밈 대상에 포함');
     const names = []; e.fixtures?.traverse((o) => { if (o.name) names.push(o.name); });
     for (const n of ['kitchen_sink_cabinet', 'kitchen_counter', 'kitchen_gray_cabinet', 'toilet_door']) if (!names.includes(n)) throw new Error('설비 없음: ' + n);
     let cut = false, blob = null; window.__viewer.loaded.reconstructed.traverse((o) => { if (o.name === 'wall_z_9_tex' && (o.userData.cut || []).includes('toilet_door')) cut = true; if (o.name === 'enclosure_8_w0') blob = o; });

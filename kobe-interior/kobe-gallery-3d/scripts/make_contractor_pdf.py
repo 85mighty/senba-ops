@@ -69,9 +69,9 @@ def wall_rect(ax, w, T=0.1, fc="#333", ec=INK, lw=0.6, hatch=None, z=3):
 
 
 def draw_base(ax, m, walls, cols, show_nums=True):
-    fixture, ext = set(m.get("fixture_walls", {})), {"wall_z_11"}
+    fixture, ext = set(m.get("fixture_walls", {})), {"wall_z_11"}; gone = set(m.get("removed_elements", []))
     for w in walls:
-        if w["id"] in fixture: continue
+        if w["id"] in fixture or w["id"] in gone: continue
         grey = w["id"] in ext
         wall_rect(ax, w, fc="#bbb" if grey else "#333", ec="#999" if grey else INK)
     # 창

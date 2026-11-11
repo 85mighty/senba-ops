@@ -169,3 +169,14 @@ export function buildPassCurtain(d, isOpen, onToggle) {
   pivot.traverse((o) => { o.userData.doorPivot = pivot; }); g.traverse((o) => { if (o.isMesh) o.userData.surface = 'curtain'; });
   return g;
 }
+
+// 바닥·천장 메쉬에서 영역 안(삼각형 중심 기준)을 잘라 낸다 — 매장 밖 스캔 잡음 제거. UV 등 속성은 그대로 유지
+export function cutRegion(mesh, inside) {
+  mesh.updateWorldMatrix(true, false); const src = mesh.geometry.index ? mesh.geometry.toNonIndexed() : mesh.geometry; const pos = src.attributes.position; const n = pos.count;
+  const v = new THREE.Vector3(); const keep = [];
+  for (let i = 0; i < n; i += 3) { let cx = 0, cz = 0; for (let k = 0; k < 3; k++) { v.fromBufferAttribute(pos, i + k).applyMatrix4(mesh.matrixWorld); cx += v.x / 3; cz += v.z / 3; } if (!inside(cx, cz)) keep.push(i); }
+  if (keep.length * 3 === n) { if (src !== mesh.geometry) src.dispose(); return false; }
+  const out = new THREE.BufferGeometry();
+  for (const name of Object.keys(src.attributes)) { const a = src.attributes[name]; const arr = new a.array.constructor(keep.length * 3 * a.itemSize); keep.forEach((i, t) => { for (let k = 0; k < 3; k++) for (let c = 0; c < a.itemSize; c++) arr[(t * 3 + k) * a.itemSize + c] = a.array[(i + k) * a.itemSize + c]; }); out.setAttribute(name, new THREE.BufferAttribute(arr, a.itemSize)); }
+  out.computeBoundingBox(); out.computeBoundingSphere(); const old = mesh.geometry; mesh.geometry = out; old.dispose(); if (src !== old) src.dispose(); return true;
+}
