@@ -175,7 +175,7 @@ export class Editor {
         const am = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: paint, roughness: 0.9 })); am.userData.surface = c.id;
         const trimM = new THREE.Mesh(new THREE.TorusGeometry(r + 0.01, 0.018, 8, 40, Math.PI), new THREE.MeshStandardMaterial({ color: '#c9a24a', metalness: 0.6, roughness: 0.4 })); trimM.position.set(r, spring, T / 2);   // 금색 아치 몰딩
         const zmin = Math.min(...ws.map((x) => x.offset)), xmin = Math.min(...ws.map((x) => x.offset));
-        if (w.axis === 'z') { am.position.set(w.from, 0, zmin); am.add(trimM); } else { am.rotation.y = -Math.PI / 2; am.position.set(xmin, 0, w.from); am.add(trimM); }
+        if (w.axis === 'z') { am.position.set(w.from, 0, zmin); am.add(trimM); } else { am.rotation.y = Math.PI / 2; am.position.set(xmin, 0, w.to); am.add(trimM); }   // 로컬 +x→월드 −z, 로컬 +z→월드 +x
         cg.add(am); continue; }
       for (const w of closureWalls(c, this.s.design)) { const m = new THREE.Mesh(new THREE.BoxGeometry(w.to - w.from, this.ceil, T), mat); m.userData.surface = w.id; this.placeOnWall(m, { ...w, sid: w.id }, (w.from + w.to) / 2, this.ceil / 2, -T / 2); cg.add(m); }
       // 바닥(카펫): 복원 바닥 삼각형 중 영역 안의 것만 — 바닥 칠 위(y 0.016)에 깐다
