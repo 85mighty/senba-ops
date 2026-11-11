@@ -180,3 +180,12 @@ export function applyArchDemolish(base) {
 
 // 11/11: 리셉션 → 홀 입구(레지 뒤 벽 ~ 날개벽 ① 사이 0.90 m)도 아치로
 export function applyHallArch(base) { const d = JSON.parse(JSON.stringify(base || {})); d.closures = { ...(d.closures || {}), hall_arch: true }; d.editedAt = Date.now(); return d; }
+
+// 11/11: 세면실 포토 스폿 — 리프 모자이크 타일 + 세면대 위 금테 타원 거울 + 스포트, 문은 경첩 반대·안여닫이(메타)
+export function applyWashroomPhoto(base) {
+  const d = JSON.parse(JSON.stringify(base || {})); d.closures = { ...(d.closures || {}), washroom_tile: true };
+  d.props = (d.props || []).filter((p) => !['wr_mirror', 'wr_spot'].includes(p.id));
+  d.props.push({ id: 'wr_mirror', type: 'oval_mirror', x: 2.06, y: 1.0, z: 3.03, rot: -Math.PI / 2, scale: 1, color: null },      // 동쪽 벽(세면대 위), 서쪽을 봄
+               { id: 'wr_spot', type: 'spot_light', x: 1.45, z: 3.03, rot: Math.PI / 2, aim: 0.6, scale: 1, color: null });
+  d.editedAt = Date.now(); return d;
+}

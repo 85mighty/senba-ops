@@ -151,6 +151,15 @@ export function buildProp(p) {
       const plane = new THREE.Mesh(new THREE.PlaneGeometry(0.28, 1.12), mat); plane.position.set(0, 0.56, 0.004); g.add(plane);
       break;
     }
+    case 'oval_mirror': {   // 금테 타원 거울(바로크 장식, 약 64×92 cm) — 벽에 붙임(+Z 앞), '높이(y)' = 거울 아래 끝
+      const gold = std(c || 0xc9a24a, { metalness: 0.85, roughness: 0.28 }), gold2 = std(0xe0bd5c, { metalness: 0.8, roughness: 0.25 }); const RX = 0.30, RY = 0.44, cy = RY + 0.04;
+      const frame = new THREE.Mesh(new THREE.TorusGeometry(1, 0.05, 14, 72), gold); frame.scale.set(RX + 0.02, RY + 0.02, 1); frame.position.set(0, cy, 0.03); g.add(frame);
+      const bead = new THREE.Mesh(new THREE.TorusGeometry(1, 0.012, 8, 96), gold2); bead.scale.set(RX - 0.01, RY - 0.01, 1); bead.position.set(0, cy, 0.055); g.add(bead);
+      for (const [ang, sc] of [[Math.PI / 2, 1.3], [-Math.PI / 2, 1.1], [Math.PI / 2 + 0.9, 0.7], [Math.PI / 2 - 0.9, 0.7], [-Math.PI / 2 + 0.9, 0.6], [-Math.PI / 2 - 0.9, 0.6]]) {   // 장식(카르투슈 흉내)
+        const o = new THREE.Mesh(new THREE.SphereGeometry(0.045 * sc, 12, 10), gold2); o.scale.set(1.6, 1, 0.6); o.position.set(Math.cos(ang) * (RX + 0.03), cy + Math.sin(ang) * (RY + 0.03), 0.045); o.rotation.z = ang; g.add(o); }
+      const mir = new THREE.Mesh(new THREE.CircleGeometry(1, 64), new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 1, roughness: 0.04, envMapIntensity: 1.3 })); mir.scale.set(RX, RY, 1); mir.position.set(0, cy, 0.02); g.add(mir);
+      break;
+    }
     case 'round_mirror': {  // 금테 원형 거울(지름 약 55 cm) — 중심 높이는 '높이(y)' + 0.27
       const gold = std(c || 0xc9a24a, { metalness: 0.8, roughness: 0.3 });
       const ring = new THREE.Mesh(new THREE.TorusGeometry(0.265, 0.022, 12, 48), gold); ring.position.set(0, 0.27, 0.02); g.add(ring);

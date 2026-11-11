@@ -2,6 +2,7 @@
 // 위치·치수는 geometry_metadata.json 의 kitchen / door_openings (observed: 사진 확인, 치수는 스캔 추정).
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { subtractRects } from './scope.js';
 
 const std = (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.6, ...o });
 // 월드 범위로 상자 만들기
@@ -76,11 +77,12 @@ export function buildFixtures(meta) {
     boxAt(g, [d.from, d.from + jt], [0, d.y1], [z0, z1], frameM); boxAt(g, [d.to - jt, d.to], [0, d.y1], [z0, z1], frameM); boxAt(g, [d.from, d.to], [d.y1 - jt, d.y1], [z0, z1], frameM);
     // 문짝: 경첩 쪽(from)에서 방 쪽으로 열림(기본 열린 상태). 닫으면 문틀 안에 들어간다
     const lw = d.to - d.from - 2 * jt - 0.006, lh = d.y1 - jt - 0.015, t = 0.04, side = d.room_side || -1;
-    const pivot = new THREE.Group(); pivot.position.set(d.from + jt, 0, side < 0 ? z0 : z1); g.add(pivot); const lz = -side * t / 2;
-    const leaf = new THREE.Mesh(new THREE.BoxGeometry(lw, lh, t), leafM); leaf.position.set(lw / 2, 0.01 + lh / 2, lz); pivot.add(leaf);
-    for (const sz of [-1, 1]) { const lev = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.018, 0.018), steel); lev.position.set(lw - 0.1, 0.98, lz + sz * (t / 2 + 0.03)); pivot.add(lev); const rose = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.012, 14), steel); rose.rotation.x = Math.PI / 2; rose.position.set(lw - 0.06, 0.98, lz + sz * (t / 2 + 0.008)); pivot.add(rose); }
-    const closer = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.06, 0.06), std(0x2b2b2b)); closer.position.set(0.2, lh - 0.04, lz + side * (t / 2 + 0.03)); pivot.add(closer);
-    hinge(pivot, 0, side * -(d.swing_deg ?? 70) * Math.PI / 180, true, 'toilet_door_leaf');
+    // 경첩: hinge 'from'(서쪽) 또는 'to'(동쪽). room_side +1 = 세면실 쪽(+z)으로 열림(안여닫이), −1 = 홀 쪽
+    const hs = d.hinge === 'to' ? -1 : 1; const pivot = new THREE.Group(); pivot.position.set(hs > 0 ? d.from + jt : d.to - jt, 0, side < 0 ? z0 : z1); g.add(pivot); const lz = -side * t / 2;
+    const leaf = new THREE.Mesh(new THREE.BoxGeometry(lw, lh, t), leafM); leaf.position.set(hs * lw / 2, 0.01 + lh / 2, lz); pivot.add(leaf);
+    for (const sz of [-1, 1]) { const lev = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.018, 0.018), steel); lev.position.set(hs * (lw - 0.1), 0.98, lz + sz * (t / 2 + 0.03)); pivot.add(lev); const rose = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.012, 14), steel); rose.rotation.x = Math.PI / 2; rose.position.set(hs * (lw - 0.06), 0.98, lz + sz * (t / 2 + 0.008)); pivot.add(rose); }
+    const closer = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.06, 0.06), std(0x2b2b2b)); closer.position.set(hs * 0.2, lh - 0.04, lz + side * (t / 2 + 0.03)); pivot.add(closer);
+    hinge(pivot, 0, -side * hs * (d.swing_deg ?? 70) * Math.PI / 180, true, 'toilet_door_leaf');
     // 안쪽: 벽걸이 세면대(왼쪽 벽) + 안쪽 칸막이 문(오른쪽 벽) — 사진 11
     const inner = (meta.elements || []).filter((e) => e.type === 'wall' && e.axis === 'x' && e.from <= wall.offset + 0.1 && e.to > wall.offset + 1.0 && e.offset > d.from - 0.3 && e.offset < d.to + 0.6);
     const right = inner.reduce((a, e) => (!a || e.offset < a.offset ? e : a), null), left = inner.reduce((a, e) => (!a || e.offset > a.offset ? e : a), null);
@@ -179,4 +181,33 @@ export function cutRegion(mesh, inside) {
   const out = new THREE.BufferGeometry();
   for (const name of Object.keys(src.attributes)) { const a = src.attributes[name]; const arr = new a.array.constructor(keep.length * 3 * a.itemSize); keep.forEach((i, t) => { for (let k = 0; k < 3; k++) for (let c = 0; c < a.itemSize; c++) arr[(t * 3 + k) * a.itemSize + c] = a.array[(i + k) * a.itemSize + c]; }); out.setAttribute(name, new THREE.BufferAttribute(arr, a.itemSize)); }
   out.computeBoundingBox(); out.computeBoundingSphere(); const old = mesh.geometry; mesh.geometry = out; old.dispose(); if (src !== old) src.dispose(); return true;
+}
+
+// 리프(나뭇잎) 모자이크 타일 — 베이지 톤 뾰족 타원이 엇갈려 늘어선 무늬, 크림 줄눈. 한 장 = 0.2 m (타원 4개 폭)
+let leafTex = null;
+export function leafMosaicMaterial() {
+  if (!leafTex) {
+    const N = 512, cols = 4, cw = N / cols, lh = cw * 1.6; const cv = document.createElement('canvas'); cv.width = N; cv.height = N; const c = cv.getContext('2d');
+    c.fillStyle = '#ece3d3'; c.fillRect(0, 0, N, N);
+    const tones = ['#d8c3a5', '#c7a98a', '#e3d2ba', '#b99778', '#d2bb9c', '#e8dcc8'];
+    const leaf = (x, y, w, h, col) => { c.beginPath(); c.moveTo(x, y - h / 2); c.quadraticCurveTo(x + w * 0.62, y, x, y + h / 2); c.quadraticCurveTo(x - w * 0.62, y, x, y - h / 2); c.closePath(); c.fillStyle = col; c.fill();
+      const g = c.createLinearGradient(x - w / 2, y - h / 2, x + w / 2, y + h / 2); g.addColorStop(0, 'rgba(255,255,255,0.35)'); g.addColorStop(1, 'rgba(90,60,30,0.18)'); c.fillStyle = g; c.fill(); };
+    let k = 0; const rows = Math.ceil(N / (lh * 0.5)) + 2;
+    for (let r = -1; r < rows; r++) { const y = r * lh * 0.5; const off = (r % 2) ? cw / 2 : 0; for (let i = -1; i <= cols; i++) leaf(i * cw + cw / 2 + off, y, cw * 0.94, lh * 0.94, tones[(k++) % tones.length]); }
+    leafTex = new THREE.CanvasTexture(cv); leafTex.colorSpace = THREE.SRGBColorSpace; leafTex.wrapS = leafTex.wrapT = THREE.RepeatWrapping; leafTex.anisotropy = 4;
+  }
+  const mt = new THREE.MeshStandardMaterial({ map: leafTex, roughness: 0.3, metalness: 0.05, polygonOffset: true, polygonOffsetFactor: -2 }); mt.userData.shared = true; mt.userData.tileM = 0.2; return mt;
+}
+// 세면실 네 벽 안쪽 면을 타일로 덮는다(문·칸 문 자리는 비움). region: {x:[x0,x1], z:[z0,z1], holes:[{face, from, to, y1}]}
+export function buildWashroomTile(meta, region, ceilH = 2.38) {
+  const g = new THREE.Group(); g.name = 'washroom_tile'; const mat = leafMosaicMaterial(); const T = mat.userData.tileM; const off = 0.004;
+  const quad = (w, h, pos, rotY) => { const geo = new THREE.PlaneGeometry(w, h); const uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w / T, uv.getY(i) * h / T); const mm = new THREE.Mesh(geo, mat); mm.position.copy(pos); mm.rotation.y = rotY; mm.userData.surface = 'washroom_tile'; g.add(mm); };
+  const faces = { w: { len: [region.z[0], region.z[1]], at: region.x[0] + off, rot: Math.PI / 2 }, e: { len: [region.z[0], region.z[1]], at: region.x[1] - off, rot: -Math.PI / 2 }, s: { len: [region.x[0], region.x[1]], at: region.z[0] + off, rot: 0 }, n: { len: [region.x[0], region.x[1]], at: region.z[1] - off, rot: Math.PI } };
+  for (const [key, f] of Object.entries(faces)) {
+    const holes = (region.holes || []).filter((h) => h.face === key).map((h) => [h.from - 0.02, h.to + 0.02, -1, h.y1 + 0.02]);
+    for (const [a, b, c0, c1] of subtractRects([f.len[0], f.len[1], 0, ceilH], holes)) {
+      const mid = (a + b) / 2, y = (c0 + c1) / 2; const pos = (key === 'w' || key === 'e') ? new THREE.Vector3(f.at, y, mid) : new THREE.Vector3(mid, y, f.at); quad(b - a, c1 - c0, pos, f.rot);
+    }
+  }
+  return g;
 }
