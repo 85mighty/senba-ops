@@ -228,7 +228,7 @@ def page_plan(pdf, m, walls, cols):
         cs, sn = math.cos(rot), math.sin(rot); pts = [(x + (dx * cs - dz * sn), z + (dx * sn + dz * cs)) for dx, dz in [(-w / 2, -d / 2), (w / 2, -d / 2), (w / 2, d / 2), (-w / 2, d / 2)]]
         ax.add_patch(Polygon(pts, closed=True, fc=fc, ec=INK, lw=lw, zorder=6)); ax.text(x, z, label, ha="center", va="center", fontsize=5.5, zorder=7)
     box(-3.554, 0.535, 0.8, 0.45, 0, "레지 0.8×0.45"); box(-0.745, 1.526, 1.6, 0.45, 0, "사이드보드 1.6×0.45"); box(-3.72, -0.64, 0.4, 0.4, 0, "좌대")
-    ax.add_patch(Rectangle((-0.745 - 0.75, 0.95 - 0.5), 1.5, 1.0, fc="none", ec=RED, lw=0.6, ls=":", zorder=6)); ax.text(-0.745, 0.6, "러그 1.5×1.0", ha="center", fontsize=5.5, color=RED, zorder=7)
+    ax.add_patch(Rectangle((-0.698 - 0.9, 0.9 - 0.6), 1.8, 1.2, fc="none", ec=RED, lw=0.6, ls=":", zorder=6)); ax.text(-0.698, 0.45, "러그 1.8×1.2", ha="center", fontsize=5.5, color=RED, zorder=7)
     for x, rot in [(-1.33, math.pi - 0.35), (-0.15, math.pi + 0.35)]: box(x, 0.95, 0.5, 0.5, rot, "", fc="#d7e3d9", lw=0.5)
     # 벽 장식 표시
     ax.plot([-2.44, -2.16], [z1 + 0.03] * 2, color=GOLD, lw=3, zorder=7); ax.text(-2.3, z1 + 0.22, "S 글씨", ha="center", fontsize=5.5, color=GOLD, zorder=7, weight="bold")

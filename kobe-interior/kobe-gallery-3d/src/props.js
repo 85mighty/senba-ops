@@ -194,6 +194,16 @@ export function buildProp(p) {
       const core = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.3), base); core.rotation.x = -Math.PI / 2; core.rotation.z = Math.PI / 4; core.position.y = 0.0225; g.add(core);
       break;
     }
+    case 'rug_large': {    // 큰 러그(1.8 × 1.2 m) — 작은 러그와 같은 무늬(와인 + 베이지 테두리 + 다이아 메달리온). 사진 코너 날개벽 사이를 꽉 채우고 홀 쪽으로 조금 나옴 (11/11)
+      const W = 1.8, D = 1.2; const base = std(c || 0x5a1f28, { roughness: 1, side: THREE.DoubleSide }); const trim = std(0xcdb28a, { roughness: 1, side: THREE.DoubleSide });
+      const r = new THREE.Mesh(new THREE.PlaneGeometry(W, D), trim); r.rotation.x = -Math.PI / 2; r.position.y = 0.018; g.add(r);
+      const inner = new THREE.Mesh(new THREE.PlaneGeometry(W - 0.16, D - 0.16), base); inner.rotation.x = -Math.PI / 2; inner.position.y = 0.0195; g.add(inner);
+      const line = new THREE.Mesh(new THREE.PlaneGeometry(W - 0.30, D - 0.30), trim); line.rotation.x = -Math.PI / 2; line.position.y = 0.0205; g.add(line);   // 안쪽 가는 선
+      const field = new THREE.Mesh(new THREE.PlaneGeometry(W - 0.34, D - 0.34), base); field.rotation.x = -Math.PI / 2; field.position.y = 0.021; g.add(field);
+      const dia = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 0.55), trim); dia.rotation.x = -Math.PI / 2; dia.rotation.z = Math.PI / 4; dia.position.y = 0.0215; g.add(dia);
+      const core = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.4), base); core.rotation.x = -Math.PI / 2; core.rotation.z = Math.PI / 4; core.position.y = 0.022; g.add(core);
+      break;
+    }
     case 'big_frame': {     // 큰 금테 액자(약 110×85 cm, 안쪽 그림은 자리표시) — 벽에 붙임(+Z 가 앞), 높이는 '높이(y)' = 액자 아래 끝
       const gold = std(c || 0xc9a24a, { metalness: 0.75, roughness: 0.32 }); const W = 1.1, H = 0.85, B = 0.07;
       g.add(box(W, B, 0.05, gold, 0, H - B / 2, 0.025)); g.add(box(W, B, 0.05, gold, 0, B / 2, 0.025)); g.add(box(B, H, 0.05, gold, -W / 2 + B / 2, H / 2, 0.025)); g.add(box(B, H, 0.05, gold, W / 2 - B / 2, H / 2, 0.025));
