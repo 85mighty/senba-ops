@@ -196,7 +196,10 @@ def page_plan(pdf, m, walls, cols):
     ax.text(rb["to"] + 0.12, z0 + 0.05, "N2 신설 벽 t0.10\n新設壁", fontsize=6.5, color=RED, zorder=7, weight="bold", va="center")
     dim(ax, (rb["from"], z0), (rb["to"], z0), -0.45, "2.30", color=RED, fs=6.5); dim(ax, (-3.954, -4.804), (-3.954, z0), 0.5, f"{z0 + 4.804:.2f} (창 벽 → N2 홀 면)", color=RED, fs=6, side=1)
     # 그 밖의 신설 벽(날개벽 ①②, 화장실 가림벽 ③): N3~N5
-    extra = [c for c in m["closures"] if c["id"] not in ("kitchen", "reception")]
+    extra = [c for c in m["closures"] if c["id"] not in ("kitchen", "reception") and not c.get("arch")]
+    for c in [x for x in m["closures"] if x.get("arch")]:
+        w = c["walls"][0]; a0 = min(x["offset"] for x in c["walls"]); a1 = max(x["offset"] for x in c["walls"])
+        ax.add_patch(Rectangle((w["from"], a0), w["to"] - w["from"], a1 - a0, fc="white", ec=GOLD, lw=1.2, ls=(0, (3, 2)), zorder=6)); ax.text((w["from"] + w["to"]) / 2, a0 - 0.14, f"N6 아치 {w['to'] - w['from']:.2f}", fontsize=6.5, color=GOLD, weight="bold", ha="center", zorder=7)
     for i, c in enumerate(extra, 3):
         ws = c["walls"]; a0 = min(w["offset"] for w in ws); a1 = max(w["offset"] for w in ws); f0, f1 = ws[0]["from"], ws[0]["to"]
         if ws[0]["axis"] == "x":
@@ -231,18 +234,24 @@ def page_plan(pdf, m, walls, cols):
         pts = [(x + (dx * cs - dz * sn), z + (dx * sn + dz * cs)) for dx, dz in [(-w / 2, back), (w / 2, back), (w / 2, back + d), (-w / 2, back + d)]]
         ax.add_patch(Polygon(pts, closed=True, fc="#dbe9f3", ec=BLUE, lw=0.6, ls="--", zorder=2))
     ax.text(-1.25, -2.55, "2인 체험 세트 ×3 (각 2.657 × 1.935) — 가구, 공사 아님 / 家具・工事対象外", ha="center", fontsize=6.5, color=BLUE, zorder=7)
+    # 철거 계획 기둥(C1·C3): X 표시
+    demo = m.get("demolition_candidates", {})
+    for c in cols:
+        if c["id"] in demo:
+            fx, fz = c["footprint"]["x"], c["footprint"]["z"]; ax.plot([fx[0] - 0.08, fx[1] + 0.08], [fz[0] - 0.08, fz[1] + 0.08], color=RED, lw=1.4, zorder=8); ax.plot([fx[0] - 0.08, fx[1] + 0.08], [fz[1] + 0.08, fz[0] - 0.08], color=RED, lw=1.4, zorder=8)
+            ax.text(fx[1] + 0.1, fz[1] + 0.3, f"C{c['num']} 철거 계획\n(구조 확인 필수)", fontsize=6, color=RED, zorder=8)
     # 기둥 거울 표시
     for c in cols:
-        if c["num"] in (1, 2, 3): fx, fz = c["footprint"]["x"], c["footprint"]["z"]; ax.add_patch(Rectangle((fx[0] - 0.03, fz[0] - 0.03), fx[1] - fx[0] + 0.06, fz[1] - fz[0] + 0.06, fc="none", ec=BLUE, lw=1.0, zorder=7))
+        if c["num"] in (1, 2, 3) and c["id"] not in demo: fx, fz = c["footprint"]["x"], c["footprint"]["z"]; ax.add_patch(Rectangle((fx[0] - 0.03, fz[0] - 0.03), fx[1] - fx[0] + 0.06, fz[1] - fz[0] + 0.06, fc="none", ec=BLUE, lw=1.0, zorder=7))
     ax.text(0.2, -0.75, "M1: C1·C2·C3 띠 위~천장 4면 거울 / 柱4面ミラー", ha="left", fontsize=6.5, color=BLUE, zorder=7)
     ax.text(-2.9, -0.6, "통로 0.60", ha="center", fontsize=5.5, color=MUTE, zorder=7)
     # 오른쪽 범례·마감표
     x0 = 0.70; fig.text(x0, 0.885, "공사 항목 / 工事項目", fontsize=11, weight="bold"); y = 0.86
     items = [("N1", "주방 입구 막음 벽 1.12 × H2.39, t0.10 — LGS/목틀 + 석고보드, 양면 홀 마감"), ("N2", "레지 뒤 벽 2.30 × H2.39, t0.10 — 남면 크림슨 페인트(#8A1F2B), 북면 홀 마감"),
-             ("N3·N4", "사진 코너 양쪽 날개벽 각 1.10 × H2.39, t0.10 — W15 북면·W4 북쪽 끝에서 홀 쪽으로, 홀 마감"), ("N5", "화장실 문 가림벽 1.13 × H2.39, t0.10 — 문 벽에서 0.80 떨어져 평행, 홀 마감"),
+             ("N3·N4", "사진 코너 양쪽 날개벽 각 1.10 × H2.39, t0.10 — W15 북면·W4 북쪽 끝에서 홀 쪽으로, 홀 마감"), ("N5", "화장실 문 가림벽 1.13 × H2.39, t0.10 — 문 벽에서 0.80 평행, 동쪽 끝 W1 에 붙임"), ("N6", "세면실 아치 출입구 0.86 × 2.05(반원, 스프링 1.62) — N4~N5 사이, 상부 스팬드럴 + 금색 몰딩"), ("D", "C1·C3 철거 계획 — 구조 기둥 여부 확인 후 결정"),
              ("O1", "W4 에 개구 0.53 × H1.98 (직원 통로) + 검은 봉·암막 커튼"), ("F1", "레드 카펫 약 3.6 ㎡ (입구 통로 + 레지 앞), 기존 마루 위"), ("P1", "사이드보드 코너(W15·N1 앞): 벽 거울 1.2×0.6 걸이, 사이드보드 1.6×0.45 반입"), ("P2", "N2 북면: 액자 1.1×0.85 걸이, 좌대"),
              ("M1", "기둥 C1·C2·C3 띠 위~천장 4면 거울 (비산방지 필름)"), ("S", "N2 남면: 船場美術館 세로 금박 절단문자 H1.1(통로 정중앙) + 원형 거울 φ0.55(레지 위)"), ("L", "트랙 스포트라이트 3 등 추가 (사이드보드 2 · P2 1)")]
-    for k, t in items: fig.text(x0, y, k, fontsize=8.5, weight="bold", color=RED); fig.text(x0 + 0.034, y, t, fontsize=7.4, va="top", wrap=True); y -= 0.032
+    for k, t in items: fig.text(x0, y, k, fontsize=8, weight="bold", color=RED); fig.text(x0 + 0.034, y, t, fontsize=7, va="top", wrap=True); y -= 0.03
     y = legend_box(fig, x0, y - 0.01, 0.27, [(dict(fc="white", ec=RED, hatch="////"), "신설 벽 / 新設壁"), (dict(fc="#c9a3a8", ec=RED), "레드 카펫 / 赤カーペット"), (dict(fc="#dbe9f3", ec=BLUE, ls="--"), "체험 세트 영역(가구)"), (dict(fc="#e8dcc8", ec=INK), "고정 가구 위치(반입)")], "범례 / 凡例")
     fig.text(x0, y - 0.01, "※ 벽·바닥·천장 마감은 ③ 참조.  임대 원상복구 조건 확인 후 고정 방식 결정.", fontsize=7.5, color=MUTE, va="top", wrap=True)
     pdf.savefig(fig); plt.close(fig)
@@ -299,7 +308,9 @@ def page_scope(pdf, m):
         ("1", "N1 주방 입구 막음 벽", "1.12 × H2.39, t0.10, 양면 PB, 홀 마감", "1개소", "업체", "현 입구 소핏 아래"),
         ("2", "N2 레지 뒤 벽", "2.30 × H2.39, t0.10, 남면 크림슨 페인트 / 북면 홀 마감", "1개소", "업체", "홀 쪽 통로 0.60 확보"),
         ("2b", "N3·N4 사진 코너 날개벽", "각 1.10 × H2.39, t0.10, 양면 홀 마감", "2개소", "업체", "사이드보드 양옆"),
-        ("2c", "N5 화장실 문 가림벽", "1.13 × H2.39, t0.10, 문에서 0.80, 양면 홀 마감", "1개소", "업체", "위치 현장 조정"),
+        ("2c", "N5 화장실 문 가림벽", "1.13 × H2.39, t0.10, 문에서 0.80, 동쪽 끝 W1 에 붙임", "1개소", "업체", "위치 현장 조정"),
+        ("2d", "N6 아치 출입구", "폭 0.86, 스프링 1.62, 꼭대기 2.05 반원 — 상부 스팬드럴 + 금색 몰딩", "1개소", "업체", "N4~N5 사이"),
+        ("D", "C1·C3 철거", "얇은 기둥 2본 — 구조 기둥이면 불가. 구조 확인 선행", "2본", "업체(구조)", "계획 단계"),
         ("3", "O1 W4 개구 + 커튼", "0.53 × H1.98 개구, 보강, 검은 봉 + 암막 커튼", "1개소", "업체", "구조 확인"),
         ("4", "상부 벽 페인트", "ダルグリーン, 프라이머 + 2~3회", "약 45~50 ㎡", "업체 또는 DIY", "벽지 상태·밀착 테스트"),
         ("5", "하부 벽 판 + 見切り材", "エアサーモパネルlite 7 mm, 바닥~띠 위끝, 見切り材 25×12", "판 약 140장 · 見切り材 약 50본", "DIY 예정", "높이 A 실측 후 발주"),
@@ -313,7 +324,7 @@ def page_scope(pdf, m):
     ]
     for r in rows:
         for x, t in zip(cols_x, r): fig.text(x, y, t, fontsize=8, va="top", wrap=True)
-        y -= 0.040; fig.add_artist(plt.Line2D([0.035, 0.97], [y + 0.010, y + 0.010], color="#ddd", lw=0.6))
+        y -= 0.036; fig.add_artist(plt.Line2D([0.035, 0.97], [y + 0.009, y + 0.009], color="#ddd", lw=0.6))
     y -= 0.01; fig.text(0.035, y, "업체 확인 요청 / 業者への確認事項", fontsize=11, weight="bold", color=RED); y -= 0.028
     for t in ["• 임대 원상복구(原状回復) 조건에 맞는 고정 방식(신설 벽 바닥·천장 고정, 판 접착) 제안", "• N1·N2 가 천장 트랙·에어컨·스프링클러·배선과 간섭하는지", "• 벽지 위 페인트 가능 여부(비닐/오염방지 코팅), 필요 시 프라이머 종류",
               "• 기둥 거울 시공 방식(접착 + 비산방지 필름, 모서리 처리)과 안전 기준", "• 공사 기간 및 영업 중 시공 가능 여부", "• 견적은 항목별(1~11) 분리 — DIY 항목은 자재만 또는 제외"]:

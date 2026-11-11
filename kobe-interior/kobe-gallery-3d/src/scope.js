@@ -66,7 +66,9 @@ export const closureWalls = (c, design) => {
     return Math.abs(n[0]) > 0.5 ? { ...w, axis: 'x', offset: px, inward: Math.sign(n[0]), from: pz - h, to: pz + h } : { ...w, axis: 'z', offset: pz, inward: Math.sign(n[1]), from: px - h, to: px + h };
   });
 };
-export const closureWallsAll = (meta, design) => (meta.closures || []).flatMap((c) => closureWalls(c, design));
+export const closureWallsAll = (meta, design) => (meta.closures || []).filter((c) => !c.arch).flatMap((c) => closureWalls(c, design));   // 아치는 전용 메쉬로 그림
 export const closureOn = (meta, design, wallId) => (meta.closures || []).some((c) => closureWalls(c).some((w) => w.id === wallId) && !!design?.closures?.[c.id]);
 export const closureOf = (meta, wallId) => (meta.closures || []).find((c) => closureWalls(c).some((w) => w.id === wallId)) || null;
-export const activeClosureWalls = (meta, design) => (meta.closures || []).filter((c) => !!design?.closures?.[c.id]).flatMap((c) => closureWalls(c, design));
+export const activeClosureWalls = (meta, design) => (meta.closures || []).filter((c) => !c.arch && !!design?.closures?.[c.id]).flatMap((c) => closureWalls(c, design));
+// 철거 계획 기둥(디자인별): design.demolished[id] = true
+export const isDemolished = (design, id) => !!design?.demolished?.[id];

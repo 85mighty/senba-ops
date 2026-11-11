@@ -1113,9 +1113,9 @@
     },
     {
       "id": "toilet_screen",
-      "label": "③ 화장실 문 가림벽 1.13 m (문에서 0.80)",
+      "label": "③ 화장실 가림벽 1.13 m (벽 1 에 붙임, 문에서 0.80)",
       "status": "design",
-      "note": "11/11 지정: 길이 113 cm, 화장실 문과 80 cm. 서쪽 끝은 W4 선에 맞춤(가정) — 끌어서 조정 가능",
+      "note": "11/11: 길이 113 cm, 화장실 문 벽 북면에서 0.80. 동쪽 끝을 벽 1(x 2.354)에 붙임 → 날개벽 ②와의 사이 0.86 m 가 세면실 출입구(아치)",
       "walls": [
         {
           "id": "wall_tscreen_s",
@@ -1123,8 +1123,8 @@
           "axis": "z",
           "offset": 1.563,
           "inward": 1.0,
-          "from": 0.364,
-          "to": 1.494,
+          "from": 1.224,
+          "to": 2.354,
           "two_sided": false,
           "virtual": true,
           "openings": [],
@@ -1136,12 +1136,48 @@
           "axis": "z",
           "offset": 1.463,
           "inward": -1.0,
-          "from": 0.364,
-          "to": 1.494,
+          "from": 1.224,
+          "to": 2.354,
           "two_sided": false,
           "virtual": true,
           "openings": [],
           "face": "북(홀 쪽)"
+        }
+      ]
+    },
+    {
+      "id": "toilet_arch",
+      "label": "아치 출입구 (날개벽 ② ~ 가림벽 ③ 사이 0.86 m)",
+      "status": "design",
+      "arch": {
+        "spring": 1.62,
+        "note": "반원 아치, 폭 0.86 → 꼭대기 2.05 m. 위쪽 스팬드럴만 벽, 마감은 홀 벽 색"
+      },
+      "note": "11/11: 세면실 앞 아치형 출입구 — 가림벽과 같은 선(z), 날개벽 ② 동쪽 면(x 0.364) ~ 가림벽 서쪽 끝(x 1.224)",
+      "walls": [
+        {
+          "id": "wall_tarch_s",
+          "type": "wall",
+          "axis": "z",
+          "offset": 1.563,
+          "inward": 1.0,
+          "from": 0.364,
+          "to": 1.224,
+          "two_sided": false,
+          "virtual": true,
+          "openings": []
+        },
+        {
+          "id": "wall_tarch_n",
+          "type": "wall",
+          "axis": "z",
+          "offset": 1.463,
+          "inward": -1.0,
+          "from": 0.364,
+          "to": 1.224,
+          "two_sided": false,
+          "virtual": true,
+          "openings": []
         }
       ]
     }
@@ -1262,5 +1298,9 @@
       ],
       "note": "세면실 남쪽 벽(벽 13) 바깥"
     }
-  ]
+  ],
+  "demolition_candidates": {
+    "thin_column_4": "기둥 1 — 철거 계획(11/11). 구조 기둥일 가능성 → 구조 확인 필수",
+    "thin_column_18": "기둥 3 — 철거 계획(11/11). 구조 확인 필수"
+  }
 }
