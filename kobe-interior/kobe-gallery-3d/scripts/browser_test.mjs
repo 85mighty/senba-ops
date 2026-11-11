@@ -132,6 +132,10 @@ try {
     if (!s.design.closures?.toilet_arch || !['thin_column_4', 'thin_column_18'].every((k) => s.design.demolished?.[k])) throw new Error('E안 아치·철거 없음');
     if (e.columns().some((c) => c.id === 'thin_column_4')) throw new Error('철거 기둥이 목록에 남음'); { let c4 = null; window.__viewer.loaded.reconstructed.traverse((o) => { if (o.name === 'thin_column_4') c4 = o; }); if (c4?.visible) throw new Error('철거 기둥 메쉬가 보임'); }
     let arch = 0; e.closureG.traverse((o) => { if (o.isMesh && o.userData.surface === 'toilet_arch') arch++; }); if (!arch) throw new Error('아치 메쉬 없음');
+    // 세면실 포토 스폿: 타일 벽 + 타원 거울 + 안여닫이 문(열림 각 +)
+    if (!s.design.closures?.washroom_tile || !s.design.props.some((p) => p.type === 'oval_mirror')) throw new Error('E안 세면실 포토 스폿 없음');
+    let tiles = 0; e.closureG.traverse((o) => { if (o.isMesh && o.userData.surface === 'washroom_tile') tiles++; }); if (tiles < 4) throw new Error('세면실 타일 면 부족 ' + tiles);
+    { let pv = null; e.fixtures.traverse((o) => { if (o.name === 'toilet_door_leaf') pv = o; }); if (!pv || pv.userData.swing.open <= 0 || Math.abs(pv.position.x - (1.897 - 0.035)) > 1e-3) throw new Error('화장실 문 경첩·방향 안 바뀜 ' + pv?.position.x + ' ' + pv?.userData.swing.open); }
     e.nudgeClosure('toilet_screen', 0, 0, 1); const rot = e.walls().filter((w) => w.id.startsWith('wall_tscreen')); if (rot.length !== 2 || rot[0].axis !== 'x' || Math.abs((rot[0].to - rot[0].from) - 1.13) > 1e-6) throw new Error('막기 벽 회전 실패 ' + JSON.stringify(rot.map((w) => [w.axis, w.offset, w.from, w.to])));
     e.nudgeClosure('toilet_screen', 0.1, 0, 0); const mv = e.walls().find((w) => w.id === 'wall_tscreen_s'); if (Math.abs(mv.offset - rot[0].offset - 0.1) > 1e-6) throw new Error('막기 벽 옆 이동 실패');
     s.design.closureXform = {}; s.commit('closure');

@@ -5,7 +5,7 @@ import { PALETTE_WALL, PALETTE_FLOOR, PALETTE_CEIL, PALETTE_CURTAIN, PALETTE_TRI
 import { buildProp, buildWindow, buildCurtain, measureLine } from './props.js';
 import { disposeTree } from './viewer.js';
 import { isFixtureWall, isExteriorWall, exteriorSpans, doorOpenings, openingOn, serviceOf, subtractRects, floorKept, inExterior, closureWallsAll, closureOn, closureWalls, closureOf, closureShift, closureXform, inOutside, isDemolished } from './scope.js';
-import { buildFixtures, cutWallOpening, buildPassCurtain, cutRegion } from './fixtures.js';
+import { buildFixtures, cutWallOpening, buildPassCurtain, cutRegion, buildWashroomTile } from './fixtures.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -167,6 +167,7 @@ export class Editor {
     if (!this.closureG) { this.closureG = new THREE.Group(); this.closureG.name = 'closures'; this.root.add(this.closureG); }
     disposeTree(this.closureG); this.closureG.visible = this.modelOn !== false; const mat = new THREE.MeshStandardMaterial({ color: 0xa9a59f, roughness: 0.9 });
     const on = []; for (const c of this.meta.closures || []) { if (!this.s.design.closures?.[c.id]) continue; const xf = closureXform(this.s.design, c.id); on.push(`${c.id}:${xf.dx},${xf.dz},${xf.rot}`); const T = this.meta.wall_thickness_m || 0.1;
+      if (c.kind === 'tile') { this.closureG.add(buildWashroomTile(this.meta, c.region, this.ceil)); continue; }   // 세면실 타일 벽(끌기 없음)
       const cg = new THREE.Group(); cg.name = 'closure'; cg.userData.pick = { kind: 'closure', id: c.id, axis: closureWalls(c, this.s.design)[0].axis }; this.closureG.add(cg);   // 길게 눌러 끌면 앞뒤로 옮겨진다(현재 방향 기준)
       if (c.arch) { const ws = closureWalls(c, this.s.design); const w = ws[0]; const W = w.to - w.from, spring = c.arch.spring || 1.62, r = W / 2;   // 아치 출입구: 위쪽 스팬드럴만 벽(반원 구멍)
         const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.lineTo(W, 0); sh.lineTo(W, this.ceil); sh.lineTo(0, this.ceil); sh.closePath();
@@ -197,7 +198,7 @@ export class Editor {
       for (const p of [a, b]) { const t = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.12, 0.02), new THREE.MeshBasicMaterial({ color, depthTest: false })); t.position.copy(p); g.add(t); }
       const lbl = this.v.textSprite(text, color); lbl.scale.set(0.25 * lbl.userData.aspect, 0.25, 1); lbl.position.copy(a).lerp(b, 0.5).add(new THREE.Vector3(0, 0.18, 0)); g.add(lbl); g.traverse((o) => { o.renderOrder = 998; o.userData.zone = true; }); return g; };
     for (const c of this.meta.closures || []) {
-      if (!this.s.design.closures?.[c.id]) continue; const walls = closureWalls(c, this.s.design); if (walls[0].axis !== 'z') continue;
+      if (!this.s.design.closures?.[c.id]) continue; const walls = closureWalls(c, this.s.design); if (!walls.length || walls[0].axis !== 'z') continue;
       const sh = (liveShift && liveShift.id === c.id) ? liveShift.dz : 0; const zs = walls.map((w) => w.offset + sh); const zS = Math.max(...zs), zN = Math.min(...zs); const x0 = Math.min(...walls.map((w) => w.from)), x1 = Math.max(...walls.map((w) => w.to));
       // 남쪽(입구 쪽): 레지 뒷면까지
       const reg = (this.s.design.props || []).find((p) => p.type === 'register' && p.x > x0 && p.x < x1 && p.z > zS); if (reg) { const back = reg.z - 0.225 - Math.abs(Math.sin(reg.rot || 0)) * 0.175; this.closureDims.add(line(new THREE.Vector3(reg.x, 1.0, zS), new THREE.Vector3(reg.x, 1.0, back), `레지 ↔ 벽 ${(back - zS).toFixed(2)} m`)); }
