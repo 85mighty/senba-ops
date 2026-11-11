@@ -72,7 +72,9 @@ export function buildFixtures(meta) {
   for (const d of meta.door_openings || []) {
     const wall = (meta.elements || []).find((e) => e.id === d.wall); if (!wall || wall.axis !== 'z') continue;   // 현재는 X 방향 벽(z=상수)만
     const g = new THREE.Group(); g.name = 'toilet_door'; root.add(g); g.userData.surface = 'toilet';
-    const frameM = std(0x8b8e90, { metalness: 0.3, roughness: 0.45 }), leafM = std(0x63666a, { metalness: 0.45, roughness: 0.38 }), steel = std(0xc3c6c8, { metalness: 0.7, roughness: 0.3 });
+    // 교체 문(디자인): 다크 월넛 패널 문 — 참고 사진의 거울에 비친 문. finish 'steel' 이면 기존 회색 철문
+    const wood = d.finish !== 'steel';
+    const frameM = wood ? std(0x3e2a1f, { roughness: 0.55, metalness: 0.05 }) : std(0x8b8e90, { metalness: 0.3, roughness: 0.45 }), leafM = wood ? std(0x4a3226, { roughness: 0.5, metalness: 0.05 }) : std(0x63666a, { metalness: 0.45, roughness: 0.38 }), steel = wood ? std(0xc9a85c, { metalness: 0.8, roughness: 0.3 }) : std(0xc3c6c8, { metalness: 0.7, roughness: 0.3 });
     const z0 = wall.offset - 0.07, z1 = wall.offset + 0.07, jt = 0.035;
     boxAt(g, [d.from, d.from + jt], [0, d.y1], [z0, z1], frameM); boxAt(g, [d.to - jt, d.to], [0, d.y1], [z0, z1], frameM); boxAt(g, [d.from, d.to], [d.y1 - jt, d.y1], [z0, z1], frameM);
     // 문짝: 경첩 쪽(from)에서 방 쪽으로 열림(기본 열린 상태). 닫으면 문틀 안에 들어간다
@@ -80,6 +82,13 @@ export function buildFixtures(meta) {
     // 경첩: hinge 'from'(서쪽) 또는 'to'(동쪽). room_side +1 = 세면실 쪽(+z)으로 열림(안여닫이), −1 = 홀 쪽
     const hs = d.hinge === 'to' ? -1 : 1; const pivot = new THREE.Group(); pivot.position.set(hs > 0 ? d.from + jt : d.to - jt, 0, side < 0 ? z0 : z1); g.add(pivot); const lz = -side * t / 2;
     const leaf = new THREE.Mesh(new THREE.BoxGeometry(lw, lh, t), leafM); leaf.position.set(hs * lw / 2, 0.01 + lh / 2, lz); pivot.add(leaf);
+    if (wood) {   // 양면 2단 패널(위 길게·아래 짧게): 몰딩 테두리 + 안쪽 오목 판
+      const panM = std(0x2f1f17, { roughness: 0.6 }), inM = std(0x56392b, { roughness: 0.55 }); const pw = lw - 0.2;
+      for (const [y0, y1] of [[0.18, 0.78], [0.95, lh - 0.1]]) for (const sz of [-1, 1]) {
+        const rim = new THREE.Mesh(new THREE.BoxGeometry(pw, y1 - y0, 0.012), panM); rim.position.set(hs * lw / 2, (y0 + y1) / 2, lz + sz * (t / 2 + 0.006)); pivot.add(rim);
+        const inn = new THREE.Mesh(new THREE.BoxGeometry(pw - 0.07, y1 - y0 - 0.07, 0.014), inM); inn.position.set(hs * lw / 2, (y0 + y1) / 2, lz + sz * (t / 2 + 0.007)); pivot.add(inn);
+      }
+    }
     for (const sz of [-1, 1]) { const lev = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.018, 0.018), steel); lev.position.set(hs * (lw - 0.1), 0.98, lz + sz * (t / 2 + 0.03)); pivot.add(lev); const rose = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.012, 14), steel); rose.rotation.x = Math.PI / 2; rose.position.set(hs * (lw - 0.06), 0.98, lz + sz * (t / 2 + 0.008)); pivot.add(rose); }
     const closer = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.06, 0.06), std(0x2b2b2b)); closer.position.set(hs * 0.2, lh - 0.04, lz + side * (t / 2 + 0.03)); pivot.add(closer);
     hinge(pivot, 0, -side * hs * (d.swing_deg ?? 70) * Math.PI / 180, true, 'toilet_door_leaf');
@@ -199,14 +208,27 @@ export function leafMosaicMaterial() {
   const mt = new THREE.MeshStandardMaterial({ map: leafTex, roughness: 0.3, metalness: 0.05, polygonOffset: true, polygonOffsetFactor: -2 }); mt.userData.shared = true; mt.userData.tileM = 0.2; return mt;
 }
 // 상자 영역의 네 안쪽 면을 타일로 덮는다(문 자리는 비움). region: {x, z, holes:[{face, from, to, y1}], span:{face:[a,b]}}. face: w=x0면 e=x1면 s=z0면 n=z1면
+// region.finish: {face: 'tile' | 'paint'} — 기본 tile. 'paint' = 크림색 페인트 벽 + 다크 월넛 체어레일(H 0.92) + 다크 월넛 걸레받이(참고 사진의 거울에 비친 문 쪽 벽)
+export const WASHROOM_PAINT = { wall: '#e9dcc6', rail: 0x3e2a1f, railY: 0.92, railH: 0.055, railD: 0.022, baseH: 0.10, baseD: 0.012 };
 export function buildWashroomTile(meta, region, ceilH = 2.38) {
-  const g = new THREE.Group(); g.name = 'washroom_tile'; const mat = leafMosaicMaterial(); const T = mat.userData.tileM; const off = 0.004;
-  const quad = (w, h, pos, rotY) => { const geo = new THREE.PlaneGeometry(w, h); const uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w / T, uv.getY(i) * h / T); const mm = new THREE.Mesh(geo, mat); mm.position.copy(pos); mm.rotation.y = rotY; mm.userData.surface = 'washroom_tile'; g.add(mm); };
+  const g = new THREE.Group(); g.name = 'washroom_tile'; const mat = leafMosaicMaterial(); const T = mat.userData.tileM; const off = 0.03;   // 홀 마감(판 0.017 + 見切り 0.025)보다 앞에 붙여 그 위를 덮는다
+  const paintM = std(new THREE.Color(WASHROOM_PAINT.wall).getHex(), { roughness: 0.85, metalness: 0, polygonOffset: true, polygonOffsetFactor: -2 }), railM = std(WASHROOM_PAINT.rail, { roughness: 0.5, metalness: 0.05 });
+  const quad = (w, h, pos, rotY, kind = 'tile') => {
+    const geo = new THREE.PlaneGeometry(w, h); const uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w / T, uv.getY(i) * h / T);
+    const mm = new THREE.Mesh(geo, kind === 'tile' ? mat : paintM); mm.position.copy(pos); mm.rotation.y = rotY; mm.userData.surface = kind === 'tile' ? 'washroom_tile' : 'washroom_paint'; g.add(mm);
+    if (kind !== 'tile') {   // 체어레일·걸레받이: 면 법선 쪽으로 튀어나온 상자(구멍 구간은 사각형 분할에서 이미 빠짐)
+      const P = WASHROOM_PAINT; const nrm = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), rotY); const y0 = pos.y - h / 2, y1 = pos.y + h / 2;
+      for (const [cy, ch, cd] of [[P.railY + P.railH / 2, P.railH, P.railD], [P.baseH / 2, P.baseH, P.baseD]]) {
+        if (cy - ch / 2 < y0 - 1e-3 || cy + ch / 2 > y1 + 1e-3) continue;
+        const bx = new THREE.Mesh(new THREE.BoxGeometry(w, ch, cd), railM); bx.position.copy(pos).setY(cy).addScaledVector(nrm, cd / 2); bx.rotation.y = rotY; bx.userData.surface = 'washroom_rail'; g.add(bx);
+      }
+    }
+  };
   const faces = { w: { len: [region.z[0], region.z[1]], at: region.x[0] + off, rot: Math.PI / 2 }, e: { len: [region.z[0], region.z[1]], at: region.x[1] - off, rot: -Math.PI / 2 }, s: { len: [region.x[0], region.x[1]], at: region.z[0] + off, rot: 0 }, n: { len: [region.x[0], region.x[1]], at: region.z[1] - off, rot: Math.PI } };
   for (const [key, f] of Object.entries(faces)) {
     const holes = (region.holes || []).filter((h) => h.face === key).map((h) => [h.from - 0.02, h.to + 0.02, -1, h.y1 + 0.02]); const len = (region.span || {})[key] || f.len;   // span: 그 면 중 일부만(아치 자리 제외 등)
     for (const [a, b, c0, c1] of subtractRects([len[0], len[1], 0, ceilH], holes)) {
-      const mid = (a + b) / 2, y = (c0 + c1) / 2; const pos = (key === 'w' || key === 'e') ? new THREE.Vector3(f.at, y, mid) : new THREE.Vector3(mid, y, f.at); quad(b - a, c1 - c0, pos, f.rot);
+      const mid = (a + b) / 2, y = (c0 + c1) / 2; const pos = (key === 'w' || key === 'e') ? new THREE.Vector3(f.at, y, mid) : new THREE.Vector3(mid, y, f.at); quad(b - a, c1 - c0, pos, f.rot, (region.finish || {})[key] || 'tile');
     }
   }
   return g;

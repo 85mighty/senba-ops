@@ -18,7 +18,7 @@ const PRESETS = [{ id: 'c_phone_20261027', name: 'C안 (폰에서 만든 것, 10
   { id: 'e_reception_20261108', name: '리셉션 알코브 (레지 ② + ㄱ자 레드 벽 · 카펫 · 船場美術館)', seedSlot: 'E', afterSync: true, apply: applyReception, base: () => store.getSlot('D') || applyIkeaCorner(store.getSlot('C') || presetCPhone), armText: (sl) => `${sl}안에 리셉션 알코브를 넣습니다(레지는 ②로 옮김). 다시 누르세요` },
   ...Object.entries(REGISTER_PLANS).map(([k, r]) => ({ id: 'register_' + k, name: r.name, apply: (d) => applyRegister(d, k), armText: (sl) => `${sl}안에 레지를 놓습니다(있던 레지는 옮김). 다시 누르세요` })),
   { id: 'couple3', name: '2인 세트 3팀 배치 (창 벽 2 + 동쪽 벽 1)', apply: applyCoupleLayout, armText: (sl) => `${sl}안의 2인 세트를 3팀 배치로 바꿉니다(있던 세트는 치움). 다시 누르세요` },
-  { id: 'washroom_photo', name: '화장실 앞 포토 스폿 (리프 타일 + 타원 거울)', apply: applyWashroomPhoto, armText: (sl) => `${sl}안 세면실을 타일 포토 스폿으로 만듭니다. 다시 누르세요` },
+  { id: 'washroom_photo', name: '화장실 앞 포토 스폿 (거울 벽 리프 타일 + 크림 페인트 벽)', apply: applyWashroomPhoto, armText: (sl) => `${sl}안 세면실을 타일 포토 스폿으로 만듭니다. 다시 누르세요` },
   { id: 'hall_arch', name: '홀 입구 아치 (레지 뒤 벽 ~ 날개벽 ①)', apply: applyHallArch, armText: (sl) => `${sl}안 홀 입구를 아치로 만듭니다. 다시 누르세요` },
   { id: 'arch_demolish', name: '세면실 아치 출입구 + 기둥 1·3 철거 계획', apply: applyArchDemolish, armText: (sl) => `${sl}안에 아치와 기둥 철거를 적용합니다. 다시 누르세요` },
   { id: 'wings', name: '날개벽 ①② + 화장실 가림벽 ③', apply: applyWings, armText: (sl) => `${sl}안에 벽 3개를 세웁니다. 다시 누르세요` },
@@ -45,6 +45,7 @@ const PATCHES = [{ id: 'd_upper_mirrors_20261028', slot: 'D', apply: applyUpperM
   { id: 'e_hall_arch_20261111', slot: 'E', apply: applyHallArch, msg: 'E안: 리셉션에서 홀로 들어가는 입구도 아치로 만들었습니다' },
   { id: 'e_washroom_photo_20261111', slot: 'E', apply: applyWashroomPhoto, msg: 'E안: 화장실 앞 공간을 리프 모자이크 타일 + 금테 타원 거울 포토 스폿으로, 문은 안여닫이로 바꿨습니다' },
   { id: 'e_washroom_photo_fix_20261111', slot: 'E', apply: applyWashroomPhoto, msg: 'E안: 포토 스폿을 세면실 안이 아니라 화장실 문 앞 공간으로 옮겼습니다' },
+  { id: 'e_washroom_finish_20261111', slot: 'E', apply: applyWashroomPhoto, msg: 'E안: 화장실 앞 포토 스폿 — 거울 벽만 리프 타일, 문 쪽·양옆 벽은 크림 페인트 + 다크 월넛 체어레일, 문은 다크 월넛 패널 문' },
   { id: 'd_air_panel_20261106', slot: 'D', apply: applyAirPanel, msg: 'D안: 아래 벽을 エアサーモパネル로 띠까지 덮었습니다(방법 ③)' }];
 
 const $ = (s) => document.querySelector(s);
