@@ -128,6 +128,9 @@ try {
     const z1 = e.walls().find((w) => w.id === 'wall_rec_back_in').offset; if (Math.abs(z1 - z0 - 0.2) > 1e-6) throw new Error('막기 벽 이동 안 됨 ' + z0 + ' ' + z1);
     e.setEnabled(true); let gaps = 0; e.closureDims.traverse((o) => { if (o.isSprite) gaps++; }); if (gaps < 2) throw new Error('벽 거리 표시 없음 ' + gaps);
     s.design.closureShift = {}; s.commit('closure');
+    e.nudgeClosure('toilet_screen', 0, 0, 1); const rot = e.walls().filter((w) => w.id.startsWith('wall_tscreen')); if (rot.length !== 2 || rot[0].axis !== 'x' || Math.abs((rot[0].to - rot[0].from) - 1.13) > 1e-6) throw new Error('막기 벽 회전 실패 ' + JSON.stringify(rot.map((w) => [w.axis, w.offset, w.from, w.to])));
+    e.nudgeClosure('toilet_screen', 0.1, 0, 0); const mv = e.walls().find((w) => w.id === 'wall_tscreen_s'); if (Math.abs(mv.offset - rot[0].offset - 0.1) > 1e-6) throw new Error('막기 벽 옆 이동 실패');
+    s.design.closureXform = {}; s.commit('closure');
     window.__switchSlot('A'); if (cutOf()) throw new Error('A안에 옆 통로 구멍이 남음');
     if (e.walls().some((w) => w.id === 'wall_kitchen_close') || e.closureG.children.length) throw new Error('A안에 막기 벽이 남음');
     // 북쪽 창: 사진대로 큰 미닫이창 2세트

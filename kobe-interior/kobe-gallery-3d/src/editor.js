@@ -4,7 +4,7 @@ import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { PALETTE_WALL, PALETTE_FLOOR, PALETTE_CEIL, PALETTE_CURTAIN, PALETTE_TRIM, PALETTE_LOWER, FRAME_STYLES, PROP_TYPES } from './design.js';
 import { buildProp, buildWindow, buildCurtain, measureLine } from './props.js';
 import { disposeTree } from './viewer.js';
-import { isFixtureWall, isExteriorWall, exteriorSpans, doorOpenings, openingOn, serviceOf, subtractRects, floorKept, inExterior, closureWallsAll, closureOn, closureWalls, closureOf, closureShift } from './scope.js';
+import { isFixtureWall, isExteriorWall, exteriorSpans, doorOpenings, openingOn, serviceOf, subtractRects, floorKept, inExterior, closureWallsAll, closureOn, closureWalls, closureOf, closureShift, closureXform } from './scope.js';
 import { buildFixtures, cutWallOpening, buildPassCurtain } from './fixtures.js';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -162,8 +162,8 @@ export class Editor {
   buildClosures() {
     if (!this.closureG) { this.closureG = new THREE.Group(); this.closureG.name = 'closures'; this.root.add(this.closureG); }
     disposeTree(this.closureG); this.closureG.visible = this.modelOn !== false; const mat = new THREE.MeshStandardMaterial({ color: 0xa9a59f, roughness: 0.9 });
-    const on = []; for (const c of this.meta.closures || []) { if (!this.s.design.closures?.[c.id]) continue; const sh = closureShift(this.s.design, c.id); on.push(c.id + ':' + sh); const T = this.meta.wall_thickness_m || 0.1;
-      const cg = new THREE.Group(); cg.name = 'closure'; cg.userData.pick = { kind: 'closure', id: c.id, axis: (c.walls || [c.wall])[0].axis }; this.closureG.add(cg);   // 길게 눌러 끌면 앞뒤로 옮겨진다
+    const on = []; for (const c of this.meta.closures || []) { if (!this.s.design.closures?.[c.id]) continue; const xf = closureXform(this.s.design, c.id); on.push(`${c.id}:${xf.dx},${xf.dz},${xf.rot}`); const T = this.meta.wall_thickness_m || 0.1;
+      const cg = new THREE.Group(); cg.name = 'closure'; cg.userData.pick = { kind: 'closure', id: c.id, axis: closureWalls(c, this.s.design)[0].axis }; this.closureG.add(cg);   // 길게 눌러 끌면 앞뒤로 옮겨진다(현재 방향 기준)
       for (const w of closureWalls(c, this.s.design)) { const m = new THREE.Mesh(new THREE.BoxGeometry(w.to - w.from, this.ceil, T), mat); m.userData.surface = w.id; this.placeOnWall(m, { ...w, sid: w.id }, (w.from + w.to) / 2, this.ceil / 2, -T / 2); cg.add(m); }
       // 바닥(카펫): 복원 바닥 삼각형 중 영역 안의 것만 — 바닥 칠 위(y 0.016)에 깐다
       for (const r of c.floor || []) { const geo = new THREE.PlaneGeometry(r.x[1] - r.x[0], r.z[1] - r.z[0]); geo.rotateX(-Math.PI / 2); geo.translate((r.x[0] + r.x[1]) / 2, 0, (r.z[0] + r.z[1]) / 2); const f = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: r.color || '#6e1620', roughness: 0.97, polygonOffset: true, polygonOffsetFactor: -3 })); f.position.y = 0.016; f.userData.surface = 'floor'; this.closureG.add(f); } }
@@ -171,6 +171,10 @@ export class Editor {
     for (const d of this.meta.door_openings || []) if (d.curtain && openingOn(d, this.s.design)) this.closureG.add(buildPassCurtain(d, !!this.curtainOpen[d.id], (open) => { this.curtainOpen[d.id] = open; }));
     const key = on.join(','); if (this._closureKey !== undefined && key !== this._closureKey) { this.buildItems(); this.buildPicks(); this.buildLabels(); this.renderChips?.(); } this._closureKey = key;
     this.buildClosureGaps();
+  }
+  // 막기 벽 옮기기/돌리기: dx·dz(m, 월드)와 90° 회전 횟수를 디자인에 더한다
+  nudgeClosure(id, ddx, ddz, drot) {
+    const t = closureXform(this.s.design, id); this.s.design.closureXform = { ...(this.s.design.closureXform || {}), [id]: { dx: +(t.dx + ddx).toFixed(3), dz: +(t.dz + ddz).toFixed(3), rot: ((t.rot + drot) % 4 + 4) % 4 } }; this.s.commit('closure');
   }
   // 막기 벽과 주변의 거리 표시(편집 모드): 벽 양면에서 가장 가까운 레지(남쪽)·기둥(북쪽)까지. 끌 때는 liveShift 로 미리 보여 준다
   buildClosureGaps(liveShift = null) {
@@ -422,7 +426,7 @@ export class Editor {
     if (!this.enabled) { const cb = $('#editMode'); if (cb) cb.checked = true; this.setEnabled(true); }
     if (d.moved) {
       if (pk.kind === 'prop') { const p = this.s.design.props.find((x) => x.id === pk.id); if (p) { p.x = +d.g.position.x.toFixed(2); p.z = +d.g.position.z.toFixed(2); this.s.commit('prop-move'); } }
-      else if (pk.kind === 'closure') { const ax = pk.axis === 'z' ? 'z' : 'x'; const sh = closureShift(this.s.design, pk.id) + d.g.position[ax]; this.s.design.closureShift = { ...(this.s.design.closureShift || {}), [pk.id]: +sh.toFixed(2) }; this.s.commit('closure'); this.toast(`벽을 ${(d.g.position[ax] * 100).toFixed(0)} cm 옮겼습니다`); }
+      else if (pk.kind === 'closure') { const ax = pk.axis === 'z' ? 'z' : 'x'; this.nudgeClosure(pk.id, ax === 'x' ? d.g.position.x : 0, ax === 'z' ? d.g.position.z : 0, 0); this.toast(`벽을 ${(d.g.position[ax] * 100).toFixed(0)} cm 옮겼습니다`); }
       else { this.s.design.landmarks[pk.id] = { x: +d.g.position.x.toFixed(2), z: +d.g.position.z.toFixed(2), status: 'user' }; this.s.commit('landmark'); this.onLandmarks?.(); }
     }
     if (pk.kind === 'closure') { const w = closureWalls(this.meta.closures.find((c) => c.id === pk.id), this.s.design)[0]; this.select({ kind: 'wall', id: w.id }); return true; }
@@ -611,9 +615,13 @@ export class Editor {
       row('액자 수', num(sfw.artCount ?? '', 1, (v) => { sfw.artCount = v || null; commit('art'); }, '개 (비우면 자동)'));
       row('액자 틀', selectEl(FRAME_STYLES, sfw.frame || 'gold', (v) => { sfw.frame = v; commit('frame'); }));
       if (w.virtual) { const c = closureOf(this.meta, w.id); if (c) { const sh = closureShift(this.s.design, c.id);
-        h(`<div class="hint">신설 벽(막기 벽) — 화면에서 길게 눌러 끌면 앞뒤로 옮겨집니다. 거리 표시는 편집 모드에서 보입니다.</div>`);
-        row('벽 위치 이동', num(Math.round(sh * 100), 1, (v) => { this.s.design.closureShift = { ...(this.s.design.closureShift || {}), [c.id]: v / 100 }; commit('closure'); }, 'cm (+ 입구 쪽 / − 홀 쪽)'));
-        if (sh) box.appendChild(btn('원래 위치로', () => { this.s.design.closureShift = { ...(this.s.design.closureShift || {}), [c.id]: 0 }; commit('closure'); }, 'ghost')); } }
+        const xf = closureXform(this.s.design, c.id); const cur = closureWalls(c, this.s.design)[0]; const alongZ = cur.axis === 'x';   // 벽이 z 방향으로 뻗음
+        h(`<div class="hint">신설 벽(막기 벽) — 버튼은 한 번에 5 cm. 화면에서 길게 눌러 끌어도 됩니다. 지금: 앞뒤 ${Math.round((alongZ ? xf.dx : xf.dz) * 100)} cm · 양옆 ${Math.round((alongZ ? xf.dz : xf.dx) * 100)} cm · 회전 ${xf.rot * 90}°</div>`);
+        const step = 0.05; const mv = (ddx, ddz) => this.nudgeClosure(c.id, ddx, ddz, 0);
+        const r1 = document.createElement('div'); r1.className = 'row wrap'; r1.append(btn('◀ 앞뒤 −5', () => (alongZ ? mv(-step, 0) : mv(0, -step))), btn('앞뒤 +5 ▶', () => (alongZ ? mv(step, 0) : mv(0, step)))); row('앞뒤', r1);
+        const r2 = document.createElement('div'); r2.className = 'row wrap'; r2.append(btn('◀ 양옆 −5', () => (alongZ ? mv(0, -step) : mv(-step, 0))), btn('양옆 +5 ▶', () => (alongZ ? mv(0, step) : mv(step, 0)))); row('양옆', r2);
+        const r3 = document.createElement('div'); r3.className = 'row wrap'; r3.append(btn('↺ 90°', () => this.nudgeClosure(c.id, 0, 0, -1)), btn('↻ 90°', () => this.nudgeClosure(c.id, 0, 0, 1))); row('회전(가운데 기준)', r3);
+        if (xf.dx || xf.dz || xf.rot || sh) box.appendChild(btn('원래 위치로', () => { this.s.design.closureXform = { ...(this.s.design.closureXform || {}), [c.id]: { dx: 0, dz: 0, rot: 0 } }; if (this.s.design.closureShift) delete this.s.design.closureShift[c.id]; commit('closure'); }, 'ghost')); } }
       this.renderTrimControls(box, w.id, '벽');
       box.appendChild(btn(this.hidden.has(w.id) ? '👁 이 벽 보이기' : '🙈 이 벽 숨기기', () => this.setHidden(w.id, !this.hidden.has(w.id)), 'ghost'));
       const wins = this.s.windowsOf(w.id); h(`<h4>창 (${wins.length})</h4>`);
