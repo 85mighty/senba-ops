@@ -16,7 +16,7 @@ plt.rcParams["font.family"] = ["WenQuanYi Zen Hei", "sans-serif"]
 A3_MM = (420.1, 296.9); A3 = (A3_MM[0] / 25.4, A3_MM[1] / 25.4)
 SCALE = 50                                   # 1:50 → 1 m = 20 mm
 INK, MUTE, GREEN, RED, BLUE, GOLD = "#1a1a1a", "#777", "#2f6f5e", "#b33", "#2c6fb0", "#9a7a1a"
-DATE = "2026-11-10"
+DATE = "2026-11-11"
 
 
 def load():
@@ -195,6 +195,15 @@ def page_plan(pdf, m, walls, cols):
     ax.add_patch(Rectangle((rb["from"], z0), rb["to"] - rb["from"], z1 - z0, fc="white", ec=RED, lw=1.2, hatch="////", zorder=6))
     ax.text(rb["to"] + 0.12, z0 + 0.05, "N2 신설 벽 t0.10\n新設壁", fontsize=6.5, color=RED, zorder=7, weight="bold", va="center")
     dim(ax, (rb["from"], z0), (rb["to"], z0), -0.45, "2.30", color=RED, fs=6.5); dim(ax, (-3.954, -4.804), (-3.954, z0), 0.5, f"{z0 + 4.804:.2f} (창 벽 → N2 홀 면)", color=RED, fs=6, side=1)
+    # 그 밖의 신설 벽(날개벽 ①②, 화장실 가림벽 ③): N3~N5
+    extra = [c for c in m["closures"] if c["id"] not in ("kitchen", "reception")]
+    for i, c in enumerate(extra, 3):
+        ws = c["walls"]; a0 = min(w["offset"] for w in ws); a1 = max(w["offset"] for w in ws); f0, f1 = ws[0]["from"], ws[0]["to"]
+        if ws[0]["axis"] == "x":
+            ax.add_patch(Rectangle((a0, f0), a1 - a0, f1 - f0, fc="white", ec=RED, lw=1.2, hatch="////", zorder=6)); ax.text(a1 + 0.08, (f0 + f1) / 2, f"N{i}", fontsize=6.5, color=RED, weight="bold", va="center", zorder=7); dim(ax, (a1, f0), (a1, f1), 0.45, f"{f1 - f0:.2f}", color=RED, fs=6, side=-1)
+        else:
+            ax.add_patch(Rectangle((f0, a0), f1 - f0, a1 - a0, fc="white", ec=RED, lw=1.2, hatch="////", zorder=6)); ax.text((f0 + f1) / 2, a0 - 0.12, f"N{i}", fontsize=6.5, color=RED, weight="bold", ha="center", zorder=7); dim(ax, (f0, a1), (f1, a1), 0.3, f"{f1 - f0:.2f}", color=RED, fs=6)
+        if c["id"] == "toilet_screen": dim(ax, (1.57, a1), (1.57, 2.363), 0.0, "0.80", color=RED, fs=6, side=1)
     # 개구부: 주방 옆 통로(커튼)
     ks = next(d for d in m["door_openings"] if d["id"] == "kitchen_side"); w4 = next(w for w in walls if w["id"] == ks["wall"])
     ax.add_patch(Rectangle((w4["offset"] - T - 0.01, ks["from"]), T + 0.02, ks["to"] - ks["from"], fc="white", ec="none", zorder=6))
@@ -230,9 +239,10 @@ def page_plan(pdf, m, walls, cols):
     # 오른쪽 범례·마감표
     x0 = 0.70; fig.text(x0, 0.885, "공사 항목 / 工事項目", fontsize=11, weight="bold"); y = 0.86
     items = [("N1", "주방 입구 막음 벽 1.12 × H2.39, t0.10 — LGS/목틀 + 석고보드, 양면 홀 마감"), ("N2", "레지 뒤 벽 2.30 × H2.39, t0.10 — 남면 크림슨 페인트(#8A1F2B), 북면 홀 마감"),
+             ("N3·N4", "사진 코너 양쪽 날개벽 각 1.10 × H2.39, t0.10 — W15 북면·W4 북쪽 끝에서 홀 쪽으로, 홀 마감"), ("N5", "화장실 문 가림벽 1.13 × H2.39, t0.10 — 문 벽에서 0.80 떨어져 평행, 홀 마감"),
              ("O1", "W4 에 개구 0.53 × H1.98 (직원 통로) + 검은 봉·암막 커튼"), ("F1", "레드 카펫 약 3.6 ㎡ (입구 통로 + 레지 앞), 기존 마루 위"), ("P1", "사이드보드 코너(W15·N1 앞): 벽 거울 1.2×0.6 걸이, 사이드보드 1.6×0.45 반입"), ("P2", "N2 북면: 액자 1.1×0.85 걸이, 좌대"),
              ("M1", "기둥 C1·C2·C3 띠 위~천장 4면 거울 (비산방지 필름)"), ("S", "N2 남면: 船場美術館 세로 금박 절단문자 H1.1(통로 정중앙) + 원형 거울 φ0.55(레지 위)"), ("L", "트랙 스포트라이트 3 등 추가 (사이드보드 2 · P2 1)")]
-    for k, t in items: fig.text(x0, y, k, fontsize=9, weight="bold", color=RED); fig.text(x0 + 0.028, y, t, fontsize=7.8, va="top", wrap=True); y -= 0.034
+    for k, t in items: fig.text(x0, y, k, fontsize=8.5, weight="bold", color=RED); fig.text(x0 + 0.034, y, t, fontsize=7.4, va="top", wrap=True); y -= 0.032
     y = legend_box(fig, x0, y - 0.01, 0.27, [(dict(fc="white", ec=RED, hatch="////"), "신설 벽 / 新設壁"), (dict(fc="#c9a3a8", ec=RED), "레드 카펫 / 赤カーペット"), (dict(fc="#dbe9f3", ec=BLUE, ls="--"), "체험 세트 영역(가구)"), (dict(fc="#e8dcc8", ec=INK), "고정 가구 위치(반입)")], "범례 / 凡例")
     fig.text(x0, y - 0.01, "※ 벽·바닥·천장 마감은 ③ 참조.  임대 원상복구 조건 확인 후 고정 방식 결정.", fontsize=7.5, color=MUTE, va="top", wrap=True)
     pdf.savefig(fig); plt.close(fig)
@@ -288,6 +298,8 @@ def page_scope(pdf, m):
     rows = [
         ("1", "N1 주방 입구 막음 벽", "1.12 × H2.39, t0.10, 양면 PB, 홀 마감", "1개소", "업체", "현 입구 소핏 아래"),
         ("2", "N2 레지 뒤 벽", "2.30 × H2.39, t0.10, 남면 크림슨 페인트 / 북면 홀 마감", "1개소", "업체", "홀 쪽 통로 0.60 확보"),
+        ("2b", "N3·N4 사진 코너 날개벽", "각 1.10 × H2.39, t0.10, 양면 홀 마감", "2개소", "업체", "사이드보드 양옆"),
+        ("2c", "N5 화장실 문 가림벽", "1.13 × H2.39, t0.10, 문에서 0.80, 양면 홀 마감", "1개소", "업체", "위치 현장 조정"),
         ("3", "O1 W4 개구 + 커튼", "0.53 × H1.98 개구, 보강, 검은 봉 + 암막 커튼", "1개소", "업체", "구조 확인"),
         ("4", "상부 벽 페인트", "ダルグリーン, 프라이머 + 2~3회", "약 45~50 ㎡", "업체 또는 DIY", "벽지 상태·밀착 테스트"),
         ("5", "하부 벽 판 + 見切り材", "エアサーモパネルlite 7 mm, 바닥~띠 위끝, 見切り材 25×12", "판 약 140장 · 見切り材 약 50본", "DIY 예정", "높이 A 실측 후 발주"),
@@ -301,7 +313,7 @@ def page_scope(pdf, m):
     ]
     for r in rows:
         for x, t in zip(cols_x, r): fig.text(x, y, t, fontsize=8, va="top", wrap=True)
-        y -= 0.046; fig.add_artist(plt.Line2D([0.035, 0.97], [y + 0.012, y + 0.012], color="#ddd", lw=0.6))
+        y -= 0.040; fig.add_artist(plt.Line2D([0.035, 0.97], [y + 0.010, y + 0.010], color="#ddd", lw=0.6))
     y -= 0.01; fig.text(0.035, y, "업체 확인 요청 / 業者への確認事項", fontsize=11, weight="bold", color=RED); y -= 0.028
     for t in ["• 임대 원상복구(原状回復) 조건에 맞는 고정 방식(신설 벽 바닥·천장 고정, 판 접착) 제안", "• N1·N2 가 천장 트랙·에어컨·스프링클러·배선과 간섭하는지", "• 벽지 위 페인트 가능 여부(비닐/오염방지 코팅), 필요 시 프라이머 종류",
               "• 기둥 거울 시공 방식(접착 + 비산방지 필름, 모서리 처리)과 안전 기준", "• 공사 기간 및 영업 중 시공 가능 여부", "• 견적은 항목별(1~11) 분리 — DIY 항목은 자재만 또는 제외"]:

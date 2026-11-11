@@ -184,6 +184,9 @@ export class Editor {
       const sh = (liveShift && liveShift.id === c.id) ? liveShift.dz : 0; const zs = walls.map((w) => w.offset + sh); const zS = Math.max(...zs), zN = Math.min(...zs); const x0 = Math.min(...walls.map((w) => w.from)), x1 = Math.max(...walls.map((w) => w.to));
       // 남쪽(입구 쪽): 레지 뒷면까지
       const reg = (this.s.design.props || []).find((p) => p.type === 'register' && p.x > x0 && p.x < x1 && p.z > zS); if (reg) { const back = reg.z - 0.225 - Math.abs(Math.sin(reg.rot || 0)) * 0.175; this.closureDims.add(line(new THREE.Vector3(reg.x, 1.0, zS), new THREE.Vector3(reg.x, 1.0, back), `레지 ↔ 벽 ${(back - zS).toFixed(2)} m`)); }
+      // 남쪽에 문(화장실 문 등)이 있으면 문 벽 면까지
+      for (const dd of this.meta.door_openings || []) { if (dd.when) continue; const dw = this.allWalls().find((w) => w.id === dd.wall); if (!dw || dw.axis !== 'z' || dw.offset <= zS) continue; const cx = (dd.from + dd.to) / 2; if (cx < x0 - 0.3 || cx > x1 + 0.3) continue;
+        const face = dw.offset - (dw.two_sided ? 0.05 : 0); this.closureDims.add(line(new THREE.Vector3(Math.min(Math.max(cx, x0), x1), 1.0, zS), new THREE.Vector3(Math.min(Math.max(cx, x0), x1), 1.0, face), `${dd.id === 'toilet_door' ? '화장실 문' : '문'} ↔ 벽 ${(face - zS).toFixed(2)} m`, '#ffb3b3')); }
       // 북쪽(홀 쪽): 벽 길이 안에 있는 가장 가까운 기둥까지
       let best = null; for (const col of this.columns()) { const fp = this.s.footprint(col); const cx = (fp.x[0] + fp.x[1]) / 2; if (cx < x0 || cx > x1 || fp.z[1] > zN) continue; const gap = zN - fp.z[1]; if (!best || gap < best.gap) best = { gap, cx, z: fp.z[1], num: col.num }; }
       if (best && best.gap <= 1.5) this.closureDims.add(line(new THREE.Vector3(best.cx, 1.0, zN), new THREE.Vector3(best.cx, 1.0, best.z), `기둥 ${best.num} ↔ 벽 ${best.gap.toFixed(2)} m (통로)`, '#ffe08a'));
