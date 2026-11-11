@@ -198,14 +198,14 @@ export function leafMosaicMaterial() {
   }
   const mt = new THREE.MeshStandardMaterial({ map: leafTex, roughness: 0.3, metalness: 0.05, polygonOffset: true, polygonOffsetFactor: -2 }); mt.userData.shared = true; mt.userData.tileM = 0.2; return mt;
 }
-// 세면실 네 벽 안쪽 면을 타일로 덮는다(문·칸 문 자리는 비움). region: {x:[x0,x1], z:[z0,z1], holes:[{face, from, to, y1}]}
+// 상자 영역의 네 안쪽 면을 타일로 덮는다(문 자리는 비움). region: {x, z, holes:[{face, from, to, y1}], span:{face:[a,b]}}. face: w=x0면 e=x1면 s=z0면 n=z1면
 export function buildWashroomTile(meta, region, ceilH = 2.38) {
   const g = new THREE.Group(); g.name = 'washroom_tile'; const mat = leafMosaicMaterial(); const T = mat.userData.tileM; const off = 0.004;
   const quad = (w, h, pos, rotY) => { const geo = new THREE.PlaneGeometry(w, h); const uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w / T, uv.getY(i) * h / T); const mm = new THREE.Mesh(geo, mat); mm.position.copy(pos); mm.rotation.y = rotY; mm.userData.surface = 'washroom_tile'; g.add(mm); };
   const faces = { w: { len: [region.z[0], region.z[1]], at: region.x[0] + off, rot: Math.PI / 2 }, e: { len: [region.z[0], region.z[1]], at: region.x[1] - off, rot: -Math.PI / 2 }, s: { len: [region.x[0], region.x[1]], at: region.z[0] + off, rot: 0 }, n: { len: [region.x[0], region.x[1]], at: region.z[1] - off, rot: Math.PI } };
   for (const [key, f] of Object.entries(faces)) {
-    const holes = (region.holes || []).filter((h) => h.face === key).map((h) => [h.from - 0.02, h.to + 0.02, -1, h.y1 + 0.02]);
-    for (const [a, b, c0, c1] of subtractRects([f.len[0], f.len[1], 0, ceilH], holes)) {
+    const holes = (region.holes || []).filter((h) => h.face === key).map((h) => [h.from - 0.02, h.to + 0.02, -1, h.y1 + 0.02]); const len = (region.span || {})[key] || f.len;   // span: 그 면 중 일부만(아치 자리 제외 등)
+    for (const [a, b, c0, c1] of subtractRects([len[0], len[1], 0, ceilH], holes)) {
       const mid = (a + b) / 2, y = (c0 + c1) / 2; const pos = (key === 'w' || key === 'e') ? new THREE.Vector3(f.at, y, mid) : new THREE.Vector3(mid, y, f.at); quad(b - a, c1 - c0, pos, f.rot);
     }
   }

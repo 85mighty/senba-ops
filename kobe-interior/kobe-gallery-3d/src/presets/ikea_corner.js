@@ -181,11 +181,11 @@ export function applyArchDemolish(base) {
 // 11/11: 리셉션 → 홀 입구(레지 뒤 벽 ~ 날개벽 ① 사이 0.90 m)도 아치로
 export function applyHallArch(base) { const d = JSON.parse(JSON.stringify(base || {})); d.closures = { ...(d.closures || {}), hall_arch: true }; d.editedAt = Date.now(); return d; }
 
-// 11/11: 세면실 포토 스폿 — 리프 모자이크 타일 + 세면대 위 금테 타원 거울 + 스포트, 문은 경첩 반대·안여닫이(메타)
+// 11/11: 화장실 앞 포토 스폿 — 문 앞 0.8 m 공간 네 면 리프 모자이크 타일 + 가림벽 안쪽 면에 금테 타원 거울(문을 마주 봄) + 스포트. 문은 경첩 반대·안여닫이(메타)
 export function applyWashroomPhoto(base) {
   const d = JSON.parse(JSON.stringify(base || {})); d.closures = { ...(d.closures || {}), washroom_tile: true };
   d.props = (d.props || []).filter((p) => !['wr_mirror', 'wr_spot'].includes(p.id));
-  d.props.push({ id: 'wr_mirror', type: 'oval_mirror', x: 2.06, y: 1.0, z: 3.03, rot: -Math.PI / 2, scale: 1, color: null },      // 동쪽 벽(세면대 위), 서쪽을 봄
-               { id: 'wr_spot', type: 'spot_light', x: 1.45, z: 3.03, rot: Math.PI / 2, aim: 0.6, scale: 1, color: null });
+  d.props.push({ id: 'wr_mirror', type: 'oval_mirror', x: 1.79, y: 0.95, z: 1.568, rot: 0, scale: 1, color: null },      // 가림벽 안쪽 면 가운데, 문 쪽(+z)을 봄
+               { id: 'wr_spot', type: 'spot_light', x: 1.79, z: 2.25, rot: Math.PI, aim: 0.6, scale: 1, color: null });
   d.editedAt = Date.now(); return d;
 }
