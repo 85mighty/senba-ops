@@ -44,8 +44,26 @@ export function subtractRects(r, holes) {
 
 // 디자인에서 켜는 '막기 벽'(예: 주방 입구). 꺼져 있으면 없는 벽으로 본다
 // design.closureShift[id] = 벽을 법선 방향(axis z 벽이면 z)으로 옮긴 거리(m). 벽 면·문·카펫 계산이 모두 같은 값을 쓴다
+// design.closureXform[id] = { dx, dz, rot } — 평행이동(m, 월드)과 90° 단위 회전(횟수). 옛 closureShift(법선 이동)도 읽는다
+export const closureXform = (design, id) => { const x = design?.closureXform?.[id] || {}; return { dx: +(x.dx || 0), dz: +(x.dz || 0), rot: ((+(x.rot || 0)) % 4 + 4) % 4 }; };
 export const closureShift = (design, id) => +(design?.closureShift?.[id] || 0);
-export const closureWalls = (c, design) => { const s = closureShift(design, c.id); return (c.walls || (c.wall ? [c.wall] : [])).map((w) => (s ? { ...w, offset: w.offset + s } : w)); };
+const baseWalls = (c) => c.walls || (c.wall ? [c.wall] : []);
+export const closureCenter = (c) => { const ws = baseWalls(c); const xs = [], zs = [];
+  for (const w of ws) { if (w.axis === 'z') { xs.push(w.from, w.to); zs.push(w.offset); } else { zs.push(w.from, w.to); xs.push(w.offset); } }
+  return { x: (Math.min(...xs) + Math.max(...xs)) / 2, z: (Math.min(...zs) + Math.max(...zs)) / 2 }; };
+export const closureWalls = (c, design) => {
+  const ws = baseWalls(c); const t = closureXform(design, c.id); const legacy = closureShift(design, c.id);
+  if (!t.dx && !t.dz && !t.rot && !legacy) return ws;
+  const C = closureCenter(c); const R = ([x, z]) => [-z, x];   // 평면 90° 회전
+  return ws.map((w0) => {
+    const w = legacy ? { ...w0, offset: w0.offset + legacy } : { ...w0 };
+    const h = (w.to - w.from) / 2, mid = (w.from + w.to) / 2;
+    let P = w.axis === 'z' ? [mid - C.x, w.offset - C.z] : [w.offset - C.x, mid - C.z]; let n = w.axis === 'z' ? [0, w.inward] : [w.inward, 0];
+    for (let k = 0; k < t.rot; k++) { P = R(P); n = R(n); }
+    const px = C.x + P[0] + t.dx, pz = C.z + P[1] + t.dz;
+    return Math.abs(n[0]) > 0.5 ? { ...w, axis: 'x', offset: px, inward: Math.sign(n[0]), from: pz - h, to: pz + h } : { ...w, axis: 'z', offset: pz, inward: Math.sign(n[1]), from: px - h, to: px + h };
+  });
+};
 export const closureWallsAll = (meta, design) => (meta.closures || []).flatMap((c) => closureWalls(c, design));
 export const closureOn = (meta, design, wallId) => (meta.closures || []).some((c) => closureWalls(c).some((w) => w.id === wallId) && !!design?.closures?.[c.id]);
 export const closureOf = (meta, wallId) => (meta.closures || []).find((c) => closureWalls(c).some((w) => w.id === wallId)) || null;
