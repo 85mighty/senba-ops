@@ -323,8 +323,13 @@ def page_zoom(pdf, m, walls, cols, g):
 # ---------------------------------------------------------------- ④ 新設壁・開口 詳細
 def page_detail(pdf, m, g):
     fig = plt.figure(figsize=A3)
-    header(fig, "④ 新設壁・開口部 詳細（立面・一覧）", "立面は壁面側から見た図, 単位 mm。天井高 ✓2393。新設壁 N2〜N7 は上端 2150（天井まで 243 空ける — エアコンの風を通す）, N1 のみ天井まで。LGS または木下地＋PB 12.5 両面。", 4)
+    header(fig, "④ 新設壁・開口部 詳細（立面・一覧）", "立面は壁面側から見た図, 単位 mm。天井高 ✓2393。新設壁 N2〜N7 は上端 2150, その上 243 は横桟 3 段の欄間（エアコンの風を通す）, N1 のみ天井まで。LGS または木下地＋PB 12.5 両面。", 4)
     H = g["ceil"] * 1000; HW = WT * 1000
+    def slats(ax, x0, x1, y0, y1):   # 欄間: 上桟 35・笠木 25・横桟 22×40 を 3 段等間隔・両端に縦桟 22
+        ax.add_patch(Rectangle((x0, y1 - 35), x1 - x0, 35, fc="#3a2a1f", ec="none")); ax.add_patch(Rectangle((x0, y0), x1 - x0, 25, fc="#3a2a1f", ec="none"))
+        a, b = y0 + 25, y1 - 35
+        for i in range(1, 4): ax.add_patch(Rectangle((x0, a + (b - a) * i / 4 - 11), x1 - x0, 22, fc="#3a2a1f", ec="none"))
+        for xx in (x0, x1 - 22): ax.add_patch(Rectangle((xx, a), 22, b - a, fc="#3a2a1f", ec="none"))
     def elev(rect, w_mm, title, note=""):
         ax = fig.add_axes(rect); ax.set_xlim(-250, w_mm + 250); ax.set_ylim(-200, H + 420); ax.set_aspect("equal"); ax.axis("off")
         ax.add_patch(Rectangle((-250, -200), w_mm + 500, 200, fc="#c9a97a", ec=INK, lw=0.5)); ax.add_patch(Rectangle((-250, H), w_mm + 500, 60, fc="#eee", ec=INK, lw=0.5))
@@ -335,8 +340,8 @@ def page_detail(pdf, m, g):
         ax.annotate("", xy=(x0, y), xytext=(x1, y), arrowprops=dict(arrowstyle="<->", color=c, lw=0.8)); ax.text((x0 + x1) / 2, y + 40, label, color=c, fontsize=7, ha="center")
     def arch_elev(rect, W, spring, title, note):
         w_mm = W * 1000; r = w_mm / 2; sp = spring * 1000; ax = elev(rect, w_mm, title, note)
-        ax.add_patch(Rectangle((0, 0), w_mm, HW, fc="#e3e8e3", ec=INK, lw=0.6)); ax.annotate("", xy=(w_mm + 60, HW), xytext=(w_mm + 60, H), arrowprops=dict(arrowstyle="<->", color=BLUE, lw=0.8)); ax.text(w_mm + 90, (HW + H) / 2, f"{H - HW:.0f} 縦格子欄間", color=BLUE, fontsize=6.5, va="center")
-        for k in range(1, int(w_mm // 100)): ax.plot([k * 100, k * 100], [HW + 25, H - 35], color="#3a2a1f", lw=1.2); ax.add_patch(Rectangle((0, H - 35), w_mm, 35, fc="#3a2a1f", ec="none")); ax.add_patch(Rectangle((0, HW), w_mm, 25, fc="#3a2a1f", ec="none"))
+        ax.add_patch(Rectangle((0, 0), w_mm, HW, fc="#e3e8e3", ec=INK, lw=0.6)); ax.annotate("", xy=(w_mm + 60, HW), xytext=(w_mm + 60, H), arrowprops=dict(arrowstyle="<->", color=BLUE, lw=0.8)); ax.text(w_mm + 90, (HW + H) / 2, f"{H - HW:.0f} 横桟欄間", color=BLUE, fontsize=6.5, va="center")
+        slats(ax, 0, w_mm, HW, H)
         verts = [(0, 0), (0, sp)] + [(r + r * math.cos(a), sp + r * math.sin(a)) for a in [math.pi - i * math.pi / 36 for i in range(37)]] + [(w_mm, 0)]
         ax.add_patch(Polygon(verts, closed=True, fc="white", ec=INK, lw=0.8, zorder=3))
         ax.add_patch(Arc((r, sp), 2 * r + 70, 2 * r + 70, theta1=0, theta2=180, color=GOLD, lw=3, zorder=4))
@@ -348,9 +353,8 @@ def page_detail(pdf, m, g):
     arch_elev([0.27, 0.50, 0.24, 0.40], N6["x1"] - N6["x0"], N6["spring"], "N6 洗面室入口アーチ（ホール側から）", "N4 東面 〜 N5 西端。フォトスポット側はタイル仕上げ")
     # N5 + ミラー（フォトスポット側立面）
     w5 = (N5["x1"] - N5["x0"]) * 1000; ax = elev([0.53, 0.50, 0.22, 0.40], w5, "N5 目隠し壁 南面（フォトスポット側）", "全面リーフモザイクタイル, 中央に金縁楕円ミラー 640×920（下端 FL+950）")
-    ax.add_patch(Rectangle((0, 0), w5, HW, fc="#f1e6d2", ec=INK, lw=0.6)); ax.text(w5 / 2, H + 60, f"上端 {HW:.0f}, 上 {H - HW:.0f} は縦格子欄間", ha="center", fontsize=6.5, color=BLUE)
-    for k in range(1, int(w5 // 100)): ax.plot([k * 100, k * 100], [HW + 25, H - 35], color="#3a2a1f", lw=1.2)
-    ax.add_patch(Rectangle((0, H - 35), w5, 35, fc="#3a2a1f", ec="none")); ax.add_patch(Rectangle((0, HW), w5, 25, fc="#3a2a1f", ec="none"))
+    ax.add_patch(Rectangle((0, 0), w5, HW, fc="#f1e6d2", ec=INK, lw=0.6)); ax.text(w5 / 2, H + 60, f"上端 {HW:.0f}, 上 {H - HW:.0f} は横桟欄間（3 段）", ha="center", fontsize=6.5, color=BLUE)
+    slats(ax, 0, w5, HW, H)
     for yy in range(0, int(HW), 200): ax.plot([0, w5], [yy, yy], color="#d8c9ad", lw=0.3)
     for xx in range(0, int(w5), 200): ax.plot([xx, xx], [0, HW], color="#d8c9ad", lw=0.3)
     mx = (1.79 - N5["x0"]) * 1000; from matplotlib.patches import Ellipse; ax.add_patch(Ellipse((w5 - mx, 950 + 460), 640, 920, fc="#cfd3d6", ec=GOLD, lw=3, zorder=4))
@@ -420,7 +424,7 @@ def page_finish(pdf, m):
             ("パネル上端・側端", "lite 用見切り材 25×12×1200 — 上端 約 39 m（33 本）＋側端（柱角・窓際）約 17 本 → 約 50 本"),
             ("黒い帯・幅木", "撤去なし。パネル裏に隠す"),
             ("柱 C2（C1・C3 残す場合も）", "帯上（≈0.89）〜天井 4 面ミラー, 角は突付け, 飛散防止フィルム。下部はパネル"),
-            ("新設壁 N1〜N5", "LGS または木下地＋PB 12.5 両面。N1 は天井まで, N2〜N5・アーチは上端 2.15。その上 0.24 は縦格子の欄間（上桟 35, 笠木 25, 縦桟 22×40 @100, ダークウォールナット）で通気 — 天井の上桟に固定し倒れ止めを兼ねる。N2 南面はクリムゾン #8A1F2B 艶消し塗装（帯・幅木なし）。その他ホール面は共通仕上げ（ダルグリーン＋パネル）"),
+            ("新設壁 N1〜N5", "LGS または木下地＋PB 12.5 両面。N1 は天井まで, N2〜N5・アーチは上端 2.15。その上 0.24 は横桟の欄間（上桟 35, 笠木 25, 横桟 22×40 を 3 段等間隔, 両端に縦桟, ダークウォールナット）で通気 — 天井の上桟に固定し倒れ止めを兼ねる。N2 南面はクリムゾン #8A1F2B 艶消し塗装（帯・幅木なし）。その他ホール面は共通仕上げ（ダルグリーン＋パネル）"),
             ("アーチ N6・N7", "上部スパンドレルのみ壁（t100）。半円 R = 有効幅/2, スプリング 1.62。金色モール φ60 を両面に, 開口内側に細モール"),
             ("フォトスポット P3", "N5 南面・N6 南面: リーフモザイクタイル（ベージュ, シート 200 角相当）約 3.1 ㎡。W10 北面・W1・W4 面: 無地クリーム塗装, チェアレール 45×18 を H920 に, 幅木 H100（同色）"),
             ("O1 開口", "W4 端 0.53×1.98 開口, 補強, 上部に黒丸棒＋遮光カーテン（濃グレー）"),
@@ -466,7 +470,7 @@ def page_scope(pdf, m, g):
         for x, tx in zip(cols_x, r): fig.text(x, y, tx, fontsize=7.6, va="top")
         y -= 0.029 + (0.012 if any("\n" in c for c in r) else 0); fig.add_artist(plt.Line2D([0.035, 0.97], [y + 0.008, y + 0.008], color="#ddd", lw=0.6))
     y -= 0.008; fig.text(0.035, y, "業者への確認事項", fontsize=11, weight="bold", color=RED); y -= 0.027
-    for tx in ["• 賃貸の原状回復条件に合う固定方法（新設壁の床・天井固定, パネル接着）の提案", "• N2〜N5 上部の縦格子欄間（0.24）で倒れ止めが足りるか, 床固定の方法", "• クロスの上への塗装可否（ビニール／防汚コート）, 必要なプライマー",
+    for tx in ["• 賃貸の原状回復条件に合う固定方法（新設壁の床・天井固定, パネル接着）の提案", "• N2〜N5 上部の横桟欄間（0.24, 3 段）で倒れ止めが足りるか, 床固定の方法", "• クロスの上への塗装可否（ビニール／防汚コート）, 必要なプライマー",
                "• 柱ミラーの施工方法（接着＋飛散防止フィルム, 角の納まり）と安全基準", "• N7 アーチ 有効 0.86（エアコン交換・荷物搬入を考慮）— N2 南面〜N3 北端の内法を現場で確保", "• 工期, 営業しながらの施工可否", "• 見積は項目別（1〜18）に分離"]:
         fig.text(0.04, y, tx, fontsize=8.3, color=RED); y -= 0.02
     fig.text(0.035, 0.04, "添付: 3D ビューア（E案） https://85mighty.github.io/senba-ops/kobe-interior/kobe-gallery-3d/app/  ・ 現場写真 11 枚 ・ 実測手書き平面図（11/07, 11/10）", fontsize=8, color=MUTE)

@@ -11,7 +11,7 @@ import { TOUR_E, tourAt, playTour, tourDuration } from './tour.js';
 import { LANG, ONLY_E, tr, installDomTranslator } from './i18n.js';
 installDomTranslator();   // 일본어 화면(ja.html)에서만 동작
 import presetCPhone from './presets/c_phone_20261027.json';
-import { applyIkeaCorner, applyUpperMirrors, applyWindowCurtains, applyRealFloor, applyDullGreen, applyAirPanel, applyRegister, REGISTER_PLANS, applyPhotoEast, applyReception, applyCoupleLayout, applyRegisterGap, applyRegisterLeft, applyPhotoSpot2, applyWallPull, applyElegantChairs, applyLightsRug, applyWings, applyArchDemolish, applyHallArch, applyWashroomPhoto, applyBigRug, applyMeasured1110, applySpots, applyArchWiden } from './presets/ikea_corner.js';
+import { applyIkeaCorner, applyUpperMirrors, applyWindowCurtains, applyRealFloor, applyDullGreen, applyAirPanel, applyRegister, REGISTER_PLANS, applyPhotoEast, applyReception, applyCoupleLayout, applyRegisterGap, applyRegisterLeft, applyPhotoSpot2, applyWallPull, applyElegantChairs, applyLightsRug, applyWings, applyArchDemolish, applyHallArch, applyWashroomPhoto, applyBigRug, applyMeasured1110, applySpots, applyArchWiden, applySlatsH } from './presets/ikea_corner.js';
 
 // 저장소에 보관된 디자인 — 어느 기기에서든 불러올 수 있다. seedSlot: 그 안이 비어 있으면 처음 열 때 자동으로 채움
 const PRESETS = [{ id: 'c_phone_20261027', name: 'C안 (폰에서 만든 것, 10/27)', seedSlot: 'C', design: presetCPhone },
@@ -57,6 +57,7 @@ const PATCHES = [{ id: 'd_upper_mirrors_20261028', slot: 'D', apply: applyUpperM
   { id: 'e_measured_1110_20261111', slot: 'E', apply: applyMeasured1110, msg: 'E안: 11/10 실측대로 — 레지 뒤 벽을 창 벽에서 4.72 m 로, 레지는 110×45.5 세로(벽 2 에서 1.05), 홀 입구 아치 0.74' },
   { id: 'e_spots_20261111', slot: 'E', apply: applySpots, msg: 'E안: 체험 스폿 번호 ①~④ 표시(벽 2 쪽 가운데에 세트 ② 추가)' },
   { id: 'e_arch_widen_20261117', slot: 'E', apply: applyArchWiden, msg: 'E안: 홀 입구 아치를 0.86 m 로(뒤 벽 북쪽 0.11 · 날개벽 ① 0.11 단축) — 세면실 아치와 같은 폭' },
+  { id: 'e_slats_h_20261118', slot: 'E', apply: applySlatsH, msg: 'E안: 신설 벽 위 격자를 가로 살 3단으로' },
   { id: 'e_big_rug_20261111', slot: 'E', apply: applyBigRug, msg: 'E안: 사진 코너 러그를 큰 러그(1.8 × 1.2)로 — 날개벽 사이를 채우고 홀 쪽으로 조금 나옴' },
   { id: 'd_air_panel_20261106', slot: 'D', apply: applyAirPanel, msg: 'D안: 아래 벽을 エアサーモパネル로 띠까지 덮었습니다(방법 ③)' }];
 

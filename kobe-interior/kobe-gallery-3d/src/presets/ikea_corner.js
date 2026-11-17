@@ -189,6 +189,9 @@ export function applyArchWiden(base) {
   d.closureXform = {}; d.closureShift = {}; d.editedAt = Date.now(); return d;
 }
 
+// 11/18: 신설 벽 위 격자를 가로 살 3단으로(E안 결정)
+export function applySlatsH(base) { const d = JSON.parse(JSON.stringify(base || {})); d.slatStyle = 'h'; d.editedAt = Date.now(); return d; }
+
 // 11/11: 작은 러그 → 큰 러그(1.8 × 1.2). 날개벽 사이(x −1.66~0.264)를 채우고, 사이드보드 앞(z 1.50)에서 홀 쪽 z 0.30 까지
 export function applyBigRug(base) {
   const d = JSON.parse(JSON.stringify(base || {})); d.props = (d.props || []).filter((p) => p.id !== 'lr_rug');
