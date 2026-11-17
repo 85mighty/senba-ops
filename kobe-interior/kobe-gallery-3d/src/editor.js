@@ -172,6 +172,14 @@ export class Editor {
       if (c.kind === 'tile') { this.closureG.add(buildWashroomTile(this.meta, c.region, this.ceil)); continue; }   // 세면실 타일 벽(끌기 없음)
       const cg = new THREE.Group(); cg.name = 'closure'; cg.userData.pick = { kind: 'closure', id: c.id, axis: closureWalls(c, this.s.design)[0].axis }; this.closureG.add(cg);   // 길게 눌러 끌면 앞뒤로 옮겨진다(현재 방향 기준)
       const HT = c.height || this.ceil;   // 11/18: N2~N7 은 천장에서 띄움(에어컨 바람) — closure.height
+      if (HT < this.ceil - 0.05) {   // 띄운 구간(벽 위끝~천장)에 세로 살 격자(欄間): 위 가로대 + 0.10 간격 세로 살, 살 사이로 공기가 통한다
+        const ws0 = closureWalls(c, this.s.design); const w0 = ws0[0]; const mid = ws0.reduce((s, x) => s + x.offset, 0) / ws0.length; const gap = this.ceil - HT; const railH = 0.035, barW = 0.022, barD = 0.04, pitch = 0.10;
+        const woodM = this._slatM || (this._slatM = new THREE.MeshStandardMaterial({ color: '#3a2a1f', roughness: 0.55 })); const L = w0.to - w0.from; const grille = new THREE.Group(); grille.name = 'slats'; grille.userData.surface = c.id;
+        const place = (m, t, y) => { if (w0.axis === 'z') m.position.set(t, y, mid); else m.position.set(mid, y, t); grille.add(m); };
+        place(new THREE.Mesh(new THREE.BoxGeometry(w0.axis === 'z' ? L : barD, railH, w0.axis === 'z' ? barD : L), woodM), (w0.from + w0.to) / 2, this.ceil - railH / 2);
+        place(new THREE.Mesh(new THREE.BoxGeometry(w0.axis === 'z' ? L : barD, 0.025, w0.axis === 'z' ? barD : L), woodM), (w0.from + w0.to) / 2, HT + 0.0125);   // 벽 위 笠木
+        const n = Math.max(1, Math.round(L / pitch)); for (let i = 1; i < n; i++) place(new THREE.Mesh(new THREE.BoxGeometry(w0.axis === 'z' ? barW : barD, gap - railH - 0.025, w0.axis === 'z' ? barD : barW), woodM), w0.from + (L * i) / n, HT + 0.025 + (gap - railH - 0.025) / 2);
+        grille.traverse((o) => { if (o.isMesh) o.userData.surface = c.id; }); cg.add(grille); }
       if (c.arch) { const ws = closureWalls(c, this.s.design); const w = ws[0]; const W = w.to - w.from, spring = c.arch.spring || 1.62, r = W / 2;   // 아치 출입구: 위쪽 스팬드럴만 벽(반원 구멍)
         const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.lineTo(W, 0); sh.lineTo(W, HT); sh.lineTo(0, HT); sh.closePath();
         const hole = new THREE.Path(); hole.moveTo(0, 0); hole.lineTo(W, 0); hole.lineTo(W, spring); hole.absarc(r, spring, r, 0, Math.PI, false); hole.lineTo(0, 0); sh.holes.push(hole);
