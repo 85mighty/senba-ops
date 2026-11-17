@@ -255,6 +255,9 @@ function setupEditorUI() {
   const cbox = $('#closureBoxes'); const closeCbs = [];
   for (const c of meta.closures || []) { const l = document.createElement('label'); const cb = document.createElement('input'); cb.type = 'checkbox'; cb.id = 'close_' + c.id; l.append(cb, ' ' + (c.label || c.id)); cbox.appendChild(l); closeCbs.push([c, cb]);
     cb.addEventListener('change', () => { store.setClosure(c.id, cb.checked); store.commit('closure'); toast(cb.checked ? `${c.label || c.id} — 벽을 세웠습니다 (벽을 눌러 칠·띠 설정)` : `${c.label || c.id} — 벽을 없앴습니다`); }); }
+  // 신설 벽 위 격자(欄間) 살 방향 — 세로(기본) / 가로
+  { const l = document.createElement('label'); l.innerHTML = `${tr('신설 벽 위 격자 살')} <select id="slatStyle"><option value="v">${tr('세로 살 (기본)')}</option><option value="h">${tr('가로 살 3단')}</option></select>`; cbox.appendChild(l);
+    const sel = l.querySelector('select'); sel.addEventListener('change', () => { store.design.slatStyle = sel.value; store.commit('closure'); toast(sel.value === 'h' ? '격자를 가로 살로 바꿨습니다' : '격자를 세로 살로 바꿨습니다'); }); store.onChange(() => { sel.value = store.design.slatStyle || 'v'; }); sel.value = store.design.slatStyle || 'v'; }
   const syncClose = () => { for (const [c, cb] of closeCbs) cb.checked = !!store.design.closures?.[c.id]; }; syncClose(); store.onChange(syncClose);
   $('#exportDesign').addEventListener('click', async () => { const j = store.exportJSON(); $('#designJson').value = j; try { await navigator.clipboard.writeText(j); toast('디자인 JSON 복사됨 (아래 칸에도 표시)'); } catch { toast('아래 칸의 JSON 을 복사하세요'); } });
   $('#importDesign').addEventListener('click', () => { try { store.importJSON($('#designJson').value); editor.renderChips(); refreshBookmarks(); toast('디자인 불러옴'); } catch (e) { toast('불러오기 실패: ' + e.message); } });

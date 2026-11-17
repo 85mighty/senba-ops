@@ -178,7 +178,10 @@ export class Editor {
         const place = (m, t, y) => { if (w0.axis === 'z') m.position.set(t, y, mid); else m.position.set(mid, y, t); grille.add(m); };
         place(new THREE.Mesh(new THREE.BoxGeometry(w0.axis === 'z' ? L : barD, railH, w0.axis === 'z' ? barD : L), woodM), (w0.from + w0.to) / 2, this.ceil - railH / 2);
         place(new THREE.Mesh(new THREE.BoxGeometry(w0.axis === 'z' ? L : barD, 0.025, w0.axis === 'z' ? barD : L), woodM), (w0.from + w0.to) / 2, HT + 0.0125);   // 벽 위 笠木
-        const n = Math.max(1, Math.round(L / pitch)); for (let i = 1; i < n; i++) place(new THREE.Mesh(new THREE.BoxGeometry(w0.axis === 'z' ? barW : barD, gap - railH - 0.025, w0.axis === 'z' ? barD : barW), woodM), w0.from + (L * i) / n, HT + 0.025 + (gap - railH - 0.025) / 2);
+        if ((this.s.design.slatStyle || 'v') === 'h') {   // 가로 살: 위 가로대·笠木 사이에 가로 살 3개 + 양 끝 세로 기둥
+          const y0 = HT + 0.025, y1 = this.ceil - railH, k = 3; for (let i = 1; i <= k; i++) place(new THREE.Mesh(new THREE.BoxGeometry(w0.axis === 'z' ? L : barD, barW, w0.axis === 'z' ? barD : L), woodM), (w0.from + w0.to) / 2, y0 + ((y1 - y0) * i) / (k + 1));
+          for (const t of [w0.from + barW / 2, w0.to - barW / 2]) place(new THREE.Mesh(new THREE.BoxGeometry(w0.axis === 'z' ? barW : barD, y1 - y0, w0.axis === 'z' ? barD : barW), woodM), t, (y0 + y1) / 2);
+        } else { const n = Math.max(1, Math.round(L / pitch)); for (let i = 1; i < n; i++) place(new THREE.Mesh(new THREE.BoxGeometry(w0.axis === 'z' ? barW : barD, gap - railH - 0.025, w0.axis === 'z' ? barD : barW), woodM), w0.from + (L * i) / n, HT + 0.025 + (gap - railH - 0.025) / 2); }
         grille.traverse((o) => { if (o.isMesh) o.userData.surface = c.id; }); cg.add(grille); }
       if (c.arch) { const ws = closureWalls(c, this.s.design); const w = ws[0]; const W = w.to - w.from, spring = c.arch.spring || 1.62, r = W / 2;   // 아치 출입구: 위쪽 스팬드럴만 벽(반원 구멍)
         const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.lineTo(W, 0); sh.lineTo(W, HT); sh.lineTo(0, HT); sh.closePath();

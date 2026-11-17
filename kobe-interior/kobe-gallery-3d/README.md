@@ -111,7 +111,7 @@ npm run dev                               # 터미널에 뜨는 http://localhost
 | 홀 입구 아치 | 보관된 디자인 '홀 입구 아치' (E안 적용) | 레지 뒤 벽 남쪽 면 ~ 날개벽 ① 사이 0.86 m 도 반원 아치(`closures.hall_arch`, 꼭대기 2.05, 금색 몰딩 양면 — 11/17 뒤 벽 북쪽 0.11 · 날개벽 ① 0.11 단축으로 0.64 → 0.86) |
 | 체험 스폿 번호 | 보관된 디자인 '체험 스폿 번호 ①~④' (E안 적용) | 2인 세트에 `spot` 번호 → 바닥 표지판 '체험 스폿 ①' + 번호 스탠드. 규칙은 서쪽 열 북→남, 동쪽 열 북→남(`assignSpots`). 4팀 미만이면 벽 2 쪽 가운데에 ② 추가 |
 | 둘러보기 투어 · 영상 | 편집 패널 '▶ 둘러보기 투어' / `node scripts/make_walkthrough.mjs` | `src/tour.js` 키프레임(자동문 → 레지 → 아치 → 홀 → 체험 스폿 → 화장실 앞 포토 스폿, 56초)을 에르미트 보간으로 재생. 화면을 누르면 중지. 영상 `screenshots/walkthrough_E.mp4`(1280×720, 24 fps, ffmpeg) |
-| 신설 벽 높이 | `closures[].height` (메타) | N2~N5·아치 스팬드럴은 위끝 2.15 m, 그 위 0.24 는 세로 살 격자(위 가로대 + 笠木 + 살 @0.10, 다크 월넛 — `buildClosures` 'slats'). N1 은 천장까지. 타일 면은 `region.heights` |
+| 신설 벽 높이 | `closures[].height` (메타) | N2~N5·아치 스팬드럴은 위끝 2.15 m, 그 위 0.24 는 세로 살 격자(위 가로대 + 笠木 + 살 @0.10, 다크 월넛 — `buildClosures` 'slats'). 편집 패널 '신설 벽 위 격자 살' 에서 세로/가로 3단 선택(`design.slatStyle`). N1 은 천장까지. 타일 면은 `region.heights` |
 | 레지 보조 상판 | ③④ 화면에서 레지를 누름 | 북쪽 끝 경첩의 접이식 상판(0.45)이 올라와 1.55 m 로 연장, 다시 누르면 접힘(`props.js` register_leaf, `toggleDoor` 의 z 축 회전). 편집 모드에서는 선택이 우선 |
 | 일본어 화면 (E안만) | `app/ja.html` — https://85mighty.github.io/senba-ops/kobe-interior/kobe-gallery-3d/app/ja.html | 업자·일본 스태프용. `ja.html` 은 패널 글이 일본어로 쓰인 별도 페이지, 동적 글(북마크·소품·편집 패널·토스트·3D 라벨)은 `src/i18n.js` 사전으로 번역. 위쪽 바에 E안만 보이고 처음 열 때 E안으로 감. 저장 데이터·동기화는 한국어 화면과 같은 것을 씀 |
 | 일본어 시공 도면 | `python3 scripts/make_contractor_pdf_ja.py` → `../도면/施工図_E案_日本語.pdf` | 업자용 일본어 도면 A3 6장(1:50 현황·계획, 1:25 부분 확대, 신설 벽·개구부 입면·일람표, 벽 마감 단면, 공사 항목). 소품·가구는 빼고 레지만, 벽↔벽 거리 전부 기입. 모든 치수는 `geometry_metadata.json`에서 계산 |
