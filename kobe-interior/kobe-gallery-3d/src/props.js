@@ -1,5 +1,6 @@
 // 소품·창·커튼 절차 생성. 모든 소품은 원점이 바닥 중심, +Z 가 정면.
 import * as THREE from 'three';
+import { tr } from './i18n.js';
 
 const std = (color, opts = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.75, ...opts });
 const box = (w, h, d, mat, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); return m; };
@@ -7,6 +8,7 @@ const cyl = (r0, r1, h, mat, x = 0, y = 0, z = 0, seg = 14) => { const m = new T
 const WOOD = 0xb08a5a, DARK = 0x2a2a2a, CANVAS = 0xf4f1ea;
 // 작은 글씨 판(캔버스 텍스처) — 서랍 안내 문구 등
 function labelPlate(text, w, h, bg = '#2b2118', fg = '#e9d9b6') {
+  text = tr(text);
   const cv = document.createElement('canvas'); cv.width = 512; cv.height = Math.round(512 * h / w); const c = cv.getContext('2d');
   c.fillStyle = bg; c.fillRect(0, 0, cv.width, cv.height); c.strokeStyle = fg; c.lineWidth = 6; c.strokeRect(8, 8, cv.width - 16, cv.height - 16);
   c.fillStyle = fg; c.textAlign = 'center'; c.textBaseline = 'middle'; const lines = text.split('\n'); const fs = Math.min(cv.height / (lines.length + 0.8), 64);
