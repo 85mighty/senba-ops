@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { tr } from './i18n.js';
 
 // 개발 서버(npm run dev)는 assets/ 를 루트로 서빙 → 'models/..', 빌드본(app/)은 ../assets/models/.. 를 참조
 const BASE = import.meta.env.DEV ? '' : (import.meta.env.VITE_MODEL_BASE ?? '../assets/');  // 배포처에 따라 VITE_MODEL_BASE 로 변경 가능
@@ -203,6 +204,7 @@ export class Viewer {
 
   // ---------------- 치수
   textSprite(text, color = '#ffd27a') {
+    text = tr(text);
     // 긴 글은 캔버스를 넓혀 잘리지 않게(512 기준 스케일 유지)
     const cv = document.createElement('canvas'); const ctx = cv.getContext('2d'); ctx.font = 'bold 56px -apple-system, sans-serif'; const W = Math.max(512, Math.ceil(ctx.measureText(text).width + 60)); cv.width = W; cv.height = 128;
     ctx.font = 'bold 56px -apple-system, sans-serif'; ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(0, 0, W, 128);

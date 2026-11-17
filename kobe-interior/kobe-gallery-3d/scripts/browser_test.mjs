@@ -213,6 +213,21 @@ try {
   const counts = await page.evaluate(() => { const i = window.__interior; const o = {}; for (const k in i.layers) o[k] = i.layers[k].children.length; return o; });
   console.log('인테리어 레이어 객체 수:', counts);
   if (!counts.molding) problems.push('몰딩 프레임이 생성되지 않음'); if (!counts.mirror_4_sides) problems.push('거울이 생성되지 않음 (central_wide_column 확인)');
+// 일본어 화면(ja.html): E안만, 패널·북마크에 한글이 남지 않아야 한다
+{
+  const pj = await browser.newPage({ viewport: { width: 1200, height: 800 } }); pj.setDefaultTimeout(180000); const errs = []; pj.on('pageerror', (e) => errs.push(e.message));
+  await pj.goto(`http://127.0.0.1:${PORT}/app/ja.html`, { waitUntil: 'load' }); await pj.waitForFunction(() => window.__viewerReady === true);
+  await pj.evaluate(() => document.querySelector('button[data-mode=interior]').click()); await pj.waitForFunction(() => !window.__viewer.loadingCount); await new Promise((r) => setTimeout(r, 1500));
+  const j = await pj.evaluate(() => { const txt = (sel) => [...document.querySelectorAll(sel)].map((b) => b.textContent.trim());
+    const ko = [...document.querySelectorAll('#panel *, #topbar *')].filter((e) => e.children.length === 0 && /[가-힣]/.test(e.textContent)).map((e) => e.textContent.trim());
+    let plates = 0; window.__editor.props.traverse((o) => { if (o.isMesh && o.material?.map?.image && o.position.y > 1.0 && o.position.y < 1.1) plates++; });
+    return { active: window.__store.active, slots: txt('#slotBar button'), bookmarks: txt('#bookmarks button'), ko, lang: document.documentElement.lang, plates }; });
+  if (errs.length) throw new Error('ja.html 오류: ' + errs.join(' | '));
+  if (j.lang !== 'ja' || j.active !== 'E' || j.slots.join() !== 'E案') throw new Error('ja.html: E안만 보여야 함 ' + JSON.stringify(j));
+  if (!j.bookmarks.includes('メイン') || !j.bookmarks.includes('トイレ')) throw new Error('ja.html 북마크 번역 안 됨 ' + j.bookmarks.join());
+  if (j.ko.length) throw new Error('ja.html 에 한글 남음: ' + j.ko.slice(0, 5).join(' / '));
+  if (j.plates < 4) throw new Error('ja.html 스폿 번호판 없음'); await pj.close(); console.log('ja.html OK', JSON.stringify(j.bookmarks));
+}
 } finally { await browser.close(); stopServer(); }
 
 if (problems.length) { console.error('\n❌ 문제 발견:'); problems.forEach((p) => console.error(' -', p)); process.exit(1); }

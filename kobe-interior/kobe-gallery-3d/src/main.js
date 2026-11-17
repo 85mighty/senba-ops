@@ -8,6 +8,8 @@ import { Editor } from './editor.js';
 import { encodeDesign, decodeDesign, shareCodeFromHash } from './share.js';
 import { Sync, DEFAULT_SYNC_URL } from './sync.js';
 import { TOUR_E, tourAt, playTour, tourDuration } from './tour.js';
+import { LANG, ONLY_E, tr, installDomTranslator } from './i18n.js';
+installDomTranslator();   // 일본어 화면(ja.html)에서만 동작
 import presetCPhone from './presets/c_phone_20261027.json';
 import { applyIkeaCorner, applyUpperMirrors, applyWindowCurtains, applyRealFloor, applyDullGreen, applyAirPanel, applyRegister, REGISTER_PLANS, applyPhotoEast, applyReception, applyCoupleLayout, applyRegisterGap, applyRegisterLeft, applyPhotoSpot2, applyWallPull, applyElegantChairs, applyLightsRug, applyWings, applyArchDemolish, applyHallArch, applyWashroomPhoto, applyBigRug, applyMeasured1110, applySpots } from './presets/ikea_corner.js';
 
@@ -61,7 +63,7 @@ const $ = (s) => document.querySelector(s);
 const errors = []; window.__viewerErrors = errors; window.__viewerReady = false;
 function showError(msg) { errors.push(msg); const d = document.createElement('div'); d.className = 'e'; d.innerHTML = `<b>로딩 오류</b>\n${escapeHtml(msg)}`; $('#errors').appendChild(d); console.error(msg); }
 function escapeHtml(s) { return String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
-function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._h); toast._h = setTimeout(() => t.classList.remove('show'), 1800); }
+function toast(msg) { const t = $('#toast'); t.textContent = tr(msg); t.classList.add('show'); clearTimeout(toast._h); toast._h = setTimeout(() => t.classList.remove('show'), 1800); }
 window.addEventListener('error', (e) => { if (window.__viewer?.contextLost || /getShaderInfoLog|getProgramInfoLog|WebGL/.test(e.message)) return; showError(`JS: ${e.message}`); });
 window.addEventListener('unhandledrejection', (e) => showError(`Promise: ${e.reason?.message || e.reason}`));
 
@@ -190,7 +192,7 @@ function setupEditorUI() {
   $('#measureBtn').addEventListener('click', () => { if (!editor.enabled) { $('#editMode').checked = true; editor.setEnabled(true); } editor.startMeasure(); });
   $('#measureClear').addEventListener('click', () => editor.clearMeasures());
   $('#shotBtn').addEventListener('click', () => editor.screenshot());
-  const saveState = () => { $('#undoBtn').disabled = !store.canUndo(); $('#redoBtn').disabled = !store.canRedo(); $('#revertBtn').disabled = !store.hasExplicit(); $('#saveState').textContent = '바꾸는 즉시 자동 저장 · 동기화됩니다(저장 버튼 불필요).' + (store.hasExplicit() ? (store.dirty ? ' 📌 저장본 이후 바뀐 내용 있음.' : ' 📌 지금 상태가 저장본입니다.') : ' 📌 저장본은 \'되돌아올 지점\'이 필요할 때만 만드세요.'); };
+  const saveState = () => { $('#undoBtn').disabled = !store.canUndo(); $('#redoBtn').disabled = !store.canRedo(); $('#revertBtn').disabled = !store.hasExplicit(); $('#saveState').textContent = tr('바꾸는 즉시 자동 저장 · 동기화됩니다(저장 버튼 불필요).') + tr(store.hasExplicit() ? (store.dirty ? ' 📌 저장본 이후 바뀐 내용 있음.' : ' 📌 지금 상태가 저장본입니다.') : ' 📌 저장본은 \'되돌아올 지점\'이 필요할 때만 만드세요.'); };
   store.onChange(saveState); saveState();
   $('#saveNow').addEventListener('click', () => { store.saveExplicit(); saveState(); toast('저장본을 만들었습니다 (디자인은 원래 자동 저장됨)'); });
   $('#undoBtn').addEventListener('click', () => { if (store.undo()) { editor.renderChips(); refreshBookmarks(); toast('되돌림'); } });
@@ -199,7 +201,7 @@ function setupEditorUI() {
   $('#resetWindows').addEventListener('click', () => { store.resetWindows(); editor.renderChips(); toast('창을 스캔 기본값으로 재설정'); });
   window.addEventListener('keydown', (e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'z' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') { e.preventDefault(); if (e.shiftKey) store.redo(); else store.undo(); editor.renderChips(); } if ((e.metaKey || e.ctrlKey) && e.key === 's') { e.preventDefault(); store.saveExplicit(); saveState(); toast('저장됨'); } });
   // 디자인 안 A/B/C — 위쪽 바에서 전환
-  const renderSlotBar = () => { const bar = $('#slotBar'); bar.innerHTML = ''; for (const sl of SLOTS) { const b = document.createElement('button'); const has = store.hasSlot(sl); b.textContent = has ? `${sl}안` : `${sl}안 +`; b.className = (sl === store.active ? 'on' : '') + (has ? '' : ' empty'); b.title = has ? `${sl}안 열기` : `${sl}안 새로 만들기(지금 디자인 복사)`; b.addEventListener('click', () => switchTo(sl)); bar.appendChild(b); } };
+  const renderSlotBar = () => { const bar = $('#slotBar'); bar.innerHTML = ''; for (const sl of SLOTS) { if (ONLY_E && sl !== 'E') continue; const b = document.createElement('button'); const has = store.hasSlot(sl); b.textContent = has ? `${sl}안` : `${sl}안 +`; b.className = (sl === store.active ? 'on' : '') + (has ? '' : ' empty'); b.title = has ? `${sl}안 열기` : `${sl}안 새로 만들기(지금 디자인 복사)`; b.addEventListener('click', () => switchTo(sl)); bar.appendChild(b); } };
   const switchTo = (sl) => { if (viewer.mode !== 'interior' && viewer.mode !== 'reconstructed') setMode('interior'); const r = store.switchSlot(sl); if (r === 'same') return; if (r === 'new') window.__sync?.touched(sl); editor.renderChips(); refreshBookmarks(); renderSlotBar(); saveState(); toast(r === 'new' ? `${sl}안을 새로 만들었습니다 (지금 디자인 복사)` : `${sl}안 열림`); };
   window.__switchSlot = switchTo;
   for (const sl of SLOTS) { const btn = $(`#copy${sl}`); btn.addEventListener('click', () => { if (sl === store.active) { toast(`지금 ${sl}안입니다`); return; } if (store.hasSlot(sl) && !btn.dataset.arm) { btn.dataset.arm = '1'; btn.textContent = `${sl}안 덮어쓰기? (다시 누름)`; setTimeout(() => { delete btn.dataset.arm; btn.textContent = `→ ${sl}안`; }, 4000); return; } delete btn.dataset.arm; btn.textContent = `→ ${sl}안`; store.copyTo(sl); window.__sync?.touched(sl); renderSlotBar(); toast(`지금 디자인을 ${sl}안으로 복사`); }); }
@@ -212,8 +214,8 @@ function setupEditorUI() {
   const seedAfterSync = () => { for (const p of PRESETS) { if (!p.afterSync) continue; const flag = 'kobe3d.seed.' + p.id; let seeded = false; try { seeded = !!localStorage.getItem(flag); } catch {}
     if (!seeded && !store.hasSlot(p.seedSlot)) { store.putSlot(p.seedSlot, p.apply(p.base())); try { localStorage.setItem(flag, '1'); } catch {} window.__sync?.touched(p.seedSlot); renderSlotBar(); toast(`${p.seedSlot}안(${p.name.split(' (')[0]})을 만들었습니다 — 위쪽 ${p.seedSlot}안을 누르세요`); }
     runPatches(p.seedSlot); }   // 이 안의 수정을 끝낸 뒤 다음 안(E안은 D안을 바탕으로)
-    runPatches(); };
-  for (const p of PRESETS) { const b = document.createElement('button'); b.className = 'ghost'; const label = p.apply ? `${p.name} → 지금 안에 더하기` : `${p.name} → 지금 안에 불러오기`; b.textContent = label;
+    runPatches(); if (ONLY_E && store.hasSlot('E') && store.active !== 'E') switchTo('E'); };
+  for (const p of PRESETS) { const b = document.createElement('button'); b.className = 'ghost'; const label = p.apply ? `${tr(p.name)} → ${tr('지금 안에 더하기')}` : `${tr(p.name)} → ${tr('지금 안에 불러오기')}`; b.textContent = label;
     b.addEventListener('click', () => { if (!b.dataset.arm) { b.dataset.arm = '1'; b.textContent = p.armText ? p.armText(store.active) : p.apply ? `지금 ${store.active}안에 코너를 더합니다(그 자리 소품은 치움). 다시 누르세요` : `지금 ${store.active}안을 덮어씁니다. 다시 누르세요`; setTimeout(() => { delete b.dataset.arm; b.textContent = label; }, 4000); return; }
       delete b.dataset.arm; b.textContent = label; store.putSlot(store.active, p.apply ? p.apply(store.design) : p.design); editor.renderChips(); refreshBookmarks(); toast(`${p.name}을 ${store.active}안에 불러옴`); });
     $('#presetList').appendChild(b); }
@@ -239,8 +241,8 @@ function setupEditorUI() {
   const SYNC_TEXT = { off: '꺼짐', idle: '연결 중', ok: '동기화됨', pending: '저장 대기', pushing: '올리는 중…', offline: '오프라인', auth: '비밀번호 확인' };
   const sync = new Sync(store, {
     onApplied: (slot) => { renderSlotBar(); if (slot === store.active) { editor.renderChips(); refreshBookmarks(); saveState(); } },
-    onStatus: (st, detail) => { const pill = $('#syncPill'); pill.hidden = st === 'off'; pill.className = 'syncpill ' + st; pill.textContent = '☁ ' + SYNC_TEXT[st];
-      $('#syncState').textContent = SYNC_TEXT[st] + (detail ? ` — ${detail}` : '') + (st === 'ok' && sync.lastSync ? ` · ${sync.lastSync.toLocaleTimeString()}` : ''); },
+    onStatus: (st, detail) => { const pill = $('#syncPill'); pill.hidden = st === 'off'; pill.className = 'syncpill ' + st; pill.textContent = '☁ ' + tr(SYNC_TEXT[st]);
+      $('#syncState').textContent = tr(SYNC_TEXT[st]) + (detail ? ` — ${tr(detail)}` : '') + (st === 'ok' && sync.lastSync ? ` · ${sync.lastSync.toLocaleTimeString()}` : ''); },
   });
   window.__sync = sync;
   $('#syncUrl').value = sync.cfg.url || DEFAULT_SYNC_URL; if (sync.cfg.token) $('#syncToken').value = sync.cfg.token;
