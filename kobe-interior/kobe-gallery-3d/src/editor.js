@@ -250,10 +250,10 @@ export class Editor {
     const cut = this.v.clipPlane?.constant ?? Infinity;
     return rc.intersectObjects(objs, false).find((h) => h.point.y <= cut + 1e-3) || null;
   }
-  doorAt(ev) { if (!this.fixtures?.visible) return null; return this.frontHit(ev)?.object.userData.doorPivot || null; }
+  doorAt(ev) { if (!this.fixtures?.visible) return null; const pv = this.frontHit(ev)?.object.userData.doorPivot || null; if (pv?.userData.swing?.prop && this.enabled) return null; return pv; }   // 소품에 달린 것(레지 보조판)은 편집 모드에선 선택이 우선
   toggleDoor(pivot) {
     const sw = pivot.userData.swing; sw.isOpen = !sw.isOpen; sw.onToggle?.(sw.isOpen);
-    const ps = sw.pivots || [pivot]; const get = () => (sw.kind === 'scale' ? ps[0].scale.x : ps[0].rotation.y), set = (v) => { for (const q of ps) { if (sw.kind === 'scale') q.scale.x = v; else q.rotation.y = v; } };
+    const ps = sw.pivots || [pivot]; const ax = sw.axis || 'y'; const get = () => (sw.kind === 'scale' ? ps[0].scale.x : ps[0].rotation[ax]), set = (v) => { for (const q of ps) { if (sw.kind === 'scale') q.scale.x = v; else q.rotation[ax] = v; } };
     const from = get(), to = sw.isOpen ? sw.open : sw.closed; let t = 0;
     this.v.onFrame.push((dt) => { t = Math.min(1, t + dt * 1.8); const k = t * t * (3 - 2 * t); set(from + (to - from) * k); return t < 1; });
     return sw.isOpen;
