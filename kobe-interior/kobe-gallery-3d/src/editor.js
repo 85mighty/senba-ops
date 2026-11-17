@@ -169,8 +169,9 @@ export class Editor {
     const on = []; for (const c of this.meta.closures || []) { if (!this.s.design.closures?.[c.id]) continue; const xf = closureXform(this.s.design, c.id); on.push(`${c.id}:${xf.dx},${xf.dz},${xf.rot}`); const T = this.meta.wall_thickness_m || 0.1;
       if (c.kind === 'tile') { this.closureG.add(buildWashroomTile(this.meta, c.region, this.ceil)); continue; }   // 세면실 타일 벽(끌기 없음)
       const cg = new THREE.Group(); cg.name = 'closure'; cg.userData.pick = { kind: 'closure', id: c.id, axis: closureWalls(c, this.s.design)[0].axis }; this.closureG.add(cg);   // 길게 눌러 끌면 앞뒤로 옮겨진다(현재 방향 기준)
+      const HT = c.height || this.ceil;   // 11/18: N2~N7 은 천장에서 띄움(에어컨 바람) — closure.height
       if (c.arch) { const ws = closureWalls(c, this.s.design); const w = ws[0]; const W = w.to - w.from, spring = c.arch.spring || 1.62, r = W / 2;   // 아치 출입구: 위쪽 스팬드럴만 벽(반원 구멍)
-        const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.lineTo(W, 0); sh.lineTo(W, this.ceil); sh.lineTo(0, this.ceil); sh.closePath();
+        const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.lineTo(W, 0); sh.lineTo(W, HT); sh.lineTo(0, HT); sh.closePath();
         const hole = new THREE.Path(); hole.moveTo(0, 0); hole.lineTo(W, 0); hole.lineTo(W, spring); hole.absarc(r, spring, r, 0, Math.PI, false); hole.lineTo(0, 0); sh.holes.push(hole);
         const geo = new THREE.ExtrudeGeometry(sh, { depth: T, bevelEnabled: false }); const paint = this.s.getSurface(c.id).paint || this.s.getSurface('wall_x_1').paint || '#39433a';
         const am = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: paint, roughness: 0.9 })); am.userData.surface = c.id;
@@ -181,7 +182,7 @@ export class Editor {
         const zmin = Math.min(...ws.map((x) => x.offset)), xmin = Math.min(...ws.map((x) => x.offset));
         if (w.axis === 'z') { am.position.set(w.from, 0, zmin); am.add(trimM); } else { am.rotation.y = Math.PI / 2; am.position.set(xmin, 0, w.to); am.add(trimM); }   // 로컬 +x→월드 −z, 로컬 +z→월드 +x
         cg.add(am); continue; }
-      for (const w of closureWalls(c, this.s.design)) { const m = new THREE.Mesh(new THREE.BoxGeometry(w.to - w.from, this.ceil, T), mat); m.userData.surface = w.id; this.placeOnWall(m, { ...w, sid: w.id }, (w.from + w.to) / 2, this.ceil / 2, -T / 2); cg.add(m); }
+      for (const w of closureWalls(c, this.s.design)) { const m = new THREE.Mesh(new THREE.BoxGeometry(w.to - w.from, HT, T), mat); m.userData.surface = w.id; this.placeOnWall(m, { ...w, sid: w.id }, (w.from + w.to) / 2, HT / 2, -T / 2); cg.add(m); }
       // 바닥(카펫): 복원 바닥 삼각형 중 영역 안의 것만 — 바닥 칠 위(y 0.016)에 깐다
       for (const r of c.floor || []) { const geo = new THREE.PlaneGeometry(r.x[1] - r.x[0], r.z[1] - r.z[0]); geo.rotateX(-Math.PI / 2); geo.translate((r.x[0] + r.x[1]) / 2, 0, (r.z[0] + r.z[1]) / 2); const f = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: r.color || '#6e1620', roughness: 0.97, polygonOffset: true, polygonOffsetFactor: -3 })); f.position.y = 0.016; f.userData.surface = 'floor'; this.closureG.add(f); } }
     this.curtainOpen = this.curtainOpen || {};

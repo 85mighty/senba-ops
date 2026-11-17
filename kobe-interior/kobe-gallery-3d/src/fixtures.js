@@ -231,7 +231,7 @@ export function buildWashroomTile(meta, region, ceilH = 2.38) {
     const W = h.to - h.from, r = W / 2, sp = h.spring || 1.62; const sh = new THREE.Shape();
     const P = (u, y) => sh.lineTo(sgn * u, y); sh.moveTo(sgn * h.from, 0); P(h.from, sp);
     for (let i = 0; i <= 24; i++) { const a = Math.PI - (i / 24) * Math.PI; P(h.from + r + Math.cos(a) * r, sp + Math.sin(a) * r); }   // 반원(왼쪽→오른쪽)
-    P(h.to, 0); P(h.to, ceilH); P(h.from, ceilH); sh.closePath();
+    const top = (region.heights || {})[key] || ceilH; P(h.to, 0); P(h.to, top); P(h.from, top); sh.closePath();
     const geo = new THREE.ShapeGeometry(sh, 4); const uv = geo.attributes.uv, ps = geo.attributes.position; for (let i = 0; i < uv.count; i++) uv.setXY(i, sgn * ps.getX(i) / T, ps.getY(i) / T);
     const m = kind === 'tile' ? mat : paintM; const mm = new THREE.Mesh(geo, kind === 'tile' ? (() => { const c = m.clone(); c.side = THREE.DoubleSide; c.userData.shared = true; return c; })() : paintM);
     mm.rotation.y = f.rot; if (key === 'w' || key === 'e') mm.position.set(f.at, 0, 0); else mm.position.set(0, 0, f.at); mm.userData.surface = kind === 'tile' ? 'washroom_tile' : 'washroom_paint'; g.add(mm);
@@ -241,7 +241,8 @@ export function buildWashroomTile(meta, region, ceilH = 2.38) {
     const arches = all.filter((h) => h.shape === 'arch'); for (const h of arches) archPiece(key, f, h, kind);
     const holes = all.filter((h) => h.shape !== 'arch').map((h) => [h.from - 0.02, h.to + 0.02, -1, h.y1 + 0.02]).concat(arches.map((h) => [h.from, h.to, -1, ceilH + 1]));
     const len = (region.span || {})[key] || f.len;   // span: 그 면 중 일부만
-    for (const [a, b, c0, c1] of subtractRects([len[0], len[1], 0, ceilH], holes)) {
+    const top = (region.heights || {})[key] || ceilH;   // heights: 천장에서 띄운 신설 벽의 면은 그 높이까지만
+    for (const [a, b, c0, c1] of subtractRects([len[0], len[1], 0, top], holes)) {
       const mid = (a + b) / 2, y = (c0 + c1) / 2; const pos = (key === 'w' || key === 'e') ? new THREE.Vector3(f.at, y, mid) : new THREE.Vector3(mid, y, f.at); quad(b - a, c1 - c0, pos, f.rot, kind, a);
     }
   }
