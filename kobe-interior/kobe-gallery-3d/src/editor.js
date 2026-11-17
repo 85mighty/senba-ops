@@ -124,14 +124,16 @@ export class Editor {
   }
   // 벽면 사각형을 구멍을 피해 여러 장으로 — 각 조각마다 fn(t0, t1, y0, y1)
   eachPiece(w, t0, t1, y0, y1, fn) { for (const r of subtractRects([t0, t1, y0, y1], this.holesOf(w))) fn(...r); }
-  zoneRange(zone) { return zone === 'upper' ? [this.chair, this.ceil] : zone === 'lower' ? [this.base, this.chair] : [0, this.ceil]; }
+  // 벽 위끝: 천장에서 띄운 신설 벽(closure.height)은 그 높이까지만 — 칠·픽·띠가 모두 같은 값을 쓴다
+  wallTop(w) { if (!w?.virtual) return this.ceil; const c = closureOf(this.meta, w.id); return c?.height || this.ceil; }
+  zoneRange(zone, w = null) { const top = this.wallTop(w); return zone === 'upper' ? [this.chair, top] : zone === 'lower' ? [this.base, this.chair] : [0, top]; }
 
   // ---------------- 픽 메쉬 (투명) & 라벨
   buildPicks() {
     disposeTree(this.picks); const mat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.0, depthWrite: false, side: THREE.DoubleSide });
     for (const w of this.walls()) for (const seg of this.segmentsOf(w)) {
       const sides = w.two_sided ? [w.inward, -w.inward] : [w.inward];
-      for (const sd of sides) { const q = this.wallQuad(w, seg.from, seg.to, 0, this.ceil, 0.03, mat, sd); q.userData.pick = { kind: 'wall', id: w.id, seg: seg.key }; this.picks.add(q); }
+      for (const sd of sides) { const q = this.wallQuad(w, seg.from, seg.to, 0, this.wallTop(w), 0.03, mat, sd); q.userData.pick = { kind: 'wall', id: w.id, seg: seg.key }; this.picks.add(q); }
     }
     for (const col of this.columns()) { const fp = this.s.footprint(col); const m = new THREE.Mesh(new THREE.BoxGeometry(fp.x[1] - fp.x[0] + 0.06, this.ceil, fp.z[1] - fp.z[0] + 0.06), mat); m.position.set((fp.x[0] + fp.x[1]) / 2, this.ceil / 2, (fp.z[0] + fp.z[1]) / 2); m.userData.pick = { kind: 'column', id: col.id }; this.picks.add(m); }
     for (const tile of this.tiles) for (const [kind, y] of [['ceiling', this.ceil - 0.03], ['floor', 0.03]]) {
@@ -461,14 +463,14 @@ export class Editor {
     for (const w of this.walls()) {
       const sides = w.two_sided ? [w.inward, -w.inward] : [w.inward];
       for (const seg of this.segmentsOf(w)) {
-        const sf = this.s.getSurface(seg.key); if (!sf.paint) continue; const [y0, y1] = this.zoneRange(sf.zone || 'all');
+        const sf = this.s.getSurface(seg.key); if (!sf.paint) continue; const [y0, y1] = this.zoneRange(sf.zone || 'all', w);
         const mat = this.paintMat(sf.paint); for (const sd of sides) this.eachPiece(w, seg.from, seg.to, y0, y1, (a, b, c, d) => { const q = this.wallQuad(w, a, b, c, d, 0.0015, mat, sd); q.userData.surface = w.id; this.overlays.add(q); });
       }
       // 하부 벽(띠 사이) 마감 — 이 벽 설정. 벽 '색'을 띠 아래(하부)로 칠했으면 그쪽 우선, 상부/전체 칠과는 함께 쓴다(하부가 위에 그려짐)
       const sfw0 = this.s.getSurface(w.id);
       if (!(sfw0.paint && sfw0.zone === 'lower')) this.addLower(w, w.id, sides);
       // 벽 전체 설정(세그먼트 없이 칠한 경우)
-      const sfw = this.s.getSurface(w.id); if (sfw.paint) { const [y0, y1] = this.zoneRange(sfw.zone || 'all'); const mat = this.paintMat(sfw.paint); for (const sd of sides) this.eachPiece(w, w.from, w.to, y0, y1, (a, b, c, d) => { const q = this.wallQuad(w, a, b, c, d, 0.001, mat, sd); q.userData.surface = w.id; this.overlays.add(q); }); }
+      const sfw = this.s.getSurface(w.id); if (sfw.paint) { const [y0, y1] = this.zoneRange(sfw.zone || 'all', w); const mat = this.paintMat(sfw.paint); for (const sd of sides) this.eachPiece(w, w.from, w.to, y0, y1, (a, b, c, d) => { const q = this.wallQuad(w, a, b, c, d, 0.001, mat, sd); q.userData.surface = w.id; this.overlays.add(q); }); }
     }
     for (const col of this.columns()) {
       const sf = this.s.getSurface(col.id);
