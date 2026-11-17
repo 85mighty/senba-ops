@@ -182,6 +182,13 @@ export function applyMeasured1110(base) {
   d.editedAt = Date.now(); return d;
 }
 
+// 11/17: 홀 입구 아치 0.86 — 뒤 벽이 북쪽으로 0.11 가면서 벽에 붙은 글씨·거울·액자·좌대도 같이
+export function applyArchWiden(base) {
+  const d = JSON.parse(JSON.stringify(base || {})); const Z = { rec_sign: -0.084, rec_mirror: -0.084, ph2_frame: -0.196, ph2_pedestal: -0.49, ph2_bust: -0.49 };
+  for (const p of d.props || []) if (p.id in Z) p.z = Z[p.id];
+  d.closureXform = {}; d.closureShift = {}; d.editedAt = Date.now(); return d;
+}
+
 // 11/11: 작은 러그 → 큰 러그(1.8 × 1.2). 날개벽 사이(x −1.66~0.264)를 채우고, 사이드보드 앞(z 1.50)에서 홀 쪽 z 0.30 까지
 export function applyBigRug(base) {
   const d = JSON.parse(JSON.stringify(base || {})); d.props = (d.props || []).filter((p) => p.id !== 'lr_rug');
