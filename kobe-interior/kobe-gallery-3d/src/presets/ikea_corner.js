@@ -189,6 +189,13 @@ export function applyArchWiden(base) {
   d.closureXform = {}; d.closureShift = {}; d.editedAt = Date.now(); return d;
 }
 
+// 11/21: 바닥 → 헤링본 LVT(フロアタイル, 판 90×450 45°) — 업체 견적의 바닥 교체를 헤링본으로 할 때 비교용
+export function applyHerringboneFloor(base) {
+  const d = JSON.parse(JSON.stringify(base || {})); d.surfaces = d.surfaces || {};
+  for (const k of Object.keys(d.surfaces)) if (k.startsWith('floor_t')) d.surfaces[k].paint = null;
+  d.surfaces.floor = { ...(d.surfaces.floor || {}), paint: 'tex:herringbone', texture: true }; d.editedAt = Date.now(); return d;
+}
+
 // 11/18: 신설 벽 위 격자를 가로 살 3단으로(E안 결정)
 export function applySlatsH(base) { const d = JSON.parse(JSON.stringify(base || {})); d.slatStyle = 'h'; d.editedAt = Date.now(); return d; }
 

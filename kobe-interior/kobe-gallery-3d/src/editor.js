@@ -16,6 +16,7 @@ export class Editor {
   // bandProj = 검은 띠가 벽에서 튀어나온 두께(실측 1 cm). 사양·실측표: kobe-interior/03-자재-실측.md
   static AIR_PANEL = { t: 0.007, w: 0.304, grooves: 2, bandProj: 0.010, capD: 0.025, capH: 0.012 };   // bandProj 실측 1 cm(11/07)
   static FLOOR_TEX_M = 2.16;   // scripts/make_floor_texture.py SIZE_M 과 같게
+  static FLOOR_TEX_SIZE = { herringbone: 1.2728 };   // 텍스처별 한 장 크기(m) — scripts/make_herringbone_texture.py SIZE_M. 없으면 FLOOR_TEX_M
   static LONG_PRESS = 450;   // 소품을 옮기려면 이만큼(ms) 누르고 있어야 한다
   constructor(viewer, interior, store, toast) {
     this.v = viewer; this.i = interior; this.s = store; viewer.footprintOf = (el) => store.footprint(el); this.meta = viewer.meta; this.toast = toast;
@@ -89,7 +90,7 @@ export class Editor {
   floorMat(paint) {
     if (!paint?.startsWith('tex:')) return this.paintMat(paint);
     this._floorTex = this._floorTex || {}; if (this._floorTex[paint]) return this._floorTex[paint];
-    const tex = new THREE.TextureLoader().load(`../assets/textures/floor_${paint.slice(4)}.jpg`); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = Math.min(8, this.v.renderer.capabilities.getMaxAnisotropy());
+    const tex = new THREE.TextureLoader().load(`../assets/textures/floor_${paint.slice(4)}.jpg`); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.colorSpace = THREE.SRGBColorSpace; { const sz = Editor.FLOOR_TEX_SIZE[paint.slice(4)]; if (sz) tex.repeat.set(Editor.FLOOR_TEX_M / sz, Editor.FLOOR_TEX_M / sz); } tex.anisotropy = Math.min(8, this.v.renderer.capabilities.getMaxAnisotropy());
     const m = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5, metalness: 0, polygonOffset: true, polygonOffsetFactor: -1 }); m.userData.shared = true; return (this._floorTex[paint] = m);
   }
   // 임의 사각 영역의 바닥 형상(0.1 m 복원 격자 기준) — 카펫 등
