@@ -188,6 +188,17 @@ try {
     const after = await page.evaluate((name) => { let pv = null; window.__editor.fixtures.traverse((o) => { if (o.name === name) pv = o; }); return pv.rotation.y; }, name);
     return [pt.rot, after];
   };
+  { // 보기 모드에서 레지를 누르면 보조판이 올라간다(끌기 시작이 토글을 삼키던 문제)
+    const prev = await page.evaluate(() => { const V = window.__viewer; return { slot: window.__store.active, edit: window.__editor.enabled, pos: V.camera.position.toArray(), tgt: V.controls.target.toArray() }; });
+    await page.evaluate(() => { window.__switchSlot('E'); window.__editor.setEnabled(false); const cb = document.querySelector('#editMode'); if (cb) cb.checked = false; const r = window.__store.design.props.find((p) => p.type === 'register'); if (!r) throw new Error('E안에 레지 없음'); const V = window.__viewer; V.camera.position.set(r.x + 1.2, 1.5, r.z + 0.3); V.controls.target.set(r.x, 0.9, r.z); V.controls.update(); });
+    await wait(600);
+    const pt = await page.evaluate(() => { const r = window.__store.design.props.find((p) => p.type === 'register'); const V = window.__viewer; const w = new (V.camera.position.constructor)(r.x + 0.23, 0.6, r.z); const c = V.renderer.domElement.getBoundingClientRect(); const q = w.project(V.camera); return { x: c.left + (q.x + 1) / 2 * c.width, y: c.top + (1 - q.y) / 2 * c.height }; });
+    await page.mouse.click(pt.x, pt.y); await wait(300);
+    await page.waitForFunction(() => { let pv = null; window.__editor.props.traverse((o) => { if (o.name === 'register_leaf') pv = o; }); return pv && pv.userData.swing.isOpen && Math.abs(pv.rotation.z) < 1e-3; }, null, { timeout: 120000 });
+    const st = await page.evaluate(() => ({ edit: window.__editor.enabled, sel: window.__editor.sel })); if (st.edit) throw new Error('레지 탭이 편집 모드를 켰음');
+    await page.evaluate(() => { let pv = null; window.__editor.props.traverse((o) => { if (o.name === 'register_leaf') pv = o; }); window.__editor.toggleDoor(pv); });
+    await page.evaluate((p) => { window.__switchSlot(p.slot); const V = window.__viewer; V.camera.position.set(...p.pos); V.controls.target.set(...p.tgt); V.controls.update(); if (p.edit) { window.__editor.setEnabled(true); const cb = document.querySelector('#editMode'); if (cb) cb.checked = true; } }, prev); await wait(600);
+  }
   const [r0, r1] = await tapDoor('toilet_door_leaf'); const [, r2] = await tapDoor('toilet_door_leaf');
   console.log('화장실 문 회전:', [r0, r1, r2].map((x) => +x.toFixed(2)));
   if (!(Math.abs(r1) < 0.05 && Math.abs(r2 - r0) < 0.05)) problems.push('화장실 문 터치 열고 닫기 실패 ' + JSON.stringify([r0, r1, r2]));
