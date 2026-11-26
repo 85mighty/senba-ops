@@ -122,7 +122,7 @@ try {
     // E안 리셉션 알코브: 레지 ② + ㄱ자 벽 4면 + 카펫 + 船場美術館·원형 거울
     const ee = s.getSlot('E'); if (!ee?.closures?.reception || !ee.props.some((p) => p.type === 'register' && p.id === 'reg_r2') || !['brand_sign', 'round_mirror'].every((t) => ee.props.some((p) => p.type === t))) throw new Error('E안 리셉션 알코브 없음');
     window.__switchSlot('E'); const recWalls = e.walls().filter((w) => w.id.startsWith('wall_rec_')); let carpet = 0; e.closureG.traverse((o) => { if (o.isMesh && o.userData.surface === 'floor') carpet++; });
-    if (recWalls.length !== 2 || carpet < 2 || s.getSurface('wall_rec_back_in').paint !== '#8a1f2b') throw new Error('E안 ㄱ자 벽·카펫 이상 ' + recWalls.length + ' ' + carpet);
+    if (recWalls.length !== 2 || carpet < 2 || !['#8a1f2b', 'tex:wall_damask_red'].includes(s.getSurface('wall_rec_back_in').paint)) throw new Error('E안 ㄱ자 벽·카펫 이상 ' + recWalls.length + ' ' + carpet);
     // 막기 벽 앞뒤 이동 + 거리 표시
     const z0 = e.walls().find((w) => w.id === 'wall_rec_back_in').offset; s.design.closureShift = { reception: 0.2 }; s.commit('closure');
     const z1 = e.walls().find((w) => w.id === 'wall_rec_back_in').offset; if (Math.abs(z1 - z0 - 0.2) > 1e-6) throw new Error('막기 벽 이동 안 됨 ' + z0 + ' ' + z1);
@@ -137,6 +137,7 @@ try {
     // 세면실 포토 스폿: 타일 벽 + 타원 거울 + 안여닫이 문(열림 각 +)
     if (!s.design.closures?.washroom_tile || !s.design.props.some((p) => p.type === 'oval_mirror')) throw new Error('E안 세면실 포토 스폿 없음');
     if (!s.design.props.some((p) => p.id === 'lr_rug' && p.type === 'rug_large')) throw new Error('E안 큰 러그 없음');
+    { const pt = s.design.surfaces?.wall_rec_back_in?.paint; if (pt !== 'tex:wall_damask_red') throw new Error('레지 뒤 벽이 다마스크 벽지 아님 ' + pt); let wp = 0; e.overlays.traverse((o) => { if (o.isMesh && o.material?.userData?.wallpaperSize && o.material.map) wp++; }); if (!wp) throw new Error('다마스크 벽지 메쉬 없음'); }
     { const sc = s.design.props.filter((p) => p.type === 'wall_sconce'); const mi = s.design.props.find((p) => p.id === 'ik_mirror'); if (sc.length !== 2 || !mi || !(sc.some((q) => q.x < mi.x) && sc.some((q) => q.x > mi.x))) throw new Error('E안 거울 양옆 벽 조명 2개 아님 ' + JSON.stringify(sc.map((q) => q.x))); let n = 0; e.props.traverse((o) => { if (o.isMesh && o.geometry?.type === 'CylinderGeometry' && o.geometry.parameters.openEnded) n++; }); if (n < 2) throw new Error('벽 조명 갓 메쉬 부족 ' + n); }
     { const sets = s.design.props.filter((p) => p.type === 'couple_set'); if (sets.length !== 4 || sets.map((p) => p.spot).sort().join() !== '1,2,3,4') throw new Error('체험 스폿 번호 ①~④ 아님 ' + JSON.stringify(sets.map((p) => [p.id, p.spot]))); let plates = 0; e.props.traverse((o) => { if (o.isMesh && o.geometry?.type === 'PlaneGeometry' && o.material?.map && o.position.y > 1.0 && o.position.y < 1.1) plates++; }); if (plates < 4) throw new Error('스폿 번호 스탠드 부족 ' + plates); }
     { const l = window.__tourAt(10); const V = window.__viewer; const k = [l, V.camera.position.x, window.__tourDuration]; if (k[0] !== '레지에서 계산' || Math.abs(k[1] + 2.35) > 0.05 || k[2] < 50) throw new Error('투어 경로 이상 ' + JSON.stringify(k)); }

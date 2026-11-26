@@ -111,7 +111,9 @@ export class Editor {
   placeOnWall(obj, w, t, y, off) { this.i.placeOnWall(obj, w, t, y, off); }
   // 벽 안쪽(또는 양면) 사각형 메쉬
   wallQuad(w, t0, t1, y0, y1, off, mat, side = null) {
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(t1 - t0, y1 - y0), mat); const sw = side ? { ...w, inward: side } : w;
+    const geo = new THREE.PlaneGeometry(t1 - t0, y1 - y0); const S = mat?.userData?.wallpaperSize;
+    if (S) { const uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, (t0 + uv.getX(i) * (t1 - t0)) / S, (y0 + uv.getY(i) * (y1 - y0)) / S); }   // 벽 길이방향 t·높이 y 기준 → 조각이 갈려도 무늬가 이어진다
+    const m = new THREE.Mesh(geo, mat); const sw = side ? { ...w, inward: side } : w;
     this.placeOnWall(m, sw, (t0 + t1) / 2, (y0 + y1) / 2, off); return m;
   }
   // 꾸밈을 하지 않을 벽면 구멍 [t0,t1,y0,y1]: 창(틀 포함), 문 개구부, 입구 밖 구간
@@ -490,7 +492,17 @@ export class Editor {
     this.select({ kind: pk.kind, id: pk.id }); return true;
   }
   shade(hex, k) { const c = new THREE.Color(hex); c.multiplyScalar(k); return '#' + c.getHexString(); }
-  paintMat(hex) { return new THREE.MeshStandardMaterial({ color: hex, roughness: 0.85, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1 }); }
+  static WALLPAPER = { damask_red: { file: 'wall_damask_red.jpg', size: 0.64, fallback: '#8d1c2c' } };   // 'tex:wall_<id>' — 무늬 벽지(칠 대신). size = 한 장 크기(m)
+  paintMat(hex) {
+    if (typeof hex === 'string' && hex.startsWith('tex:wall_')) {   // 벽지: 한 장 크기마다 반복. 면 위치(월드)를 기준으로 UV 를 잡아 조각이 이어진다 → wallQuad 에서 uv 보정
+      const id = hex.slice(9), wp = Editor.WALLPAPER[id]; if (wp) {
+        this._wpMat = this._wpMat || {}; if (this._wpMat[id]) return this._wpMat[id];
+        const tex = new THREE.TextureLoader().load(`../assets/textures/${wp.file}`); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = Math.min(8, this.v.renderer.capabilities.getMaxAnisotropy());
+        const m = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1 }); m.userData.shared = true; m.userData.wallpaperSize = wp.size; return (this._wpMat[id] = m);
+      }
+    }
+    return new THREE.MeshStandardMaterial({ color: hex, roughness: 0.85, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1 });
+  }
   buildOverlays() {
     disposeTree(this.overlays);
     for (const w of this.walls()) {
