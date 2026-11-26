@@ -1,7 +1,8 @@
 // 일본어 화면(ja.html) — 한국어 UI 문자열을 일본어로. 정확히 일치하는 문장 사전 → 없으면 단어 치환(남는 조사는 그대로)
 // ja.html 이 <script>window.__APP = { lang: 'ja', onlyE: true }</script> 로 켠다. 한국어 화면(index.html)에서는 아무것도 하지 않는다.
 export const LANG = (typeof window !== 'undefined' && window.__APP?.lang) || 'ko';
-export const ONLY_E = !!(typeof window !== 'undefined' && window.__APP?.onlyE);
+export const ONLY_SLOT = typeof window !== 'undefined' ? (window.__APP?.only || (window.__APP?.onlyE ? 'E' : null)) : null;   // ja.html = E안만, ja-f.html = F안만
+export const ONLY_E = ONLY_SLOT === 'E';
 const HANGUL = /[가-힣]/;
 
 const EXACT = {
@@ -82,7 +83,7 @@ const WORDS = [
   ['메인', 'メイン'], ['창가', '窓側'], ['입구', '入口'], ['주방', 'キッチン'], ['거리 재기', '距離を測る'],
   ['쪽', '側'], ['사이', 'の間'], ['앞', '前'], ['옆', '横'], ['위', '上'], ['아래', '下'],
 ];
-const SLOT = /([A-E])안/g;
+const SLOT = /([A-F])안/g;
 
 const cache = new Map();
 export function tr(s) {

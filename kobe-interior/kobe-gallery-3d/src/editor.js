@@ -348,7 +348,8 @@ export class Editor {
     const hi = this._wsLit[color + '#hi'] || (this._wsLit[color + '#hi'] = new THREE.MeshStandardMaterial({ color: m0.color.clone().multiplyScalar(1.22), roughness: 0.7 }));   // 몰딩 안쪽 단은 살짝 밝게(같은 색 계열 — 단이 눈에 읽히도록)
     const box = (a, b, y0, y1, depth, offStart, mat = m0) => { const m = new THREE.Mesh(new THREE.BoxGeometry(b - a, y1 - y0, depth), mat); this.placeOnWall(m, ww, (a + b) / 2, (y0 + y1) / 2, offStart + depth / 2); m.userData.surface = sid; this.bands.add(m); return m; };
     const plinthH = 0.11, capH = 0.075, yb = plinthH + 0.08, yt = H - capH - 0.08, fw = 0.035, fi = 0.015;
-    for (const [a, b, c, d] of subtractRects([from, to, 0.003, H], this.holesOf(f).concat(archCut))) {
+    const lay = { sid, side: sd, axis: f.axis, offset: f.offset, isCol: !!isCol, from, to, H, pieces: [], frames: [] }; (this.wsLayout = this.wsLayout || []).push(lay);   // 도면(腰壁 割付図)용 기록
+    for (const [a, b, c, d] of subtractRects([from, to, 0.003, H], this.holesOf(f).concat(archCut))) { lay.pieces.push([+a.toFixed(3), +b.toFixed(3), +c.toFixed(3), +d.toFixed(3)]);
       box(a, b, c, d - 0.04, tBack, off0);                                                               // 단색 뒷판
       box(a, b, c, plinthH - 0.025, 0.030, off0); box(a, b, plinthH - 0.025, plinthH, 0.040, off0);       // 걸레받이: 본체 + 윗 단(두 단 계단)
       box(a, b, d - 0.025, d, 0.050, off0, hi); box(a, b, d - 0.05, d - 0.025, 0.038, off0); box(a, b, d - capH, d - 0.05, 0.026, off0, hi);   // 위끝 캡: 3단 계단 몰딩
@@ -356,7 +357,7 @@ export class Editor {
     // 액자형 몰딩 프레임(11/26): 벽 하나하나 폭을 계산해서 배치한다.
     //  · 창 벽처럼 design.global.lower.noFrame 에 든 벽은 프레임 없이 판넬만
     //  · 직각으로 만나는 벽(두께 포함)·문·창 개구 구간은 빼고, 남은 구간마다 양 끝 여백 0.14 · 프레임 사이 0.16 · 목표 폭 0.72 로 개수를 정해 폭을 똑같이 나눈다 → 프레임이 옆 벽·모서리로 넘어가지 않는다
-    const noFrame = (this.s.design.global?.lower?.noFrame || []).includes(sid); if (noFrame) return;
+    const noFrame = (this.s.design.global?.lower?.noFrame || []).includes(sid); lay.yb = yb; lay.yt = yt; lay.noFrame = noFrame; if (noFrame) return;
     const spans = subtractRects([from, to, 0.003, H], (isCol ? [] : this.holesOf(f)).concat(isCol ? [] : this.perpBlocked(f), archCut));
     const margin = isCol ? 0.07 : 0.14, gap = 0.16, target = 0.72, frame = (l, r) => {
       // 바깥 띠(폭 fw, 두께 8 mm) + 안쪽 단(폭 fi, 두께 +7 mm) — 계단 단면
@@ -367,7 +368,7 @@ export class Editor {
     for (const [a, b] of spans) {
       const L = b - a - 2 * margin; if (L < 0.30) continue;
       const n = Math.max(1, Math.round((L + gap) / (target + gap))), w = (L - (n - 1) * gap) / n; if (w < 0.28) continue;
-      for (let k = 0; k < n; k++) { const l = a + margin + k * (w + gap); frame(l, l + w); }
+      for (let k = 0; k < n; k++) { const l = a + margin + k * (w + gap); frame(l, l + w); lay.frames.push([+l.toFixed(3), +(l + w).toFixed(3)]); }
     }
   }
   // 이 면(f)에 직각으로 닿아 있는 벽이 면 위에서 차지하는 구간들 [t0,t1,y0,y1] — 두께를 포함한다(프레임·몰딩이 옆 벽으로 넘어가지 않게)
@@ -381,7 +382,7 @@ export class Editor {
     return out;
   }
   buildBands() {
-    disposeTree(this.bands);
+    disposeTree(this.bands); this.wsLayout = [];
     const rec = this.v.loaded?.reconstructed;
     // 스캔 띠(GLB)는 기본(검정·평면) 띠이면서 창·문이 없는 벽에서만 쓴다. 창·문이 있으면 띠를 끊어야 해서 직접 그린다
     const byId = new Map(this.allWalls().map((w) => [w.id, w]));
@@ -418,8 +419,9 @@ export class Editor {
     if (!this.s.design.global?.crown) return; const C = this.ceil;
     this._crownM = this._crownM || new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.55, metalness: 0 });
     const steps = [[C - 0.13, C - 0.105, 0.012], [C - 0.105, C - 0.075, 0.03], [C - 0.075, C - 0.04, 0.05], [C - 0.04, C, 0.07]];   // [아래, 위, 벽에서 나온 깊이]
-    const run = (f, sid, sd, ext) => { const ww = { ...f, inward: sd, sid };
-      for (const [a, b, c, d] of subtractRects([f.from - ext, f.to + ext, C - 0.13, C], ext ? [] : this.holesOf(f))) for (const [y0, y1, dep] of steps) { const y0c = Math.max(y0, c), y1c = Math.min(y1, d); if (y1c - y0c < 0.004) continue;
+    this.crownLayout = [];
+    const run = (f, sid, sd, ext) => { const ww = { ...f, inward: sd, sid }; const rec = { sid, side: sd, isCol: !!ext, pieces: [] }; this.crownLayout.push(rec);
+      for (const [a, b, c, d] of subtractRects([f.from - ext, f.to + ext, C - 0.13, C], ext ? [] : this.holesOf(f))) if (rec.pieces.push([+a.toFixed(3), +b.toFixed(3)])) for (const [y0, y1, dep] of steps) { const y0c = Math.max(y0, c), y1c = Math.min(y1, d); if (y1c - y0c < 0.004) continue;
         const m = new THREE.Mesh(new THREE.BoxGeometry(b - a, y1c - y0c, dep), this._crownM); this.placeOnWall(m, ww, (a + b) / 2, (y0c + y1c) / 2, dep / 2); m.userData.surface = sid; m.userData.crown = true; this.bands.add(m); } };
     for (const w of this.walls()) { if (this.wallTop(w) < C - 0.05 || this.plainService(w.id)) continue; for (const sd of (w.two_sided ? [w.inward, -w.inward] : [w.inward])) run(w, w.id, sd, 0); }
     for (const col of this.columns()) for (const f of this.i.columnFaces(col)) run({ ...f, two_sided: false }, col.id, f.inward, 0.07);
