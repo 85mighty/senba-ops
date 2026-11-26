@@ -15,6 +15,7 @@ export class Editor {
   // エアサーモパネルlite D(판매 표기): 두께 7 mm, 앞면 313 mm·유효 폭 304 mm(겹쳐 끼움), 홈은 이음과 판 가운데. 見切り材 25×12 mm.
   // bandProj = 검은 띠가 벽에서 튀어나온 두께(실측 1 cm). 사양·실측표: kobe-interior/03-자재-실측.md
   static AIR_PANEL = { t: 0.007, w: 0.304, grooves: 2, bandProj: 0.010, capD: 0.025, capH: 0.012 };   // bandProj 실측 1 cm(11/07)
+  static WAINSCOT_H = 0.95;   // 원목 허리 판넬 위끝 높이(m) — 검은 띠 위끝 0.89 를 덮는다
   static FLOOR_TEX_M = 2.16;   // scripts/make_floor_texture.py SIZE_M 과 같게
   static FLOOR_TEX_SIZE = { herringbone: 1.2728 };   // 텍스처별 한 장 크기(m) — scripts/make_herringbone_texture.py SIZE_M. 없으면 FLOOR_TEX_M
   static LONG_PRESS = 450;   // 소품을 옮기려면 이만큼(ms) 누르고 있어야 한다
@@ -299,7 +300,7 @@ export class Editor {
   // ---------------- 띠(체어레일)·걸레받이: 벽/기둥별. 기본(검정·평면)과 다른 면만 GLB 띠를 숨기고 직접 그린다
   // 주방·화장실 안쪽 벽은 실제로 띠가 없다(타일·회색 벽) — 그 벽만의 띠 설정을 하지 않았으면 전체 설정(띠·하부 벽)을 적용하지 않는다
   plainService(id) { return !!serviceOf(this.meta, id) && !this.s.hasOwnTrim(id); }
-  isDefaultTrim(t) { return t.rail.color === '#1c1c1c' && t.rail.style === 'flat' && t.base.color === '#1c1c1c' && t.base.style === 'flat' && t.lower?.style !== 'air_panel'; }
+  isDefaultTrim(t) { return t.rail.color === '#1c1c1c' && t.rail.style === 'flat' && t.base.color === '#1c1c1c' && t.base.style === 'flat' && !['air_panel', 'wainscot'].includes(t.lower?.style); }
   // 방법 ③ — エアサーモパネルlite(두께 7 mm, 폭 313 mm)를 바닥부터 검은 띠 위끝까지 세워 붙임.
   // 띠·걸레받이는 판 뒤 받침(벽에서 BAND_PROJ 만큼 뜸)이 되어 가려지고, 위끝은 전용 見切り材(깊이 25 × 높이 12 mm)로 덮는다.
   // 창·문 구간은 피하고, 잘린 위끝마다 見切り材. 기둥은 바깥 모서리가 맞물리게 판을 두께만큼 늘린다
@@ -320,6 +321,31 @@ export class Editor {
       if (d - c > 0.15) { box(a, b, d, d + P.capH, P.capD, P.capD / 2, cap); }                                                                  // 위끝 見切り材
     });
   }
+  // 원목 허리 판넬(웨인스코팅) — 참고 사진(경성미술관)의 꿀색 원목 허리벽. 바닥~H 0.95 로 검은 띠(위끝 0.89)·걸레받이를 통째로 덮는다.
+  //  구성: 뒷판(원목 결) + 하단 걸레받이(plinth) + 판마다 덧댄 사각 몰딩 프레임 + 위끝 캡 몰딩. 판 폭은 약 0.66 m 로 나눔
+  wainscot(f, sid, sd, color, isCol) {
+    const H = Editor.WAINSCOT_H, off0 = 0.012, tBack = 0.016, face = off0 + tBack, ww = { ...f, inward: sd, sid };
+    this._wsMats = this._wsMats || {}; const mk = (c) => this._wsMats[c] || (this._wsMats[c] = new THREE.MeshStandardMaterial({ color: c, roughness: 0.55 }));
+    if (!this._apTex) { this._apTex = new THREE.TextureLoader().load('../assets/textures/floor_wood_real.jpg'); this._apTex.wrapS = this._apTex.wrapT = THREE.RepeatWrapping; this._apTex.colorSpace = THREE.SRGBColorSpace; }
+    const c0 = new THREE.Color(color), K = 1.55, tint = new THREE.Color(Math.min(1.6, K * c0.r / 0.21), Math.min(1.6, K * c0.g / 0.085), Math.min(1.6, K * c0.b / 0.023));   // 허니 톤으로 밝게(바닥용 텍스처가 어두워서 보정)
+    const woodMat = (wdt, hgt) => { const t = this._apTex.clone(); t.needsUpdate = true; t.center.set(0.5, 0.5); t.rotation = Math.PI / 2; t.repeat.set(hgt / 3.2, wdt / 3.2); t.offset.set(Math.random(), Math.random()); return new THREE.MeshStandardMaterial({ color: tint, map: t, roughness: 0.55 }); };
+    const frameM = mk(this.shade(color, 0.88)), capM = mk(this.shade(color, 0.8)), plinthM = mk(this.shade(color, 0.72));
+    const ext = isCol ? face : 0, from = f.from - ext, to = f.to + ext;
+    const box = (a, b, y0, y1, depth, offStart, mat) => { const m = new THREE.Mesh(new THREE.BoxGeometry(b - a, y1 - y0, depth), mat); this.placeOnWall(m, ww, (a + b) / 2, (y0 + y1) / 2, offStart + depth / 2); m.userData.surface = sid; this.bands.add(m); };
+    const plinthH = 0.11, capBot = H - 0.04, yb = plinthH + 0.08, yt = capBot - 0.08, fw = 0.03;
+    this.eachPiece(f, from, to, 0.003, H, (a, b, c, d) => {
+      box(a, b, c, d - 0.04, tBack, off0, woodMat(b - a, d - 0.04 - c));                               // 뒷판(원목 결)
+      box(a, b, c, plinthH, 0.028, off0, plinthM);                                                      // 하단 걸레받이
+      box(a, b, plinthH, plinthH + 0.012, 0.034, off0, capM);                                           // 걸레받이 윗 몰딩
+      box(a, b, d - 0.04, d, 0.052, off0, capM); box(a, b, d - 0.062, d - 0.04, 0.036, off0, capM);   // 위끝 캡 + 아래 코브
+      const n = Math.max(1, Math.round((b - a) / 0.66)), pw = (b - a) / n;
+      for (let i = 0; i < n; i++) {                                                                      // 판마다 덧댄 사각 프레임
+        const l = a + i * pw + 0.07, r = a + (i + 1) * pw - 0.07; if (r - l < 0.16) continue;
+        box(l, r, yb, yb + fw, 0.010, face, frameM); box(l, r, yt - fw, yt, 0.010, face, frameM);
+        box(l, l + fw, yb, yt, 0.010, face, frameM); box(r - fw, r, yb, yt, 0.010, face, frameM);
+      }
+    });
+  }
   buildBands() {
     disposeTree(this.bands);
     const rec = this.v.loaded?.reconstructed;
@@ -338,6 +364,7 @@ export class Editor {
         const sides = f.two_sided ? [f.inward, -f.inward] : [f.inward];
         for (const sd of sides) {
           if (g.lower.style === 'air_panel') { this.airPanel(f, sid, sd, g.lower.paint || '#8b5e3c', isCol); continue; }
+          if (g.lower.style === 'wainscot') { this.wainscot(f, sid, sd, g.lower.paint || '#b07a38', isCol); continue; }
           if (g.base.style === 'none') {}   // 걸레받이 없음(알코브 레드 벽처럼 바닥까지 한 색)
           else if (g.base.style === 'molding') { strip(f, 0, base, 0.014, mk(g.base.color), sd, sid); strip(f, base - 0.02, base, 0.022, mk(g.base.color), sd, sid); }
           else strip(f, 0, base, 0.012, mk(g.base.color), sd, sid);
@@ -348,12 +375,12 @@ export class Editor {
     };
     for (const w of this.walls()) addBands([w], w.id, this.holesOf(w).length > 0 || !!w.virtual);   // 막기 벽은 스캔 띠가 없어 직접 그림
     for (const col of this.columns()) { const c = this.s.getColumn(col.id), fullMirror = (c.mirror ?? (col.id === this.meta.central_wide_column)) && c.mirrorFit !== 'upper' && this.i.layers.mirror_4_sides.visible;
-      if (fullMirror && this.s.trimOf(col.id).lower.style === 'air_panel') continue;   // 바닥까지 거울인 기둥은 판 대신 거울
+      if (fullMirror && ['air_panel', 'wainscot'].includes(this.s.trimOf(col.id).lower.style)) continue;   // 바닥까지 거울인 기둥은 판 대신 거울
       addBands(this.i.columnFaces(col).map((f) => ({ ...f, two_sided: false })), col.id, false, true); }
   }
   // 하부 벽(띠 사이) 마감 오버레이 — 벽/기둥별
   addLower(face, sid, sides) {
-    const lower = this.s.trimOf(sid).lower; if (!lower.paint || this.plainService(sid) || lower.style === 'air_panel') return;   // 판이 덮음
+    const lower = this.s.trimOf(sid).lower; if (!lower.paint || this.plainService(sid) || ['air_panel', 'wainscot'].includes(lower.style)) return;   // 판이 덮음
     const top = this.chair - (this.meta.chair_rail_thickness_m || 0.08);
     const mat = this.paintMat(lower.paint), dark = lower.style === 'wood_panel' ? this.paintMat(this.shade(lower.paint, 0.7)) : null;
     for (const sd of sides) {
@@ -639,7 +666,7 @@ export class Editor {
     row('걸레받이 형태', selectEl([['평면', 'flat'], ['몰드', 'molding'], ['없음', 'none']], t.base.style, (v) => { ed().base.style = v; commit(); }));
     row('흰 몰딩 색', this.palette([['화이트', '#f4f1ea'], ['웜 화이트', '#efe6d6'], ['원목', '#a98457'], ['월넛', '#6b4a2e'], ['골드', '#c9a24a'], ['블랙', '#1c1c1c']], t.moldingColor, (hex) => { ed().moldingColor = hex; commit(); }));
     row('하부 벽(띠 사이)', this.palette(PALETTE_LOWER, t.lower.paint, (hex) => { const e = ed(); e.lower.paint = hex; if (hex && /#a98457|#6b4a2e/.test(hex)) e.lower.style = 'wood_panel'; commit(); }));
-    row('하부 형태', selectEl([['단색', 'flat'], ['원목 패널(세로 홈)', 'wood_panel'], ['エアサーモパネル · 띠까지 덮기(방법 ③)', 'air_panel']], t.lower.style, (v) => { ed().lower.style = v; commit(); }));
+    row('하부 형태', selectEl([['단색', 'flat'], ['원목 패널(세로 홈)', 'wood_panel'], ['エアサーモパネル · 띠까지 덮기(방법 ③)', 'air_panel'], ['원목 허리 판넬(몰딩 프레임, 띠까지 덮기)', 'wainscot']], t.lower.style, (v) => { ed().lower.style = v; commit(); }));
     const r = document.createElement('div'); r.className = 'row wrap';
     if (own) r.appendChild(btn('기본값 따르기(이 설정 지우기)', () => { this.s.clearTrim(id); commit(); }));
     r.appendChild(btn(`이 ${noun} 설정을 모든 벽·기둥에`, () => { this.s.applyTrimToAll(id); commit(); this.toast('모든 벽·기둥에 적용'); }));

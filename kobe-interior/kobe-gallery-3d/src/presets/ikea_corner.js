@@ -197,6 +197,21 @@ export function applySconces(base) {
   d.editedAt = Date.now(); return d;
 }
 
+// 11/26: F안 — E안을 바탕으로 경성미술관 사진처럼: 쑥빛 회녹색 윗벽 + 꿀색 원목 허리 판넬(검은 띠·걸레받이를 업체가 덮어 마감). 레지 뒤 다마스크 벽·아치·바닥 등 나머지는 E안 그대로
+export const SAGE = '#6b8272', HONEY = '#b07a38';
+export function applyFPlan(base) {
+  const d = JSON.parse(JSON.stringify(base || {})); d.surfaces = d.surfaces || {}; d.columns = d.columns || {};
+  const green = new Set([DULL_GREEN, '#2c3529', '#3f5a52', '#2f4a3f']);
+  for (const k of Object.keys(d.surfaces)) { const s = d.surfaces[k]; if (s && green.has(s.paint)) s.paint = SAGE; }
+  for (const k of Object.keys(d.columns)) { const s = d.columns[k]; if (s && green.has(s.paint)) s.paint = SAGE; }
+  const sageAll = ['wall_x_1', 'wall_x_0', 'wall_z_8', 'wall_z_9', 'wall_z_14', 'wall_x_4', 'wall_x_3', 'wall_kitchen_close', 'wall_wing_w_in', 'wall_wing_w_out', 'wall_wing_e_in', 'wall_wing_e_out', 'wall_tscreen_s', 'wall_tscreen_n', 'wall_rec_back_out', 'wall_tarch_s', 'wall_tarch_n', 'wall_harch_w', 'wall_harch_e'];
+  for (const id of sageAll) { const s = d.surfaces[id]; if (s && s.paint !== 'tex:wall_damask_red' && s.paint !== SAGE && s.paint) s.paint = SAGE; }
+  d.global = { ...(d.global || {}), lower: { paint: HONEY, style: 'wainscot' } };
+  // 화장실 앞 포토 스폿의 문 쪽 벽(W10)은 무지 크림(+ 자체 체어레일) 그대로 — 허리 판넬을 얹지 않는다
+  { const s = d.surfaces.wall_z_9 || (d.surfaces.wall_z_9 = {}); s.trim = { rail: { color: '#ece2d0', style: 'none' }, base: { color: '#ece2d0', style: 'none' }, moldingColor: '#ece2d0', lower: { paint: null, style: 'flat' } }; }
+  d.editedAt = Date.now(); return d;
+}
+
 // 11/26: 들어서자마자 보이는 레지 뒤 벽(안쪽 면)을 무지 크림슨 → 다마스크 무늬 벽지(경성미술관 사진 느낌)로
 export function applyDamaskWall(base) {
   const d = JSON.parse(JSON.stringify(base || {})); d.surfaces = d.surfaces || {}; const prev = d.surfaces.wall_rec_back_in || {};

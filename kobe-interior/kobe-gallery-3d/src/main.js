@@ -11,7 +11,7 @@ import { TOUR_E, tourAt, playTour, tourDuration } from './tour.js';
 import { LANG, ONLY_E, tr, installDomTranslator } from './i18n.js';
 installDomTranslator();   // 일본어 화면(ja.html)에서만 동작
 import presetCPhone from './presets/c_phone_20261027.json';
-import { applyIkeaCorner, applyUpperMirrors, applyWindowCurtains, applyRealFloor, applyDullGreen, applyAirPanel, applyRegister, REGISTER_PLANS, applyPhotoEast, applyReception, applyCoupleLayout, applyRegisterGap, applyRegisterLeft, applyPhotoSpot2, applyWallPull, applyElegantChairs, applyLightsRug, applyWings, applyArchDemolish, applyHallArch, applyWashroomPhoto, applyBigRug, applyMeasured1110, applySpots, applyArchWiden, applySlatsH, applyHerringboneFloor, applySconces, applyDamaskWall, applyPlainCrimson } from './presets/ikea_corner.js';
+import { applyIkeaCorner, applyUpperMirrors, applyWindowCurtains, applyRealFloor, applyDullGreen, applyAirPanel, applyRegister, REGISTER_PLANS, applyPhotoEast, applyReception, applyCoupleLayout, applyRegisterGap, applyRegisterLeft, applyPhotoSpot2, applyWallPull, applyElegantChairs, applyLightsRug, applyWings, applyArchDemolish, applyHallArch, applyWashroomPhoto, applyBigRug, applyMeasured1110, applySpots, applyArchWiden, applySlatsH, applyHerringboneFloor, applySconces, applyDamaskWall, applyPlainCrimson, applyFPlan } from './presets/ikea_corner.js';
 
 // 저장소에 보관된 디자인 — 어느 기기에서든 불러올 수 있다. seedSlot: 그 안이 비어 있으면 처음 열 때 자동으로 채움
 const PRESETS = [{ id: 'c_phone_20261027', name: 'C안 (폰에서 만든 것, 10/27)', seedSlot: 'C', design: presetCPhone },
@@ -19,6 +19,8 @@ const PRESETS = [{ id: 'c_phone_20261027', name: 'C안 (폰에서 만든 것, 10
   { id: 'd_ikea_20261028', name: '이케아 코너 (주방 입구 막기 + 사이드보드·거울·흉상)', seedSlot: 'D', afterSync: true, apply: applyIkeaCorner, base: () => store.getSlot('C') || presetCPhone },
   // E안: D안(없으면 C안+이케아 코너)을 바탕으로 레지 ② + 리셉션 알코브(ㄱ자 레드 벽·카펫·船場美術館 글씨)
   { id: 'e_reception_20261108', name: '리셉션 알코브 (레지 ② + ㄱ자 레드 벽 · 카펫 · 船場美術館)', seedSlot: 'E', afterSync: true, apply: applyReception, base: () => store.getSlot('D') || applyIkeaCorner(store.getSlot('C') || presetCPhone), armText: (sl) => `${sl}안에 리셉션 알코브를 넣습니다(레지는 ②로 옮김). 다시 누르세요` },
+  // F안: E안을 바탕으로 경성미술관 사진처럼 쑥빛 윗벽 + 꿀색 원목 허리 판넬(검은 띠를 업체가 덮어 마감)
+  { id: 'f_wainscot_20261126', name: 'F안: 쑥빛 벽 + 원목 허리 판넬 (검은 띠 덮기)', seedSlot: 'F', afterSync: true, apply: applyFPlan, base: () => store.getSlot('E'), armText: (sl) => `${sl}안을 F안 느낌(쑥빛 벽 + 원목 허리 판넬)으로 바꿉니다. 다시 누르세요` },
   ...Object.entries(REGISTER_PLANS).map(([k, r]) => ({ id: 'register_' + k, name: r.name, apply: (d) => applyRegister(d, k), armText: (sl) => `${sl}안에 레지를 놓습니다(있던 레지는 옮김). 다시 누르세요` })),
   { id: 'couple3', name: '2인 세트 3팀 배치 (창 벽 2 + 동쪽 벽 1)', apply: applyCoupleLayout, armText: (sl) => `${sl}안의 2인 세트를 3팀 배치로 바꿉니다(있던 세트는 치움). 다시 누르세요` },
   { id: 'washroom_photo', name: '화장실 앞 포토 스폿 (거울 벽 리프 타일 + 크림 페인트 벽)', apply: applyWashroomPhoto, armText: (sl) => `${sl}안 세면실을 타일 포토 스폿으로 만듭니다. 다시 누르세요` },
