@@ -238,6 +238,13 @@ try {
   const r = await pf.evaluate(() => { window.__switchSlot('F'); const s = window.__store; const e = window.__editor; const lo = s.design.global.lower; let ws = 0; e.bands.traverse((o) => { if (o.isMesh && o.userData.surface) ws++; });
     return { active: s.active, lower: lo, sage: s.design.surfaces.wall_x_1?.paint, damask: s.design.surfaces.wall_rec_back_in?.paint, hasE: s.hasSlot('E'), ws }; });
   if (errs.length) throw new Error('F안 오류: ' + errs.join(' | '));
+  { const fr = await pf.evaluate(() => { const T = window.__THREE, e = window.__editor; e.bands.updateMatrixWorld(true); const frames = []; e.bands.traverse((o) => { if (o.userData.wsFrame) frames.push(o); });
+      const walls = e.walls().map((w) => { const t = 0.1; const a = w.two_sided ? w.offset - t / 2 : Math.min(w.offset, w.offset - w.inward * t), b = w.two_sided ? w.offset + t / 2 : Math.max(w.offset, w.offset - w.inward * t); return { id: w.id, ax: w.axis, a, b, from: w.from, to: w.to }; });
+      let win = 0, cross = 0; for (const o of frames) { if (o.userData.surface === 'wall_z_8') win++; const bb = new T.Box3().setFromObject(o);
+        for (const w of walls) { if (w.id === o.userData.surface) continue; const lo = w.ax === 'x' ? [w.a, w.b] : [w.from, w.to], lz = w.ax === 'x' ? [w.from, w.to] : [w.a, w.b];
+          if (bb.min.x < lo[1] - 0.012 && bb.max.x > lo[0] + 0.012 && bb.min.z < lz[1] - 0.012 && bb.max.z > lz[0] + 0.012) { cross++; break; } } }
+      return { n: frames.length, win, cross }; });
+    if (fr.n < 10 || fr.win !== 0 || fr.cross !== 0) throw new Error('F안 액자 프레임 배치 이상 ' + JSON.stringify(fr)); }
   if (r.active !== 'F' || r.lower?.style !== 'wainscot' || r.sage !== '#6b8272' || r.damask !== 'tex:wall_damask_red' || !r.hasE || r.ws < 200) throw new Error('F안 이상 ' + JSON.stringify(r));
   await pf.close(); console.log('F안 OK', JSON.stringify(r));
 }
