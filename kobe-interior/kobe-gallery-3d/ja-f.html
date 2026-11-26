@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>船場美術館 神戸店 3D（F案）</title>
+  <link rel="stylesheet" href="./src/style.css" />
+  <style>.ko-only { display: none !important; }</style>
+  <script>window.__APP = { lang: 'ja', only: 'F' };</script>
+</head>
+<body>
+  <canvas id="c"></canvas>
+
+  <header id="topbar">
+    <div class="brand">船場美術館 神戸店 · 3D（F案）</div>
+    <nav id="modes">
+      <button data-mode="original">① 原本スキャン</button>
+      <button data-mode="cleaned">② ノイズ除去</button>
+      <button data-mode="reconstructed">③ 空間補正</button>
+      <button data-mode="interior">④ インテリア</button>
+      <span id="slotBar" class="slotbar"></span>
+      <span id="syncPill" class="syncpill" hidden></span>
+    </nav>
+    <button id="panelToggle" class="ghost" title="パネル">☰</button>
+  </header>
+
+  <aside id="panel">
+    <section>
+      <h3>カメラ ブックマーク</h3>
+      <div id="bookmarks" class="row wrap"></div>
+      <div class="row wrap"><button id="tourBtn" title="自動ドア → レジ → アーチ → ホール → トイレ前フォトスポット（約 1 分）">▶ 店内ツアー</button></div>
+    </section>
+
+    <section>
+      <h3>表示</h3>
+      <label><input type="checkbox" id="hideCeiling" /> 天井を隠す／断面</label>
+      <label class="slider">断面の高さ <input type="range" id="sectionY" min="0.3" max="3.5" step="0.05" value="2.6" /><span id="sectionYv">2.60 m</span></label>
+      <label><input type="checkbox" id="showDims" /> 寸法を表示</label>
+      <label><input type="checkbox" id="ghostScan" /> ③④に整理済みスキャンを重ねる</label>
+      <label><input type="checkbox" id="highlightColumn" checked /> 中央の広い柱を強調</label>
+    </section>
+
+    <section id="interiorPanel">
+      <h3>インテリア A案 — レイヤー</h3>
+      <label><input type="checkbox" data-layer="molding" checked /> 下部ホワイト額縁モール（黒い帯は残す）</label>
+      <label><input type="checkbox" data-layer="mirror_4_sides" checked /> 中央の広い柱 4面ミラー</label>
+      <label><input type="checkbox" data-layer="gallery_art" checked /> 金縁額の作品ディスプレイ</label>
+      <label><input type="checkbox" data-layer="track_lights" checked /> 電球色トラックライト</label>
+      <label><input type="checkbox" data-layer="panel_white_optional" /> 下部のみホワイトパネル（オプション）</label>
+      <label><input type="checkbox" data-layer="wine_accent_optional" /> ワイン／テラコッタのアクセント壁（オプション）</label>
+
+      <h3>ミラー</h3>
+      <label class="slider">ミラー高さ <input type="range" id="mirrorH" min="1.2" max="3.0" step="0.05" value="2.2" /><span id="mirrorHv">2.20 m</span></label>
+      <label class="slider">左右の余白 <input type="range" id="mirrorInset" min="0" max="0.3" step="0.01" value="0.05" /><span id="mirrorInsetv">0.05 m</span></label>
+      <label>反射方式
+        <select id="mirrorMode">
+          <option value="env">環境マップ（軽い・モバイル向き）</option>
+          <option value="reflector">リアルタイム反射（正確・重い）</option>
+        </select>
+      </label>
+      <label class="slider">照明の明るさ <input type="range" id="lightI" min="0" max="3" step="0.1" value="1.5" /><span id="lightIv">1.5</span></label>
+      <label class="slider">色温度 <input type="range" id="lightK" min="2400" max="4000" step="100" value="3000" /><span id="lightKv">3000 K</span></label>
+
+      <div class="hint">ミラーを付ける柱は下の「インテリア編集」で柱を押して「4面ミラー」を切り替えます。テーブル・椅子・イーゼルは「小物を置く」で追加します。</div>
+      <div class="row">
+        <button id="exportGlb" class="ghost">interior_A.glb を書き出す</button>
+      </div>
+    </section>
+
+    <section id="editorPanel">
+      <h3>インテリア編集</h3>
+      <label><input type="checkbox" id="editMode" /> <b>編集モード</b>（③/④で面・小物をクリックして選択）</label>
+      <label><input type="checkbox" id="showLabels" /> 番号ラベルを表示（壁 1, 柱 1…）</label>
+      <label><input type="checkbox" id="showTileLabels" /> 天井・床タイルの番号を表示</label>
+      <label><input type="checkbox" id="toggleWindows" checked /> 窓・カーテンを表示</label>
+      <label><input type="checkbox" id="toggleProps" checked /> 小物を表示</label>
+      <label><input type="checkbox" id="autoHide" checked /> <b>視界をさえぎる壁・天井を自動で隠す</b>（カメラ手前の壁, 上から見るとき）</label>
+      <div class="row wrap"><span class="hint">隠した面:</span><button id="showAll" class="ghost">すべて表示</button></div>
+      <div id="hiddenChips" class="chips"></div>
+      <div class="hint">番号で選択（選択後に下の「隠す」ボタン）:</div>
+      <div id="itemChips" class="chips"></div>
+      <div id="inspector" class="inspector"></div>
+      <h3>小物を置く</h3>
+      <div id="propBar" class="row wrap"></div>
+      <div id="placingHint" class="hint"></div>
+      <h3>ツール</h3>
+      <div class="row wrap">
+        <button id="measureBtn">距離を測る</button><button id="measureClear" class="ghost">測定を消す</button><button id="shotBtn">画面キャプチャ保存</button>
+      </div>
+      <h3>保存・元に戻す</h3>
+      <div class="row wrap">
+        <button id="saveNow" title="今の状態を「保存点」にする — あとで「保存点に復元」で戻れます">📌 保存点を作る</button><button id="undoBtn" class="ghost">↶ 元に戻す</button><button id="redoBtn" class="ghost">↷ やり直す</button><button id="revertBtn" class="ghost">保存点に復元</button>
+      </div>
+      <div id="saveState" class="hint">変更は即時に自動保存され, 同期が接続されていれば 1〜2 秒後に他の端末にも反映されます。保存ボタンを押す必要はありません。</div>
+      <div class="row wrap"><button id="resetWindows" class="ghost">窓を標準値に戻す</button></div>
+      <div id="closureBoxes"></div>
+      <div class="ko-only">
+        <div class="row wrap"><button id="copyA" class="ghost">→ A</button><button id="copyB" class="ghost">→ B</button><button id="copyC" class="ghost">→ C</button><button id="copyD" class="ghost">→ D</button><button id="copyE" class="ghost">→ E</button><button id="copyF" class="ghost">→ F</button></div>
+      </div>
+      <h3>デザイン データ</h3>
+      <div class="hint">このブラウザに自動保存されます。他の端末へ移すには JSON をコピーして貼り付けてください。</div>
+      <div class="row wrap"><button id="exportDesign">JSON 書き出し</button><button id="importDesign" class="ghost">JSON 読み込み</button><button id="resetDesign" class="ghost">デザイン初期化</button></div>
+      <textarea id="designJson" rows="3" placeholder="デザイン JSON"></textarea>
+      <h3>端末間の自動同期</h3>
+      <div class="hint">スマホ・iPad・PC で同じパスワードで接続すると F案 が自動で揃います。最初はデザインのある端末から接続してください。</div>
+      <input id="syncToken" type="password" autocomplete="off" placeholder="同期パスワード" />
+      <details><summary class="hint">サーバーアドレス</summary><input id="syncUrl" placeholder="https://…/kobe3d-api" /></details>
+      <div class="row wrap"><button id="syncConnect"><b>接続</b></button><button id="syncNow" class="ghost">今すぐ同期</button><button id="syncOff" class="ghost">切断</button></div>
+      <div id="syncState" class="hint">オフ</div>
+      <h3>他の端末へ送る</h3>
+      <div class="row wrap"><button id="shareLink"><b>共有リンクを作る</b></button></div>
+      <div class="hint">今の案を含むリンクをコピーします。LINE・メッセージで送って他の端末で開くと F案 に読み込まれます。</div>
+      <input id="shareUrl" readonly placeholder="共有リンク" />
+      <h3>保管されたデザイン</h3>
+      <div id="presetList" class="row wrap"></div>
+    </section>
+
+    <section>
+      <h3>寸法（参考値・要実測）</h3>
+      <div id="dimsText" class="hint"></div>
+    </section>
+  </aside>
+
+  <div id="shareBanner" hidden>
+    <div><b>リンクで受け取ったデザイン</b> — F案に読み込みますか？ <span class="hint">（F案の今の内容は上書きされます）</span></div>
+    <div class="row wrap"><button data-to="F">F案に読み込む</button><button data-to="A" class="ko-only">A</button><button data-to="B" class="ko-only">B</button><button data-to="C" class="ko-only">C</button><button data-to="" class="ghost">閉じる</button></div>
+  </div>
+  <div id="propFab" hidden>
+    <div class="fabhint"><b id="fabName">小物</b> <span id="fabHint">長押ししたままドラッグで移動</span></div>
+    <button id="fabRotL" title="左へ 15°">↺</button><button id="fabRotR" title="右へ 15°">↻</button><button id="fabDup">複製</button><button id="fabDel" class="danger">🗑 削除</button><button id="fabClose" class="ghost">完了</button>
+  </div>
+  <div id="loading"><div class="bar"><i></i></div><span>モデルを読み込み中…</span></div>
+  <div id="errors"></div>
+  <div id="toast"></div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

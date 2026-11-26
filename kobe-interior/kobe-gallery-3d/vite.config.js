@@ -11,6 +11,6 @@ export default defineConfig({
     outDir: 'app',          // 빌드 결과(app/)는 저장소에 포함 → Node 없이 python3 -m http.server 로 열 수 있다
     emptyOutDir: true,
     copyPublicDir: false,   // 모델은 복사하지 않고 ../assets/models 를 직접 참조
-    rollupOptions: { input: { main: 'index.html', ja: 'ja.html' } },   // ja.html = 일본어 화면(E안만)
+    rollupOptions: { input: { main: 'index.html', ja: 'ja.html', jaF: 'ja-f.html' } },   // ja.html = 일본어 화면(E안만), ja-f.html = 일본어 화면(F안만)
   },
 });

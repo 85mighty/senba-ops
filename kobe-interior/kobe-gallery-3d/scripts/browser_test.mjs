@@ -267,6 +267,20 @@ try {
   if (j.ko.length) throw new Error('ja.html 에 한글 남음: ' + j.ko.slice(0, 5).join(' / '));
   if (j.plates < 4) throw new Error('ja.html 스폿 번호판 없음'); await pj.close(); console.log('ja.html OK', JSON.stringify(j.bookmarks));
 }
+// 일본어 F안 화면(ja-f.html): 처음 여는 업체 브라우저(빈 저장소)에서도 F안이 만들어져 F안만 보여야 한다
+{
+  const ctx = await browser.newContext({ viewport: { width: 1200, height: 800 } }); const pj = await ctx.newPage(); pj.setDefaultTimeout(180000); const errs = []; pj.on('pageerror', (e) => errs.push(e.message));
+  await pj.goto(`http://127.0.0.1:${PORT}/app/ja-f.html`, { waitUntil: 'load' }); await pj.waitForFunction(() => window.__viewerReady === true);
+  await pj.evaluate(() => document.querySelector('button[data-mode=interior]').click()); await pj.waitForFunction(() => !window.__viewer.loadingCount); await pj.waitForFunction(() => window.__store.active === 'F'); await new Promise((r) => setTimeout(r, 1500));
+  const j = await pj.evaluate(() => { const txt = (sel) => [...document.querySelectorAll(sel)].map((b) => b.textContent.trim()); const d = window.__store.design;
+    const ko = [...document.querySelectorAll('#panel *, #topbar *')].filter((e) => e.children.length === 0 && /[가-힣]/.test(e.textContent)).map((e) => e.textContent.trim());
+    return { active: window.__store.active, slots: txt('#slotBar button'), ko, lang: document.documentElement.lang, title: document.title, lower: d.global.lower?.style, crown: !!d.global.crown, sconces: d.props.filter((p) => p.type === 'wall_sconce').length, speakers: d.props.filter((p) => p.type === 'wall_speaker').length }; });
+  if (errs.length) throw new Error('ja-f.html 오류: ' + errs.join(' | '));
+  if (j.lang !== 'ja' || j.active !== 'F' || j.slots.join() !== 'F案' || !j.title.includes('F案')) throw new Error('ja-f.html: F안만 보여야 함 ' + JSON.stringify(j));
+  if (j.lower !== 'wainscot' || !j.crown || j.sconces !== 7 || j.speakers !== 4) throw new Error('ja-f.html: 새 브라우저의 F안 내용이 다름 ' + JSON.stringify(j));
+  if (j.ko.length) throw new Error('ja-f.html 에 한글 남음: ' + j.ko.slice(0, 5).join(' / '));
+  await ctx.close(); console.log('ja-f.html OK', JSON.stringify({ slots: j.slots, sconces: j.sconces, crown: j.crown }));
+}
 } finally { await browser.close(); stopServer(); }
 
 if (problems.length) { console.error('\n❌ 문제 발견:'); problems.forEach((p) => console.error(' -', p)); process.exit(1); }
