@@ -189,24 +189,27 @@ export class Editor {
         const hole = new THREE.Path(); hole.moveTo(0, 0); hole.lineTo(W, 0); hole.lineTo(W, spring); hole.absarc(r, spring, r, 0, Math.PI, false); hole.lineTo(0, 0); sh.holes.push(hole);
         const geo = new THREE.ExtrudeGeometry(sh, { depth: T, bevelEnabled: false }); const paint = this.s.getSurface(c.id).paint || this.s.getSurface('wall_x_1').paint || '#39433a';
         const am = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: paint, roughness: 0.9 })); am.userData.surface = c.id;
-        // 금색 아치 몰딩: 벽 두께 안에 묻지 않고 양쪽 면 바깥에 붙인다(비스듬히 봐도 반원이 끊기지 않게) + 개구부 안쪽 가는 테
-        const goldM = new THREE.MeshStandardMaterial({ color: '#c9a24a', metalness: 0.6, roughness: 0.4 }); const trimM = new THREE.Group();
-        for (const zz of [-0.014, T + 0.014]) { const ring = new THREE.Mesh(new THREE.TorusGeometry(r + 0.035, 0.03, 10, 48, Math.PI), goldM); ring.position.set(r, spring, zz); trimM.add(ring); }
-        { const inner = new THREE.Mesh(new THREE.TorusGeometry(r + 0.004, 0.012, 8, 48, Math.PI), goldM); inner.position.set(r, spring, T / 2); inner.scale.z = (T / 2) / 0.012; trimM.add(inner); }
+        // 금색 아치 몰딩(11/26 재작성): 양쪽 면(앞·뒤)에 반원 + 바닥까지 곧은 다리를 하나의 연속된 테로 만든다.
+        //  개구 옆이 직각으로 붙은 벽(날개벽·가림벽·뒤 벽)이 있으면 몰딩 중심선을 개구 가장자리(x=0, x=W)에 두어 반원 끝이 벽에 묻히지 않고 다리와 이어지게 하고,
+        //  옆이 같은 면으로 이어지는 벽뿐이면 개구 바깥 3.5 cm 에 둔다.
         const zmin = Math.min(...ws.map((x) => x.offset)), xmin = Math.min(...ws.map((x) => x.offset));
-        if (w.axis === 'z') { am.position.set(w.from, 0, zmin); am.add(trimM); } else { am.rotation.y = Math.PI / 2; am.position.set(xmin, 0, w.to); am.add(trimM); }   // 로컬 +x→월드 −z, 로컬 +z→월드 +x
-        // 11/26: 금색 테를 바닥까지 — 아치 양쪽 면(앞·뒤) 모두 반원 끝에서 바닥까지 곧게 내려 마감한다.
-        //  옆이 같은 평면의 벽이면 그 벽 면 위에(반원 테와 같은 굵기 원기둥), 옆이 직각으로 붙은 벽이면 그 벽의 면(개구 쪽)에 붙여 감싼다
-        { am.updateMatrix(); const arSet = new Set(ws.map((x) => x.id)); const others = this.walls().filter((x) => !arSet.has(x.id) && x.axis !== w.axis);
-          const boxOf = (x) => { const o2 = x.two_sided ? [x.offset - T / 2, x.offset + T / 2] : [Math.min(x.offset, x.offset - x.inward * T), Math.max(x.offset, x.offset - x.inward * T)]; return x.axis === 'x' ? { x: o2, z: [x.from, x.to] } : { x: [x.from, x.to], z: o2 }; };
-          const inside = (px, pz) => others.some((x) => { const b = boxOf(x); return px > b.x[0] + 0.004 && px < b.x[1] - 0.004 && pz > b.z[0] + 0.004 && pz < b.z[1] - 0.004; });
-          for (const sd of [-1, 1]) for (const fz of [-1, 1]) {
-            const lx = sd < 0 ? -0.035 : W + 0.035, lz = fz < 0 ? -0.014 : T + 0.014; const wp = new THREE.Vector3(lx, 0, lz).applyMatrix4(am.matrix);
-            let cx = lx, cz = lz, rad = 0.03;
-            if (inside(wp.x, wp.z)) { cx = sd < 0 ? 0.012 : W - 0.012; cz = fz < 0 ? -0.04 : T + 0.04; rad = 0.025; }   // 직각 벽: 그 벽의 개구 쪽 면에 붙인다
-            const leg = new THREE.Mesh(new THREE.CylinderGeometry(rad, rad, spring, 16), goldM); leg.position.set(cx, spring / 2, cz); leg.userData.archLeg = true; am.add(leg);
-            const foot = new THREE.Mesh(new THREE.CylinderGeometry(rad + 0.008, rad + 0.008, 0.03, 16), goldM); foot.position.set(cx, 0.015, cz); foot.userData.archLeg = true; am.add(foot);   // 바닥 받침(걸레받이 높이 3 cm)
-          } }
+        if (w.axis === 'z') { am.position.set(w.from, 0, zmin); } else { am.rotation.y = Math.PI / 2; am.position.set(xmin, 0, w.to); }   // 로컬 +x→월드 −z, 로컬 +z→월드 +x
+        am.updateMatrix();
+        const arSet = new Set(ws.map((x) => x.id)); const others = this.walls().filter((x) => !arSet.has(x.id) && x.axis !== w.axis);
+        const boxOf = (x) => { const o2 = x.two_sided ? [x.offset - T / 2, x.offset + T / 2] : [Math.min(x.offset, x.offset - x.inward * T), Math.max(x.offset, x.offset - x.inward * T)]; return x.axis === 'x' ? { x: o2, z: [x.from, x.to] } : { x: [x.from, x.to], z: o2 }; };
+        const inside = (lx, lz) => { const wp = new THREE.Vector3(lx, 0.5, lz).applyMatrix4(am.matrix); return others.some((x) => { const b = boxOf(x); return wp.x > b.x[0] + 0.004 && wp.x < b.x[1] - 0.004 && wp.z > b.z[0] + 0.004 && wp.z < b.z[1] - 0.004; }); };
+        const perp = [-0.05, W + 0.05].some((lx) => [-0.014, T / 2, T + 0.014].some((lz) => inside(lx, lz)));   // 개구 옆에 직각 벽이 붙어 있나
+        const Rr = perp ? r : r + 0.035, tubeR = 0.03;
+        const goldM = new THREE.MeshStandardMaterial({ color: '#c9a24a', metalness: 0.6, roughness: 0.4 }); const trimM = new THREE.Group();
+        for (const zz of [-0.014, T + 0.014]) {
+          const ring = new THREE.Mesh(new THREE.TorusGeometry(Rr, tubeR, 10, 48, Math.PI), goldM); ring.position.set(r, spring, zz); trimM.add(ring);
+          for (const lx of [r - Rr, r + Rr]) {   // 반원 끝에서 바닥까지 다리 + 받침
+            const leg = new THREE.Mesh(new THREE.CylinderGeometry(tubeR, tubeR, spring, 16), goldM); leg.position.set(lx, spring / 2, zz); leg.userData.archLeg = true; trimM.add(leg);
+            const foot = new THREE.Mesh(new THREE.CylinderGeometry(tubeR + 0.008, tubeR + 0.008, 0.03, 16), goldM); foot.position.set(lx, 0.015, zz); foot.userData.archLeg = true; trimM.add(foot);
+          }
+        }
+        { const inner = new THREE.Mesh(new THREE.TorusGeometry(r + 0.004, 0.012, 8, 48, Math.PI), goldM); inner.position.set(r, spring, T / 2); inner.scale.z = (T / 2) / 0.012; trimM.add(inner); }   // 개구 안쪽 가는 테
+        am.add(trimM);
         cg.add(am); continue; }
       for (const w of closureWalls(c, this.s.design)) { const m = new THREE.Mesh(new THREE.BoxGeometry(w.to - w.from, HT, T), mat); m.userData.surface = w.id; this.placeOnWall(m, { ...w, sid: w.id }, (w.from + w.to) / 2, HT / 2, -T / 2); cg.add(m); }
       // 바닥(카펫): 복원 바닥 삼각형 중 영역 안의 것만 — 바닥 칠 위(y 0.016)에 깐다
