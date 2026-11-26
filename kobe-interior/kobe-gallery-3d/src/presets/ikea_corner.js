@@ -219,14 +219,17 @@ export function applyFPlan(base) {
   for (const k of Object.keys(d.columns)) { const s = d.columns[k]; if (s && green.has(s.paint)) s.paint = SAGE; }
   const sageAll = ['wall_x_1', 'wall_x_0', 'wall_z_8', 'wall_z_9', 'wall_z_14', 'wall_x_4', 'wall_x_3', 'wall_kitchen_close', 'wall_wing_w_in', 'wall_wing_w_out', 'wall_wing_e_in', 'wall_wing_e_out', 'wall_tscreen_s', 'wall_tscreen_n', 'wall_rec_back_out', 'wall_tarch_s', 'wall_tarch_n', 'wall_harch_w', 'wall_harch_e'];
   for (const id of sageAll) { const s = d.surfaces[id]; if (s && s.paint !== 'tex:wall_damask_red' && s.paint !== SAGE && s.paint) s.paint = SAGE; }
-  d.global = { ...(d.global || {}), lower: { paint: HONEY, style: 'wainscot' } };
+  d.global = { ...(d.global || {}), lower: { paint: HONEY, style: 'wainscot', noFrame: ['wall_z_8'] } };   // 창 벽은 액자 프레임 없이 판넬만(11/26)
   // 화장실 앞 포토 스폿의 문 쪽 벽(W10)은 무지 크림(+ 자체 체어레일) 그대로 — 허리 판넬을 얹지 않는다
   { const s = d.surfaces.wall_z_9 || (d.surfaces.wall_z_9 = {}); s.trim = { rail: { color: '#ece2d0', style: 'none' }, base: { color: '#ece2d0', style: 'none' }, moldingColor: '#ece2d0', lower: { paint: null, style: 'flat' } }; }
   d.editedAt = Date.now(); return d;
 }
 
 // 11/26: F안 허리 판넬을 나무 결 없는 단색 + 액자형 몰딩으로(이미 만든 F안의 색 값 갱신)
-export function applyFlatWainscot(base) { const d = JSON.parse(JSON.stringify(base || {})); d.global = { ...(d.global || {}), lower: { paint: HONEY, style: 'wainscot' } }; d.editedAt = Date.now(); return d; }
+export function applyFlatWainscot(base) { const d = JSON.parse(JSON.stringify(base || {})); d.global = { ...(d.global || {}), lower: { paint: HONEY, style: 'wainscot', noFrame: (d.global?.lower?.noFrame) || [] } }; d.editedAt = Date.now(); return d; }
+
+// 11/26: 창 벽(W9)은 액자 프레임 없이 판넬만 — 이미 만든 F안에도 반영
+export function applyNoFrameWindow(base) { const d = JSON.parse(JSON.stringify(base || {})); const lo = (d.global || {}).lower || { paint: HONEY, style: 'wainscot' }; d.global = { ...(d.global || {}), lower: { ...lo, noFrame: Array.from(new Set([...(lo.noFrame || []), 'wall_z_8'])) } }; d.editedAt = Date.now(); return d; }
 
 // 11/26: 들어서자마자 보이는 레지 뒤 벽(안쪽 면)을 무지 크림슨 → 다마스크 무늬 벽지(경성미술관 사진 느낌)로
 export function applyDamaskWall(base) {
