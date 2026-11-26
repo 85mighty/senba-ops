@@ -197,6 +197,25 @@ export function applySconces(base) {
   d.editedAt = Date.now(); return d;
 }
 
+// 11/26: 벽 조명 확장(F안 시안) + 전선관 — 사진처럼 벽 색 전선관이 천장까지 올라가는 스콘스. 창 벽 기둥(창 사이 벽, x −0.82) 1개 + 서쪽 벽(W2)·동쪽 벽(W1) 홀 면에 3개씩, 갓 중심 H 1.70.
+//  서·동쪽 벽은 코너·N2·N5 에서 0.6 띄운 구간을 3등분해 가운데에. 거울 옆 2개(sc_l·sc_r)에도 전선관을 단다.
+export function wallColorOf(d) { const c = d?.surfaces?.wall_x_1?.paint || d?.surfaces?.wall_z_14?.paint; return typeof c === 'string' && c.startsWith('#') ? c : DULL_GREEN; }
+export function applySconceCable(base) {
+  const d = JSON.parse(JSON.stringify(base || {})); const col = wallColorOf(d);
+  for (const p of d.props || []) if (p.type === 'wall_sconce') p.cable = col;
+  d.editedAt = Date.now(); return d;
+}
+export function applySconcesMore(base) {
+  const d = JSON.parse(JSON.stringify(base || {})); d.props = (d.props || []).filter((p) => !String(p.id).startsWith('sx_')); const col = wallColorOf(d);
+  const thirds = (a, b) => [0, 1, 2].map((i) => +(a + ((b - a) * (i + 0.5)) / 3).toFixed(2));
+  const list = [{ id: 'sx_win', x: -0.82, z: -4.804 + 0.004, rot: 0 }];
+  thirds(-4.804 + 0.6, -0.19 - 0.6).forEach((z, i) => list.push({ id: 'sx_w2_' + (i + 1), x: -3.954 + 0.004, z, rot: Math.PI / 2 }));    // 서쪽 벽 W2(홀 면) — 창 벽 코너와 N2 북면 사이
+  thirds(-4.804 + 0.6, 1.463 - 0.6).forEach((z, i) => list.push({ id: 'sx_e_' + (i + 1), x: 2.3536 - 0.004, z, rot: -Math.PI / 2 }));      // 동쪽 벽 W1(홀 면) — 창 벽 코너와 N5 북면 사이
+  for (const s of list) d.props.push({ id: s.id, type: 'wall_sconce', x: s.x, y: 1.7, z: s.z, rot: s.rot, scale: 1, color: null, cable: col });
+  for (const p of d.props) if (p.type === 'wall_sconce') p.cable = col;
+  d.editedAt = Date.now(); return d;
+}
+
 // 11/26: 스피커 4대 — 홀 네 구석 천장 쪽(스피커 중심 H 2.12, 구석에서 0.17 안쪽)에 코너 벽걸이로. SP1 서북(W2 벽, 구석 스캔 물체를 피해 창 벽에서 0.5 옆) · SP2 동북(W1·창 벽) · SP3 동남(W1·N5 가림벽 북면) · SP4 서남(W2·N2 뒤 벽 북면). 정면은 구석에서 방 안쪽 대각선
 export const SPEAKER_SPOTS = [
   { id: 'sp_1', x: -3.954 + 0.12, z: -4.804 + 0.50, rot: 1.35, note: 'SP1 서북 — 구석 천장에 스캔 물체(덕트/배관 박스 추정, 아래 0.37 돌출)가 있어 W2 벽면에서 창 벽 쪽 0.50 옆으로 비켜 달고 방 안쪽(동)을 향함' },
