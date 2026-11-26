@@ -315,9 +315,7 @@ export class Editor {
     const c0 = new THREE.Color(color), tint = new THREE.Color(Math.min(1, c0.r / 0.21), Math.min(1, c0.g / 0.085), Math.min(1, c0.b / 0.023));   // sRGB 7e522a → 선형값으로 나눔
     // 텍스처를 2배로 늘려 판 하나(31 cm)≈결 한 줄, 가로 이음이 거의 안 보이게. 판마다 위치를 흩뜨림
     const woodMat = (wdt, hgt) => { const t = this._apTex.clone(); t.needsUpdate = true; t.center.set(0.5, 0.5); t.rotation = Math.PI / 2; t.repeat.set(hgt / 4.3, wdt / 4.3); t.offset.set(Math.random(), Math.random()); return new THREE.MeshStandardMaterial({ color: tint, map: t, roughness: 0.6 }); };
-    const ext = isCol ? face : 0; let from = f.from - ext, to = f.to + ext;
-    // 11/26: 아치 개구와 같은 줄로 이어지는 벽(날개벽 등)은 판넬이 금색 아치 다리 중심까지 닿아 몰딩 앞으로 튀어나온다 → 다리 굵기(반지름 3 cm)+여유만큼 판넬을 물려 금색 몰딩이 좌우를 가르게 한다
-    if (!isCol && !f.key) { let a0 = 0, a1 = 0; for (const c of this.meta.closures || []) { if (!c.arch) continue; for (const aw of closureWalls(c, this.s.design)) { if (aw.axis !== f.axis || Math.abs(aw.offset - f.offset) > 0.25) continue; if (Math.abs(aw.to - f.from) < 0.03) a0 = 0.07; if (Math.abs(aw.from - f.to) < 0.03) a1 = 0.07; } } from += a0; to -= a1; }
+    const ext = isCol ? face : 0, from = f.from - ext, to = f.to + ext;
     const box = (a, b, y0, y1, depth, off, mat) => { const m = new THREE.Mesh(new THREE.BoxGeometry(b - a, y1 - y0, depth), mat); this.placeOnWall(m, ww, (a + b) / 2, (y0 + y1) / 2, off); m.userData.surface = sid; this.bands.add(m); };
     this.eachPiece(f, from, to, 0.003, top, (a, b, c, d) => {
       box(a, b, c, d, P.t, off0 + P.t / 2, woodMat(b - a, d - c));
@@ -336,19 +334,22 @@ export class Editor {
     const ext = isCol ? face : 0; let from = f.from - ext, to = f.to + ext;
     // 11/26: 아치 개구와 같은 줄로 이어지는 벽(날개벽 등)은 판넬이 금색 아치 다리 중심까지 닿아 몰딩 앞으로 튀어나온다 → 다리 굵기(반지름 3 cm)+여유만큼 판넬을 물려 금색 몰딩이 좌우를 가르게 한다
     if (!isCol && !f.key) { let a0 = 0, a1 = 0; for (const c of this.meta.closures || []) { if (!c.arch) continue; for (const aw of closureWalls(c, this.s.design)) { if (aw.axis !== f.axis || Math.abs(aw.offset - f.offset) > 0.25) continue; if (Math.abs(aw.to - f.from) < 0.03) a0 = 0.07; if (Math.abs(aw.from - f.to) < 0.03) a1 = 0.07; } } from += a0; to -= a1; }
+    // 11/26: 이 벽에 직각으로 닿는 아치 벽(예: 날개벽에 붙은 화장실 아치)은 개구 두께 구간 + 금색 몰딩 폭만큼 판넬을 끊는다 — 안 끊으면 판넬이 아치 안쪽 금색 면 위로 지나간다
+    const archCut = []; if (!isCol && !f.key) for (const c of this.meta.closures || []) { if (!c.arch) continue; const aws = closureWalls(c, this.s.design); const aw0 = aws[0]; if (!aw0 || aw0.axis === f.axis) continue;
+      if (f.offset < aw0.from - 0.03 || f.offset > aw0.to + 0.03) continue; const offs = aws.map((x) => x.offset); const lo = Math.min(...offs) - 0.065, hi = Math.max(...offs) + 0.065; if (hi < f.from || lo > f.to) continue; archCut.push([lo, hi, -1, 99]); }
     const hi = this._wsLit[color + '#hi'] || (this._wsLit[color + '#hi'] = new THREE.MeshStandardMaterial({ color: m0.color.clone().multiplyScalar(1.22), roughness: 0.7 }));   // 몰딩 안쪽 단은 살짝 밝게(같은 색 계열 — 단이 눈에 읽히도록)
     const box = (a, b, y0, y1, depth, offStart, mat = m0) => { const m = new THREE.Mesh(new THREE.BoxGeometry(b - a, y1 - y0, depth), mat); this.placeOnWall(m, ww, (a + b) / 2, (y0 + y1) / 2, offStart + depth / 2); m.userData.surface = sid; this.bands.add(m); return m; };
     const plinthH = 0.11, capH = 0.075, yb = plinthH + 0.08, yt = H - capH - 0.08, fw = 0.035, fi = 0.015;
-    this.eachPiece(f, from, to, 0.003, H, (a, b, c, d) => {
+    for (const [a, b, c, d] of subtractRects([from, to, 0.003, H], this.holesOf(f).concat(archCut))) {
       box(a, b, c, d - 0.04, tBack, off0);                                                               // 단색 뒷판
       box(a, b, c, plinthH - 0.025, 0.030, off0); box(a, b, plinthH - 0.025, plinthH, 0.040, off0);       // 걸레받이: 본체 + 윗 단(두 단 계단)
       box(a, b, d - 0.025, d, 0.050, off0, hi); box(a, b, d - 0.05, d - 0.025, 0.038, off0); box(a, b, d - capH, d - 0.05, 0.026, off0, hi);   // 위끝 캡: 3단 계단 몰딩
-    });
+    }
     // 액자형 몰딩 프레임(11/26): 벽 하나하나 폭을 계산해서 배치한다.
     //  · 창 벽처럼 design.global.lower.noFrame 에 든 벽은 프레임 없이 판넬만
     //  · 직각으로 만나는 벽(두께 포함)·문·창 개구 구간은 빼고, 남은 구간마다 양 끝 여백 0.14 · 프레임 사이 0.16 · 목표 폭 0.72 로 개수를 정해 폭을 똑같이 나눈다 → 프레임이 옆 벽·모서리로 넘어가지 않는다
     const noFrame = (this.s.design.global?.lower?.noFrame || []).includes(sid); if (noFrame) return;
-    const spans = subtractRects([from, to, 0.003, H], (isCol ? [] : this.holesOf(f)).concat(isCol ? [] : this.perpBlocked(f)));
+    const spans = subtractRects([from, to, 0.003, H], (isCol ? [] : this.holesOf(f)).concat(isCol ? [] : this.perpBlocked(f), archCut));
     const margin = isCol ? 0.07 : 0.14, gap = 0.16, target = 0.72, frame = (l, r) => {
       // 바깥 띠(폭 fw, 두께 8 mm) + 안쪽 단(폭 fi, 두께 +7 mm) — 계단 단면
       const fr = (a, b, y0, y1, d, o, mat) => { const m = box(a, b, y0, y1, d, o, mat); m.userData.wsFrame = true; return m; };
