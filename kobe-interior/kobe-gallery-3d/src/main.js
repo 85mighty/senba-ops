@@ -11,7 +11,7 @@ import { TOUR_E, tourAt, playTour, tourDuration } from './tour.js';
 import { LANG, ONLY_E, tr, installDomTranslator } from './i18n.js';
 installDomTranslator();   // 일본어 화면(ja.html)에서만 동작
 import presetCPhone from './presets/c_phone_20261027.json';
-import { applyIkeaCorner, applyUpperMirrors, applyWindowCurtains, applyRealFloor, applyDullGreen, applyAirPanel, applyRegister, REGISTER_PLANS, applyPhotoEast, applyReception, applyCoupleLayout, applyRegisterGap, applyRegisterLeft, applyPhotoSpot2, applyWallPull, applyElegantChairs, applyLightsRug, applyWings, applyArchDemolish, applyHallArch, applyWashroomPhoto, applyBigRug, applyMeasured1110, applySpots, applyArchWiden, applySlatsH, applyHerringboneFloor, applySconces, applyDamaskWall, applyPlainCrimson, applyFPlan } from './presets/ikea_corner.js';
+import { applyIkeaCorner, applyUpperMirrors, applyWindowCurtains, applyRealFloor, applyDullGreen, applyAirPanel, applyRegister, REGISTER_PLANS, applyPhotoEast, applyReception, applyCoupleLayout, applyRegisterGap, applyRegisterLeft, applyPhotoSpot2, applyWallPull, applyElegantChairs, applyLightsRug, applyWings, applyArchDemolish, applyHallArch, applyWashroomPhoto, applyBigRug, applyMeasured1110, applySpots, applyArchWiden, applySlatsH, applyHerringboneFloor, applySconces, applyDamaskWall, applyPlainCrimson, applyFPlan, applyFlatWainscot } from './presets/ikea_corner.js';
 
 // 저장소에 보관된 디자인 — 어느 기기에서든 불러올 수 있다. seedSlot: 그 안이 비어 있으면 처음 열 때 자동으로 채움
 const PRESETS = [{ id: 'c_phone_20261027', name: 'C안 (폰에서 만든 것, 10/27)', seedSlot: 'C', design: presetCPhone },
@@ -64,6 +64,7 @@ const PATCHES = [{ id: 'd_upper_mirrors_20261028', slot: 'D', apply: applyUpperM
   { id: 'e_measured_1110_20261111', slot: 'E', apply: applyMeasured1110, msg: 'E안: 11/10 실측대로 — 레지 뒤 벽을 창 벽에서 4.72 m 로, 레지는 110×45.5 세로(벽 2 에서 1.05), 홀 입구 아치 0.74' },
   { id: 'e_spots_20261111', slot: 'E', apply: applySpots, msg: 'E안: 체험 스폿 번호 ①~④ 표시(벽 2 쪽 가운데에 세트 ② 추가)' },
   { id: 'e_arch_widen_20261117', slot: 'E', apply: applyArchWiden, msg: 'E안: 홀 입구 아치를 0.86 m 로(뒤 벽 북쪽 0.11 · 날개벽 ① 0.11 단축) — 세면실 아치와 같은 폭' },
+  { id: 'f_flat_wainscot_20261126', slot: 'F', apply: applyFlatWainscot, msg: 'F안: 허리 판넬을 나무 결 없는 단색 + 액자형 몰딩으로 바꿨습니다' },
   { id: 'e_damask_wall_20261126', slot: 'E', apply: applyDamaskWall, msg: 'E안: 레지 뒤 벽(들어서자마자 보이는 면)을 다마스크 무늬 벽지로' },
   { id: 'e_sconces_20261126', slot: 'E', apply: applySconces, msg: 'E안: 사진 코너 거울 양옆에 벽 조명(황동 스콘스) 2개를 달았습니다' },
   { id: 'e_slats_h_20261118', slot: 'E', apply: applySlatsH, msg: 'E안: 신설 벽 위 격자를 가로 살 3단으로' },

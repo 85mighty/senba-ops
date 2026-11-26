@@ -198,7 +198,7 @@ export function applySconces(base) {
 }
 
 // 11/26: F안 — E안을 바탕으로 경성미술관 사진처럼: 쑥빛 회녹색 윗벽 + 꿀색 원목 허리 판넬(검은 띠·걸레받이를 업체가 덮어 마감). 레지 뒤 다마스크 벽·아치·바닥 등 나머지는 E안 그대로
-export const SAGE = '#6b8272', HONEY = '#b07a38';
+export const SAGE = '#6b8272', HONEY = '#a8672f';   // HONEY: 허리 판넬 단색 도장(11/26 — 나무 결 없이, 이전 꿀색 톤 그대로)
 export function applyFPlan(base) {
   const d = JSON.parse(JSON.stringify(base || {})); d.surfaces = d.surfaces || {}; d.columns = d.columns || {};
   const green = new Set([DULL_GREEN, '#2c3529', '#3f5a52', '#2f4a3f']);
@@ -211,6 +211,9 @@ export function applyFPlan(base) {
   { const s = d.surfaces.wall_z_9 || (d.surfaces.wall_z_9 = {}); s.trim = { rail: { color: '#ece2d0', style: 'none' }, base: { color: '#ece2d0', style: 'none' }, moldingColor: '#ece2d0', lower: { paint: null, style: 'flat' } }; }
   d.editedAt = Date.now(); return d;
 }
+
+// 11/26: F안 허리 판넬을 나무 결 없는 단색 + 액자형 몰딩으로(이미 만든 F안의 색 값 갱신)
+export function applyFlatWainscot(base) { const d = JSON.parse(JSON.stringify(base || {})); d.global = { ...(d.global || {}), lower: { paint: HONEY, style: 'wainscot' } }; d.editedAt = Date.now(); return d; }
 
 // 11/26: 들어서자마자 보이는 레지 뒤 벽(안쪽 면)을 무지 크림슨 → 다마스크 무늬 벽지(경성미술관 사진 느낌)로
 export function applyDamaskWall(base) {
