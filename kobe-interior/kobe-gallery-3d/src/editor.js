@@ -208,7 +208,13 @@ export class Editor {
             const foot = new THREE.Mesh(new THREE.CylinderGeometry(tubeR + 0.008, tubeR + 0.008, 0.03, 16), goldM); foot.position.set(lx, 0.015, zz); foot.userData.archLeg = true; trimM.add(foot);
           }
         }
-        { const inner = new THREE.Mesh(new THREE.TorusGeometry(r + 0.004, 0.012, 8, 48, Math.PI), goldM); inner.position.set(r, spring, T / 2); inner.scale.z = (T / 2) / 0.012; trimM.add(inner); }   // 개구 안쪽 가는 테
+        // 11/26: 개구 안쪽 면(벽 두께 부분)도 금색으로 채운다 — 앞·뒤 테 사이를 메워 하나의 금색 틀(단면이 둥근 띠)로.
+        //  위: 반고리 모양을 벽 두께만큼 밀어낸 띠, 옆: 다리 사이를 메우는 판(바닥~스프링)
+        { const z0 = -0.014, depth = T + 0.028; const Ro = Rr + tubeR, Ri = Math.min(Rr - tubeR, r - 0.006);
+          const band = new THREE.Shape(); band.moveTo(r + Ro, spring); band.absarc(r, spring, Ro, 0, Math.PI, false); band.lineTo(r - Ri, spring); band.absarc(r, spring, Ri, Math.PI, 0, true); band.closePath();
+          const soffit = new THREE.Mesh(new THREE.ExtrudeGeometry(band, { depth, bevelEnabled: false, curveSegments: 36 }), goldM); soffit.position.z = z0; soffit.userData.archFill = true; trimM.add(soffit);
+          for (const [xa, xb] of [[r - Ro, r - Ri], [r + Ri, r + Ro]]) { const jamb = new THREE.Mesh(new THREE.BoxGeometry(xb - xa, spring, depth), goldM); jamb.position.set((xa + xb) / 2, spring / 2, z0 + depth / 2); jamb.userData.archFill = true; trimM.add(jamb);
+            const base = new THREE.Mesh(new THREE.BoxGeometry(xb - xa + 0.016, 0.03, depth), goldM); base.position.set((xa + xb) / 2, 0.015, z0 + depth / 2); base.userData.archFill = true; trimM.add(base); } }
         am.add(trimM);
         cg.add(am); continue; }
       for (const w of closureWalls(c, this.s.design)) { const m = new THREE.Mesh(new THREE.BoxGeometry(w.to - w.from, HT, T), mat); m.userData.surface = w.id; this.placeOnWall(m, { ...w, sid: w.id }, (w.from + w.to) / 2, HT / 2, -T / 2); cg.add(m); }
