@@ -1,5 +1,6 @@
 // 소품·창·커튼 절차 생성. 모든 소품은 원점이 바닥 중심, +Z 가 정면.
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { tr } from './i18n.js';
 
 const std = (color, opts = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.75, ...opts });
@@ -230,6 +231,22 @@ export function buildProp(p) {
       c2.fillStyle = 'rgba(255,240,200,0.45)'; c2.beginPath(); c2.ellipse(300, 150, 120, 80, 0.4, 0, Math.PI * 2); c2.fill(); c2.fillStyle = 'rgba(60,40,30,0.5)'; c2.fillRect(0, 300, 512, 100);
       const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
       const pic = new THREE.Mesh(new THREE.PlaneGeometry(W - 0.24, H - 0.24), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8 })); pic.position.set(0, H / 2, 0.023); g.add(pic);
+      break;
+    }
+    case 'wall_speaker': {   // 코너 벽걸이 스피커(약 20×30×17 cm, 2웨이 매장용) — 구석 천장 쪽에 대각선으로 달고 아래로 12° 기울여 매장을 향한다. 정면(+Z) = 구석에서 방 안쪽, '높이(y)' = 스피커 중심 높이(이 안에서는 0 기준)
+      const blk = std(c || 0x17171a, { roughness: 0.55 }), grille = std(0x26262b, { roughness: 0.92 }), ring = std(0x55555c, { metalness: 0.6, roughness: 0.4 }), metal = std(0x2d2d31, { metalness: 0.7, roughness: 0.4 });
+      const W = 0.20, H = 0.30, D = 0.17; const sp = new THREE.Group(); sp.rotation.x = 0.21;   // 앞이 아래로
+      const body = new THREE.Mesh(new RoundedBoxGeometry(W, H, D, 3, 0.014), blk); sp.add(body);
+      const baffle = new THREE.Mesh(new THREE.BoxGeometry(W - 0.025, H - 0.025, 0.006), grille); baffle.position.z = D / 2 + 0.002; sp.add(baffle);
+      const woof = new THREE.Mesh(new THREE.TorusGeometry(0.066, 0.006, 8, 32), ring); woof.position.set(0, -0.045, D / 2 + 0.006); sp.add(woof);
+      const cone = new THREE.Mesh(new THREE.CircleGeometry(0.06, 28), std(0x101012, { roughness: 0.6 })); cone.position.set(0, -0.045, D / 2 + 0.0055); sp.add(cone);
+      const cap = new THREE.Mesh(new THREE.SphereGeometry(0.022, 14, 10, 0, Math.PI * 2, 0, Math.PI / 2), ring); cap.rotation.x = Math.PI / 2; cap.position.set(0, -0.045, D / 2 + 0.006); sp.add(cap);
+      const tw = new THREE.Mesh(new THREE.TorusGeometry(0.02, 0.004, 8, 20), ring); tw.position.set(0, 0.09, D / 2 + 0.006); sp.add(tw);
+      const twd = new THREE.Mesh(new THREE.CircleGeometry(0.017, 18), std(0x0b0b0d)); twd.position.set(0, 0.09, D / 2 + 0.0055); sp.add(twd);
+      const led = new THREE.Mesh(new THREE.CircleGeometry(0.004, 10), new THREE.MeshBasicMaterial({ color: 0x3df08a })); led.position.set(0.075, -0.135, D / 2 + 0.0065); sp.add(led);   // 전원 LED
+      g.add(sp);
+      // 벽걸이 브래킷: 뒤판에 붙는 판 + 구석 쪽으로 뻗는 암(받침 판은 구석을 향함)
+      g.add(box(0.12, 0.10, 0.012, metal, 0, 0.02, -D / 2 - 0.004)); g.add(box(0.05, 0.05, 0.04, metal, 0, 0.02, -D / 2 - 0.022));
       break;
     }
     case 'wall_sconce': {   // 벽 조명(브라켓/스콘스) — 황동 타원 받침 + 휘어진 팔 + 양초형 소켓 + 흰 천 갓(전구색으로 빛남). 벽에 붙임(+Z 앞), '높이(y)' = 갓 중심 높이(소품 위치 y, 이 안에서는 0 기준)

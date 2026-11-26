@@ -197,6 +197,19 @@ export function applySconces(base) {
   d.editedAt = Date.now(); return d;
 }
 
+// 11/26: 스피커 4대 — 홀 네 구석 천장 쪽(스피커 중심 H 2.12, 구석에서 0.17 안쪽)에 코너 벽걸이로. SP1 서북(W2 벽, 구석 스캔 물체를 피해 창 벽에서 0.5 옆) · SP2 동북(W1·창 벽) · SP3 동남(W1·N5 가림벽 북면) · SP4 서남(W2·N2 뒤 벽 북면). 정면은 구석에서 방 안쪽 대각선
+export const SPEAKER_SPOTS = [
+  { id: 'sp_1', x: -3.954 + 0.12, z: -4.804 + 0.50, rot: 1.35, note: 'SP1 서북 — 구석 천장에 스캔 물체(덕트/배관 박스 추정, 아래 0.37 돌출)가 있어 W2 벽면에서 창 벽 쪽 0.50 옆으로 비켜 달고 방 안쪽(동)을 향함' },
+  { id: 'sp_2', x: 2.354 - 0.17, z: -4.804 + 0.17, rot: -Math.PI / 4, note: 'SP2 동북 — 창 벽(W9) × W1' },
+  { id: 'sp_3', x: 2.354 - 0.17, z: 1.463 - 0.17, rot: -Math.PI * 3 / 4, note: 'SP3 동남 — W1 × 화장실 가림벽 N5 북면' },
+  { id: 'sp_4', x: -3.954 + 0.17, z: -0.19 - 0.17, rot: Math.PI * 3 / 4, note: 'SP4 서남 — W2 × 레지 뒤 벽 N2 북면' },
+];
+export function applySpeakers(base) {
+  const d = JSON.parse(JSON.stringify(base || {})); d.props = (d.props || []).filter((p) => !String(p.id).startsWith('sp_'));
+  for (const s of SPEAKER_SPOTS) d.props.push({ id: s.id, type: 'wall_speaker', x: +s.x.toFixed(3), y: 2.12, z: +s.z.toFixed(3), rot: s.rot, scale: 1, color: null });
+  d.editedAt = Date.now(); return d;
+}
+
 // 11/26: F안 — E안을 바탕으로 경성미술관 사진처럼: 쑥빛 회녹색 윗벽 + 꿀색 원목 허리 판넬(검은 띠·걸레받이를 업체가 덮어 마감). 레지 뒤 다마스크 벽·아치·바닥 등 나머지는 E안 그대로
 export const SAGE = '#6b8272', HONEY = '#a8672f';   // HONEY: 허리 판넬 단색 도장(11/26 — 나무 결 없이, 이전 꿀색 톤 그대로)
 export function applyFPlan(base) {
