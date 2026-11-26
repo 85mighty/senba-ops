@@ -132,6 +132,7 @@ try {
     if (!s.design.closures?.toilet_arch || !['thin_column_4', 'thin_column_18'].every((k) => s.design.demolished?.[k])) throw new Error('E안 아치·철거 없음');
     if (e.columns().some((c) => c.id === 'thin_column_4')) throw new Error('철거 기둥이 목록에 남음'); { let c4 = null; window.__viewer.loaded.reconstructed.traverse((o) => { if (o.name === 'thin_column_4') c4 = o; }); if (c4?.visible) throw new Error('철거 기둥 메쉬가 보임'); }
     let arch = 0; e.closureG.traverse((o) => { if (o.isMesh && o.userData.surface === 'toilet_arch') arch++; }); if (!arch) throw new Error('아치 메쉬 없음');
+    { let legs = 0, h = 0; e.closureG.traverse((o) => { if (o.userData.archLeg && o.geometry?.parameters?.height > 1) { legs++; h = o.geometry.parameters.height; } }); if (legs < 8 || h < 1.5) throw new Error('아치 금색 테가 바닥까지 내려오지 않음 ' + legs + ' ' + h); }
     // 세면실 포토 스폿: 타일 벽 + 타원 거울 + 안여닫이 문(열림 각 +)
     if (!s.design.closures?.washroom_tile || !s.design.props.some((p) => p.type === 'oval_mirror')) throw new Error('E안 세면실 포토 스폿 없음');
     if (!s.design.props.some((p) => p.id === 'lr_rug' && p.type === 'rug_large')) throw new Error('E안 큰 러그 없음');

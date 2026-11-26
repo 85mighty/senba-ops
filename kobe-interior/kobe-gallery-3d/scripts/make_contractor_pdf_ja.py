@@ -345,9 +345,10 @@ def page_detail(pdf, m, g):
         verts = [(0, 0), (0, sp)] + [(r + r * math.cos(a), sp + r * math.sin(a)) for a in [math.pi - i * math.pi / 36 for i in range(37)]] + [(w_mm, 0)]
         ax.add_patch(Polygon(verts, closed=True, fc="white", ec=INK, lw=0.8, zorder=3))
         ax.add_patch(Arc((r, sp), 2 * r + 70, 2 * r + 70, theta1=0, theta2=180, color=GOLD, lw=3, zorder=4))
+        for xx in (-35, w_mm + 35): ax.plot([xx, xx], [0, sp], color=GOLD, lw=3, zorder=4, solid_capstyle="butt")   # 金色モールは半円から床まで
         hdim(ax, 0, w_mm, -120, f"有効 {round(w_mm / 5) * 5:.0f}"); vdim(ax, -90, 0, sp, f"スプリング {sp:.0f}"); vdim(ax, w_mm + 90, 0, sp + r, f"頂部 {sp + r:.0f}", ha="left"); vdim(ax, w_mm + 200, 0, HW, f"壁上端 {HW:.0f}", ha="left"); vdim(ax, -200, 0, H, f"天井 {H:.0f}", c=INK)
         ax.text(r, sp + r + 110, f"半円 R{r:.0f}", ha="center", fontsize=7, color=GOLD); ax.text(r, (HW + sp + r) / 2 + 20, "スパンドレル\n(壁 t100)", ha="center", fontsize=6.5)
-        ax.text(r, -290, "金色モール φ60 両面＋開口内側に細モール", ha="center", fontsize=6, color=GOLD); return ax
+        ax.text(r, -290, "金色モール φ60 両面・半円から床まで（脚 4 本）＋開口内側に細モール", ha="center", fontsize=6, color=GOLD); return ax
     N6, N7, N5, o, d, t = g["N6"], g["N7"], g["N5"], g["o1"], g["door"], g["tile"]
     arch_elev([0.03, 0.50, 0.22, 0.40], N7["z1"] - N7["z0"], N7["spring"], "N7 ホール入口アーチ（レセプション側から）", "N2 南面 〜 N3 北端。有効 0.86 = N6 と同じ（11/17 拡幅）")
     arch_elev([0.27, 0.50, 0.24, 0.40], N6["x1"] - N6["x0"], N6["spring"], "N6 洗面室入口アーチ（ホール側から）", "N4 東面 〜 N5 西端。フォトスポット側はタイル仕上げ")
