@@ -247,6 +247,8 @@ try {
     if (fr.n < 10 || fr.win !== 0 || fr.cross !== 0) throw new Error('F안 액자 프레임 배치 이상 ' + JSON.stringify(fr)); }
   { const sc = await pf.evaluate(() => { const ps = window.__store.design.props.filter((p) => p.type === 'wall_sconce'); return { n: ps.length, cable: ps.filter((p) => p.cable).length, win: ps.filter((p) => Math.abs(p.x + 0.82) < 0.05 && p.z < -4.7).length, w2: ps.filter((p) => p.x < -3.8 && p.z > -4.7 && p.z < 0).length, e: ps.filter((p) => p.x > 2.2).length }; });
     if (sc.n !== 7 || sc.cable !== 0 || sc.win !== 1 || sc.w2 !== 2 || sc.e !== 2) throw new Error('F안 벽 조명 배치 이상 ' + JSON.stringify(sc)); }
+  { const cr = await pf.evaluate(() => { let n = 0; window.__editor.bands.traverse((o) => { if (o.userData.crown) n++; }); return { on: !!window.__store.design.global.crown, ceil: window.__store.design.surfaces.ceiling?.paint, n }; });
+    if (!cr.on || cr.ceil !== '#ffffff' || cr.n < 40) throw new Error('F안 천장 몰딩/흰 천장 이상 ' + JSON.stringify(cr)); }
   if (r.active !== 'F' || r.lower?.style !== 'wainscot' || r.sage !== '#6b8272' || r.damask !== 'tex:wall_damask_red' || !r.hasE || r.ws < 200) throw new Error('F안 이상 ' + JSON.stringify(r));
   await pf.close(); console.log('F안 OK', JSON.stringify(r));
 }

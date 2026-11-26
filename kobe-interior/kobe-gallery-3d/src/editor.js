@@ -409,6 +409,18 @@ export class Editor {
     for (const col of this.columns()) { const c = this.s.getColumn(col.id), fullMirror = (c.mirror ?? (col.id === this.meta.central_wide_column)) && c.mirrorFit !== 'upper' && this.i.layers.mirror_4_sides.visible;
       if (fullMirror && ['air_panel', 'wainscot'].includes(this.s.trimOf(col.id).lower.style)) continue;   // 바닥까지 거울인 기둥은 판 대신 거울
       addBands(this.i.columnFaces(col).map((f) => ({ ...f, two_sided: false })), col.id, false, true); }
+    this.crown();
+  }
+  // 11/26: 천장 몰딩(廻り縁) — 천장에 닿는 모든 벽·기둥 윗끝을 따라 흰색 계단식 코니스(높이 13 cm, 벽에서 7 cm 나옴). design.global.crown 이 켜져 있을 때만
+  crown() {
+    if (!this.s.design.global?.crown) return; const C = this.ceil;
+    this._crownM = this._crownM || new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.55, metalness: 0 });
+    const steps = [[C - 0.13, C - 0.105, 0.012], [C - 0.105, C - 0.075, 0.03], [C - 0.075, C - 0.04, 0.05], [C - 0.04, C, 0.07]];   // [아래, 위, 벽에서 나온 깊이]
+    const run = (f, sid, sd, ext) => { const ww = { ...f, inward: sd, sid };
+      for (const [a, b, c, d] of subtractRects([f.from - ext, f.to + ext, C - 0.13, C], ext ? [] : this.holesOf(f))) for (const [y0, y1, dep] of steps) { const y0c = Math.max(y0, c), y1c = Math.min(y1, d); if (y1c - y0c < 0.004) continue;
+        const m = new THREE.Mesh(new THREE.BoxGeometry(b - a, y1c - y0c, dep), this._crownM); this.placeOnWall(m, ww, (a + b) / 2, (y0c + y1c) / 2, dep / 2); m.userData.surface = sid; m.userData.crown = true; this.bands.add(m); } };
+    for (const w of this.walls()) { if (this.wallTop(w) < C - 0.05 || this.plainService(w.id)) continue; for (const sd of (w.two_sided ? [w.inward, -w.inward] : [w.inward])) run(w, w.id, sd, 0); }
+    for (const col of this.columns()) for (const f of this.i.columnFaces(col)) run({ ...f, two_sided: false }, col.id, f.inward, 0.07);
   }
   // 하부 벽(띠 사이) 마감 오버레이 — 벽/기둥별
   addLower(face, sid, sides) {

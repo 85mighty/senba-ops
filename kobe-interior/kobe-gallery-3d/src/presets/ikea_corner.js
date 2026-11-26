@@ -307,3 +307,9 @@ export function applyWashroomPhoto(base) {
                { id: 'wr_spot', type: 'spot_light', x: 1.79, z: 2.25, rot: Math.PI, aim: 0.6, scale: 1, color: null });
   d.editedAt = Date.now(); return d;
 }
+
+// 11/26: 천장은 흰색 + 천장 모서리를 따라 흰 계단식 몰딩(廻り縁) — 경성미술관 사진처럼
+export function applyCrown(base) {
+  const d = JSON.parse(JSON.stringify(base || {})); d.surfaces = d.surfaces || {}; d.surfaces.ceiling = { ...(d.surfaces.ceiling || {}), paint: '#ffffff' };
+  d.global = { ...(d.global || {}), crown: true }; d.editedAt = Date.now(); return d;
+}
