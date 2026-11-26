@@ -249,19 +249,26 @@ export function buildProp(p) {
       g.add(box(0.12, 0.10, 0.012, metal, 0, 0.02, -D / 2 - 0.004)); g.add(box(0.05, 0.05, 0.04, metal, 0, 0.02, -D / 2 - 0.022));
       break;
     }
-    case 'wall_sconce': {   // 벽 조명(브라켓/스콘스) — 황동 타원 받침 + 휘어진 팔 + 양초형 소켓 + 흰 천 갓(전구색으로 빛남). 벽에 붙임(+Z 앞), '높이(y)' = 갓 중심 높이(소품 위치 y, 이 안에서는 0 기준)
-      const brass = std(c || 0xb88a3e, { metalness: 0.85, roughness: 0.3 }), y = 0, cream = std(0xf1e6cf, { roughness: 0.6 });
-      const plate = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 14), brass); plate.scale.set(0.045, 0.075, 0.012); plate.position.set(0, y - 0.09, 0.012); g.add(plate);              // 타원 받침
-      const rose = cyl(0.028, 0.034, 0.016, brass, 0, y - 0.09, 0.03, 18); rose.rotation.x = Math.PI / 2; g.add(rose);
-      const arm = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.011, 8, 22, Math.PI / 1.7), brass); arm.rotation.z = Math.PI * 0.5; arm.position.set(0, y - 0.03, 0.095); arm.rotation.y = 0; g.add(arm);   // 휘어 올라오는 팔
-      const sock = cyl(0.02, 0.02, 0.07, brass, 0, y - 0.015, 0.155, 14); g.add(sock);                                                                                                  // 소켓
-      const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.028, 12, 10), std(0xfff2cf, { emissive: 0xffd9a0, emissiveIntensity: 1.6 })); bulb.position.set(0, y + 0.03, 0.155); g.add(bulb);
-      const shade = new THREE.Mesh(new THREE.CylinderGeometry(0.062, 0.095, 0.17, 28, 1, true), new THREE.MeshStandardMaterial({ color: 0xfaf3e6, emissive: 0xffd9a0, emissiveIntensity: 0.55, roughness: 0.9, side: THREE.DoubleSide }));
-      shade.position.set(0, y + 0.045, 0.155); g.add(shade);
-      for (const dy of [0.045 + 0.085, 0.045 - 0.085]) { const rim = new THREE.Mesh(new THREE.TorusGeometry(dy > 0.05 ? 0.062 : 0.095, 0.0035, 6, 28), cream); rim.rotation.x = Math.PI / 2; rim.position.set(0, y + dy, 0.155); g.add(rim); }   // 갓 테두리
-      // 벽에 번지는 따뜻한 빛(위·아래로 퍼지는 부채꼴) — 사진의 스콘스 분위기
+    case 'wall_sconce': {   // 벽 조명(스콘스) — 참고 사진(경성미술관): 황동 직사각 받침 + 아이보리 박스 + 앞으로 뻗은 팔 + 유리 구슬 + 황동 소켓 + 흰 천 갓, 아래로 늘어진 황동 막대, 벽 색 전선관이 천장까지. 벽에 붙임(+Z 앞), 갓 중심이 로컬 y 0 → '높이(y)' = 갓 중심 높이. p.cable = 전선관 색(벽 색, 없으면 전선관 없음)
+      const brass = std(c || 0xb08d4a, { metalness: 0.8, roughness: 0.32 }), cream = std(0xf1ead9, { roughness: 0.6 }), ivory = std(0xe2dfd6, { roughness: 0.7 });
+      const glass = new THREE.MeshStandardMaterial({ color: 0xf4fafa, transparent: true, opacity: 0.5, roughness: 0.05, metalness: 0.1 });
+      g.add(box(0.06, 0.075, 0.04, ivory, -0.004, -0.245, 0.02));                                              // 아이보리 박스(전선 접속함)
+      g.add(box(0.05, 0.14, 0.012, brass, 0, -0.19, 0.047));                                                    // 황동 직사각 받침
+      for (const dy of [-0.145, -0.235]) { const sc = cyl(0.0045, 0.0045, 0.004, brass, 0, dy, 0.055, 10); sc.rotation.x = Math.PI / 2; g.add(sc); }   // 나사
+      const arm = cyl(0.009, 0.009, 0.105, brass, 0, -0.18, 0.103, 12); arm.rotation.x = Math.PI / 2; g.add(arm);   // 앞으로 뻗은 팔
+      g.add(cyl(0.006, 0.006, 0.16, brass, 0, -0.195, 0.155, 10));                                                  // 세로 막대(아래로 늘어짐)
+      g.add(new THREE.Mesh(new THREE.SphereGeometry(0.0095, 10, 8), brass)); g.children[g.children.length - 1].position.set(0, -0.278, 0.155);
+      g.add(cyl(0.015, 0.015, 0.022, brass, 0, -0.118, 0.155, 14));                                                 // 칼라
+      const ball = new THREE.Mesh(new THREE.SphereGeometry(0.033, 18, 14), glass); ball.position.set(0, -0.075, 0.155); g.add(ball);    // 유리 구슬
+      g.add(cyl(0.018, 0.018, 0.05, brass, 0, -0.012, 0.155, 14));                                                  // 소켓 슬리브
+      const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.022, 12, 10), std(0xfff2cf, { emissive: 0xffd9a0, emissiveIntensity: 1.7 })); bulb.position.set(0, 0.035, 0.155); g.add(bulb);
+      const shade = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.09, 0.16, 28, 1, true), new THREE.MeshStandardMaterial({ color: 0xfbf5ea, emissive: 0xffe0b0, emissiveIntensity: 0.7, roughness: 0.9, side: THREE.DoubleSide })); shade.position.set(0, 0.068, 0.155); g.add(shade);
+      for (const [yy, rr] of [[0.148, 0.06], [-0.012, 0.09]]) { const rim = new THREE.Mesh(new THREE.TorusGeometry(rr, 0.0035, 6, 28), cream); rim.rotation.x = Math.PI / 2; rim.position.set(0, yy, 0.155); g.add(rim); }   // 갓 테두리
+      if (p.cable) { const top = 2.38 - (p.y || 0), y0 = -0.155; const cab = cyl(0.0085, 0.0085, top - y0, std(p.cable, { roughness: 0.75 }), -0.03, (top + y0) / 2, 0.0095, 10); g.add(cab);   // 벽 색 전선관: 받침 위에서 천장까지
+        const feed = cyl(0.0085, 0.0085, 0.05, std(p.cable, { roughness: 0.75 }), -0.03 / 2, -0.155, 0.0095, 10); feed.rotation.z = Math.PI / 2; g.add(feed); }   // 전선관 → 접속함으로 꺾이는 짧은 가로 구간
+      // 벽에 번지는 따뜻한 빛 — 위·아래로 퍼짐
       if (!buildProp._glow) { const cv = document.createElement('canvas'); cv.width = cv.height = 256; const cx = cv.getContext('2d'); const gr = cx.createRadialGradient(128, 128, 4, 128, 128, 124); gr.addColorStop(0, 'rgba(255,214,150,0.85)'); gr.addColorStop(0.45, 'rgba(255,200,130,0.32)'); gr.addColorStop(1, 'rgba(255,190,110,0)'); cx.fillStyle = gr; cx.fillRect(0, 0, 256, 256); buildProp._glow = new THREE.CanvasTexture(cv); }
-      const glow = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.95), new THREE.MeshBasicMaterial({ map: buildProp._glow, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.55 })); glow.position.set(0, y + 0.02, 0.006); glow.userData.zone = false; g.add(glow);
+      const glow = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.95), new THREE.MeshBasicMaterial({ map: buildProp._glow, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.5 })); glow.position.set(0, 0.04, 0.006); g.add(glow);
       break;
     }
     case 'wall_mirror': {   // 검은 틀 가로 거울(약 120×60 cm) — 중심 높이 1.55 m, 벽에 붙임
