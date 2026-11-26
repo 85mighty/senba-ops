@@ -11,7 +11,7 @@ import { TOUR_E, tourAt, playTour, tourDuration } from './tour.js';
 import { LANG, ONLY_E, tr, installDomTranslator } from './i18n.js';
 installDomTranslator();   // 일본어 화면(ja.html)에서만 동작
 import presetCPhone from './presets/c_phone_20261027.json';
-import { applyIkeaCorner, applyUpperMirrors, applyWindowCurtains, applyRealFloor, applyDullGreen, applyAirPanel, applyRegister, REGISTER_PLANS, applyPhotoEast, applyReception, applyCoupleLayout, applyRegisterGap, applyRegisterLeft, applyPhotoSpot2, applyWallPull, applyElegantChairs, applyLightsRug, applyWings, applyArchDemolish, applyHallArch, applyWashroomPhoto, applyBigRug, applyMeasured1110, applySpots, applyArchWiden, applySlatsH, applyHerringboneFloor } from './presets/ikea_corner.js';
+import { applyIkeaCorner, applyUpperMirrors, applyWindowCurtains, applyRealFloor, applyDullGreen, applyAirPanel, applyRegister, REGISTER_PLANS, applyPhotoEast, applyReception, applyCoupleLayout, applyRegisterGap, applyRegisterLeft, applyPhotoSpot2, applyWallPull, applyElegantChairs, applyLightsRug, applyWings, applyArchDemolish, applyHallArch, applyWashroomPhoto, applyBigRug, applyMeasured1110, applySpots, applyArchWiden, applySlatsH, applyHerringboneFloor, applySconces } from './presets/ikea_corner.js';
 
 // 저장소에 보관된 디자인 — 어느 기기에서든 불러올 수 있다. seedSlot: 그 안이 비어 있으면 처음 열 때 자동으로 채움
 const PRESETS = [{ id: 'c_phone_20261027', name: 'C안 (폰에서 만든 것, 10/27)', seedSlot: 'C', design: presetCPhone },
@@ -28,6 +28,7 @@ const PRESETS = [{ id: 'c_phone_20261027', name: 'C안 (폰에서 만든 것, 10
   { id: 'lights_rug', name: '조명 + 러그 (사진 코너 스포트 3 · 작은 러그)', apply: applyLightsRug, armText: (sl) => `${sl}안에 스포트라이트 3개와 러그를 더합니다. 다시 누르세요` },
   { id: 'measured_1110', name: '실측 위치 (11/10) — 뒤 벽 4.72 m · 레지 세로', apply: applyMeasured1110, armText: (sl) => `${sl}안 레지 뒤 벽·레지를 11/10 실측 위치로 옮깁니다. 다시 누르세요` },
   { id: 'spots', name: '체험 스폿 번호 ①~④ (2인 세트 4팀)', apply: applySpots, armText: (sl) => `${sl}안 2인 세트에 체험 스폿 번호를 붙입니다(4팀 미만이면 ② 추가). 다시 누르세요` },
+  { id: 'sconces', name: '벽 조명 2개 (사진 코너 거울 양옆)', apply: applySconces, armText: (sl) => `${sl}안 거울 양옆에 벽 조명 2개를 답니다. 다시 누르세요` },
   { id: 'floor_herringbone', name: '바닥 → 헤링본 LVT (フロアタイル 90×450)', apply: applyHerringboneFloor, armText: (sl) => `${sl}안 바닥을 헤링본 LVT 로 바꿉니다(비교용). 다시 누르세요` },
   { id: 'floor_real', name: '바닥 → 지금 마루 그대로(사진)', apply: applyRealFloor, armText: (sl) => `${sl}안 바닥을 지금 마루(사진)로 되돌립니다. 다시 누르세요` },
   { id: 'big_rug', name: '큰 러그 (사진 코너 1.8 × 1.2)', apply: applyBigRug, armText: (sl) => `${sl}안 사진 코너 러그를 큰 러그로 바꿉니다. 다시 누르세요` },
@@ -59,6 +60,7 @@ const PATCHES = [{ id: 'd_upper_mirrors_20261028', slot: 'D', apply: applyUpperM
   { id: 'e_measured_1110_20261111', slot: 'E', apply: applyMeasured1110, msg: 'E안: 11/10 실측대로 — 레지 뒤 벽을 창 벽에서 4.72 m 로, 레지는 110×45.5 세로(벽 2 에서 1.05), 홀 입구 아치 0.74' },
   { id: 'e_spots_20261111', slot: 'E', apply: applySpots, msg: 'E안: 체험 스폿 번호 ①~④ 표시(벽 2 쪽 가운데에 세트 ② 추가)' },
   { id: 'e_arch_widen_20261117', slot: 'E', apply: applyArchWiden, msg: 'E안: 홀 입구 아치를 0.86 m 로(뒤 벽 북쪽 0.11 · 날개벽 ① 0.11 단축) — 세면실 아치와 같은 폭' },
+  { id: 'e_sconces_20261126', slot: 'E', apply: applySconces, msg: 'E안: 사진 코너 거울 양옆에 벽 조명(황동 스콘스) 2개를 달았습니다' },
   { id: 'e_slats_h_20261118', slot: 'E', apply: applySlatsH, msg: 'E안: 신설 벽 위 격자를 가로 살 3단으로' },
   { id: 'e_big_rug_20261111', slot: 'E', apply: applyBigRug, msg: 'E안: 사진 코너 러그를 큰 러그(1.8 × 1.2)로 — 날개벽 사이를 채우고 홀 쪽으로 조금 나옴' },
   { id: 'd_air_panel_20261106', slot: 'D', apply: applyAirPanel, msg: 'D안: 아래 벽을 エアサーモパネル로 띠까지 덮었습니다(방법 ③)' }];

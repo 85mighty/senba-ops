@@ -232,6 +232,21 @@ export function buildProp(p) {
       const pic = new THREE.Mesh(new THREE.PlaneGeometry(W - 0.24, H - 0.24), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8 })); pic.position.set(0, H / 2, 0.023); g.add(pic);
       break;
     }
+    case 'wall_sconce': {   // 벽 조명(브라켓/스콘스) — 황동 타원 받침 + 휘어진 팔 + 양초형 소켓 + 흰 천 갓(전구색으로 빛남). 벽에 붙임(+Z 앞), '높이(y)' = 갓 중심 높이(소품 위치 y, 이 안에서는 0 기준)
+      const brass = std(c || 0xb88a3e, { metalness: 0.85, roughness: 0.3 }), y = 0, cream = std(0xf1e6cf, { roughness: 0.6 });
+      const plate = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 14), brass); plate.scale.set(0.045, 0.075, 0.012); plate.position.set(0, y - 0.09, 0.012); g.add(plate);              // 타원 받침
+      const rose = cyl(0.028, 0.034, 0.016, brass, 0, y - 0.09, 0.03, 18); rose.rotation.x = Math.PI / 2; g.add(rose);
+      const arm = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.011, 8, 22, Math.PI / 1.7), brass); arm.rotation.z = Math.PI * 0.5; arm.position.set(0, y - 0.03, 0.095); arm.rotation.y = 0; g.add(arm);   // 휘어 올라오는 팔
+      const sock = cyl(0.02, 0.02, 0.07, brass, 0, y - 0.015, 0.155, 14); g.add(sock);                                                                                                  // 소켓
+      const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.028, 12, 10), std(0xfff2cf, { emissive: 0xffd9a0, emissiveIntensity: 1.6 })); bulb.position.set(0, y + 0.03, 0.155); g.add(bulb);
+      const shade = new THREE.Mesh(new THREE.CylinderGeometry(0.062, 0.095, 0.17, 28, 1, true), new THREE.MeshStandardMaterial({ color: 0xfaf3e6, emissive: 0xffd9a0, emissiveIntensity: 0.55, roughness: 0.9, side: THREE.DoubleSide }));
+      shade.position.set(0, y + 0.045, 0.155); g.add(shade);
+      for (const dy of [0.045 + 0.085, 0.045 - 0.085]) { const rim = new THREE.Mesh(new THREE.TorusGeometry(dy > 0.05 ? 0.062 : 0.095, 0.0035, 6, 28), cream); rim.rotation.x = Math.PI / 2; rim.position.set(0, y + dy, 0.155); g.add(rim); }   // 갓 테두리
+      // 벽에 번지는 따뜻한 빛(위·아래로 퍼지는 부채꼴) — 사진의 스콘스 분위기
+      if (!buildProp._glow) { const cv = document.createElement('canvas'); cv.width = cv.height = 256; const cx = cv.getContext('2d'); const gr = cx.createRadialGradient(128, 128, 4, 128, 128, 124); gr.addColorStop(0, 'rgba(255,214,150,0.85)'); gr.addColorStop(0.45, 'rgba(255,200,130,0.32)'); gr.addColorStop(1, 'rgba(255,190,110,0)'); cx.fillStyle = gr; cx.fillRect(0, 0, 256, 256); buildProp._glow = new THREE.CanvasTexture(cv); }
+      const glow = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.95), new THREE.MeshBasicMaterial({ map: buildProp._glow, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.55 })); glow.position.set(0, y + 0.02, 0.006); glow.userData.zone = false; g.add(glow);
+      break;
+    }
     case 'wall_mirror': {   // 검은 틀 가로 거울(약 120×60 cm) — 중심 높이 1.55 m, 벽에 붙임
       const fr = std(c || 0x1a1a1a, { roughness: 0.5 }); const W = 1.2, H = 0.6, y = 1.55;
       g.add(box(W + 0.06, H + 0.06, 0.03, fr, 0, y, 0.015)); const m = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 1, roughness: 0.04, envMapIntensity: 1.3 }));
