@@ -205,14 +205,19 @@ export function applySconceCable(base) {
   for (const p of d.props || []) if (p.type === 'wall_sconce') p.cable = col;
   d.editedAt = Date.now(); return d;
 }
+export function applySconceClean(base) {   // 11/26: 벽 조명 전선을 벽 속에 매입 — 노출 전선관 제거
+  const d = JSON.parse(JSON.stringify(base || {}));
+  for (const p of d.props || []) if (p.type === 'wall_sconce') delete p.cable;
+  d.editedAt = Date.now(); return d;
+}
 export function applySconcesMore(base) {
-  const d = JSON.parse(JSON.stringify(base || {})); d.props = (d.props || []).filter((p) => !String(p.id).startsWith('sx_')); const col = wallColorOf(d);
-  const thirds = (a, b) => [0, 1, 2].map((i) => +(a + ((b - a) * (i + 0.5)) / 3).toFixed(2));
+  const d = JSON.parse(JSON.stringify(base || {})); d.props = (d.props || []).filter((p) => !String(p.id).startsWith('sx_'));
+  const halves = (a, b) => [0, 1].map((i) => +(a + ((b - a) * (i + 0.5)) / 2).toFixed(2));
   const list = [{ id: 'sx_win', x: -0.82, z: -4.804 + 0.004, rot: 0 }];
-  thirds(-4.804 + 0.6, -0.19 - 0.6).forEach((z, i) => list.push({ id: 'sx_w2_' + (i + 1), x: -3.954 + 0.004, z, rot: Math.PI / 2 }));    // 서쪽 벽 W2(홀 면) — 창 벽 코너와 N2 북면 사이
-  thirds(-4.804 + 0.6, 1.463 - 0.6).forEach((z, i) => list.push({ id: 'sx_e_' + (i + 1), x: 2.3536 - 0.004, z, rot: -Math.PI / 2 }));      // 동쪽 벽 W1(홀 면) — 창 벽 코너와 N5 북면 사이
-  for (const s of list) d.props.push({ id: s.id, type: 'wall_sconce', x: s.x, y: 1.7, z: s.z, rot: s.rot, scale: 1, color: null, cable: col });
-  for (const p of d.props) if (p.type === 'wall_sconce') p.cable = col;
+  halves(-4.804 + 0.6, -0.19 - 0.6).forEach((z, i) => list.push({ id: 'sx_w2_' + (i + 1), x: -3.954 + 0.004, z, rot: Math.PI / 2 }));    // 서쪽 벽 W2(홀 면) — 창 벽 코너와 N2 북면 사이
+  halves(-4.804 + 0.6, 1.463 - 0.6).forEach((z, i) => list.push({ id: 'sx_e_' + (i + 1), x: 2.3536 - 0.004, z, rot: -Math.PI / 2 }));      // 동쪽 벽 W1(홀 면) — 창 벽 코너와 N5 북면 사이
+  for (const s of list) d.props.push({ id: s.id, type: 'wall_sconce', x: s.x, y: 1.7, z: s.z, rot: s.rot, scale: 1, color: null });
+  for (const p of d.props) if (p.type === 'wall_sconce') delete p.cable;   // 11/26: 내장형 — 전선은 벽 속으로(노출 전선관 없음)
   d.editedAt = Date.now(); return d;
 }
 
@@ -221,7 +226,7 @@ export const SPEAKER_SPOTS = [
   { id: 'sp_1', x: -3.954 + 0.12, z: -4.804 + 0.50, rot: 1.35, note: 'SP1 서북 — 구석 천장에 스캔 물체(덕트/배관 박스 추정, 아래 0.37 돌출)가 있어 W2 벽면에서 창 벽 쪽 0.50 옆으로 비켜 달고 방 안쪽(동)을 향함' },
   { id: 'sp_2', x: 2.354 - 0.17, z: -4.804 + 0.17, rot: -Math.PI / 4, note: 'SP2 동북 — 창 벽(W9) × W1' },
   { id: 'sp_3', x: 2.354 - 0.17, z: 1.463 - 0.17, rot: -Math.PI * 3 / 4, note: 'SP3 동남 — W1 × 화장실 가림벽 N5 북면' },
-  { id: 'sp_4', x: -3.954 + 0.17, z: -0.19 - 0.17, rot: Math.PI * 3 / 4, note: 'SP4 서남 — W2 × 레지 뒤 벽 N2 북면' },
+  { id: 'sp_4', x: -2.86 - 0.19, z: 2.006 - 0.17, rot: Math.PI, note: 'SP4 레지 구석 — 레지 뒤 벽 W11 북면, 동쪽 끝(화장실 벽 x -2.86)에서 0.19 안쪽, 천장 쪽 (11/26 위치 변경: 전엔 W2 × N2 북면)' },
 ];
 export function applySpeakers(base) {
   const d = JSON.parse(JSON.stringify(base || {})); d.props = (d.props || []).filter((p) => !String(p.id).startsWith('sp_'));

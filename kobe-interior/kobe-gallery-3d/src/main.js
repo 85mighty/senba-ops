@@ -11,7 +11,7 @@ import { TOUR_E, tourAt, playTour, tourDuration } from './tour.js';
 import { LANG, ONLY_E, tr, installDomTranslator } from './i18n.js';
 installDomTranslator();   // 일본어 화면(ja.html)에서만 동작
 import presetCPhone from './presets/c_phone_20261027.json';
-import { applyIkeaCorner, applyUpperMirrors, applyWindowCurtains, applyRealFloor, applyDullGreen, applyAirPanel, applyRegister, REGISTER_PLANS, applyPhotoEast, applyReception, applyCoupleLayout, applyRegisterGap, applyRegisterLeft, applyPhotoSpot2, applyWallPull, applyElegantChairs, applyLightsRug, applyWings, applyArchDemolish, applyHallArch, applyWashroomPhoto, applyBigRug, applyMeasured1110, applySpots, applyArchWiden, applySlatsH, applyHerringboneFloor, applySconces, applyDamaskWall, applyPlainCrimson, applyFPlan, applyFlatWainscot, applySpeakers, applyNoFrameWindow, applySconceCable, applySconcesMore } from './presets/ikea_corner.js';
+import { applyIkeaCorner, applyUpperMirrors, applyWindowCurtains, applyRealFloor, applyDullGreen, applyAirPanel, applyRegister, REGISTER_PLANS, applyPhotoEast, applyReception, applyCoupleLayout, applyRegisterGap, applyRegisterLeft, applyPhotoSpot2, applyWallPull, applyElegantChairs, applyLightsRug, applyWings, applyArchDemolish, applyHallArch, applyWashroomPhoto, applyBigRug, applyMeasured1110, applySpots, applyArchWiden, applySlatsH, applyHerringboneFloor, applySconces, applyDamaskWall, applyPlainCrimson, applyFPlan, applyFlatWainscot, applySpeakers, applyNoFrameWindow, applySconceCable, applySconcesMore, applySconceClean } from './presets/ikea_corner.js';
 
 // 저장소에 보관된 디자인 — 어느 기기에서든 불러올 수 있다. seedSlot: 그 안이 비어 있으면 처음 열 때 자동으로 채움
 const PRESETS = [{ id: 'c_phone_20261027', name: 'C안 (폰에서 만든 것, 10/27)', seedSlot: 'C', design: presetCPhone },
@@ -32,7 +32,7 @@ const PRESETS = [{ id: 'c_phone_20261027', name: 'C안 (폰에서 만든 것, 10
   { id: 'spots', name: '체험 스폿 번호 ①~④ (2인 세트 4팀)', apply: applySpots, armText: (sl) => `${sl}안 2인 세트에 체험 스폿 번호를 붙입니다(4팀 미만이면 ② 추가). 다시 누르세요` },
   { id: 'damask_wall', name: '레지 뒤 벽 → 다마스크 무늬 벽지', apply: applyDamaskWall, armText: (sl) => `${sl}안 레지 뒤 벽을 다마스크 벽지로 바꿉니다. 다시 누르세요` },
   { id: 'plain_crimson', name: '레지 뒤 벽 → 무지 크림슨(원래대로)', apply: applyPlainCrimson, armText: (sl) => `${sl}안 레지 뒤 벽을 무지 크림슨으로 되돌립니다. 다시 누르세요` },
-  { id: 'sconces_more', name: '벽 조명 확장 (창 벽 기둥 1 + 서·동쪽 벽 3개씩, 전선관)', apply: applySconcesMore, armText: (sl) => `${sl}안에 벽 조명 7개를 더합니다(전선관 포함). 다시 누르세요` },
+  { id: 'sconces_more', name: '벽 조명 확장 (창 벽 기둥 1 + 서·동쪽 벽 2개씩, 내장형)', apply: applySconcesMore, armText: (sl) => `${sl}안에 벽 조명 5개를 더합니다(내장형). 다시 누르세요` },
   { id: 'speakers', name: '스피커 4대 (홀 네 구석 천장 쪽)', apply: applySpeakers, armText: (sl) => `${sl}안 네 구석에 스피커 4대를 답니다. 다시 누르세요` },
   { id: 'sconces', name: '벽 조명 2개 (사진 코너 거울 양옆)', apply: applySconces, armText: (sl) => `${sl}안 거울 양옆에 벽 조명 2개를 답니다. 다시 누르세요` },
   { id: 'floor_herringbone', name: '바닥 → 헤링본 LVT (フロアタイル 90×450)', apply: applyHerringboneFloor, armText: (sl) => `${sl}안 바닥을 헤링본 LVT 로 바꿉니다(비교용). 다시 누르세요` },
@@ -76,7 +76,11 @@ const PATCHES = [{ id: 'd_upper_mirrors_20261028', slot: 'D', apply: applyUpperM
   { id: 'e_sconces_20261126', slot: 'E', apply: applySconces, msg: 'E안: 사진 코너 거울 양옆에 벽 조명(황동 스콘스) 2개를 달았습니다' },
   { id: 'e_slats_h_20261118', slot: 'E', apply: applySlatsH, msg: 'E안: 신설 벽 위 격자를 가로 살 3단으로' },
   { id: 'e_big_rug_20261111', slot: 'E', apply: applyBigRug, msg: 'E안: 사진 코너 러그를 큰 러그(1.8 × 1.2)로 — 날개벽 사이를 채우고 홀 쪽으로 조금 나옴' },
-  { id: 'd_air_panel_20261106', slot: 'D', apply: applyAirPanel, msg: 'D안: 아래 벽을 エアサーモパネル로 띠까지 덮었습니다(방법 ③)' }];
+  { id: 'd_air_panel_20261106', slot: 'D', apply: applyAirPanel, msg: 'D안: 아래 벽을 エアサーモパネル로 띠까지 덮었습니다(방법 ③)' },
+  { id: 'e_sconce_clean_20261126', slot: 'E', apply: applySconceClean, msg: 'E안: 벽 조명을 내장형으로 — 노출 전선관을 없앴습니다' },
+  { id: 'f_sconces_two_20261126', slot: 'F', apply: applySconcesMore, msg: 'F안: 서·동쪽 벽 조명을 2개씩으로, 내장형(전선관 없음)으로 바꿨습니다' },
+  { id: 'e_speakers_fix_20261126', slot: 'E', apply: applySpeakers, msg: 'E안: 스피커 SP4 를 레지 뒤 안쪽 구석(W11)으로 옮겼습니다' },
+  { id: 'f_speakers_fix_20261126', slot: 'F', apply: applySpeakers, msg: 'F안: 스피커 SP4 를 레지 뒤 안쪽 구석(W11)으로 옮겼습니다' } ];
 
 const $ = (s) => document.querySelector(s);
 const errors = []; window.__viewerErrors = errors; window.__viewerReady = false;
