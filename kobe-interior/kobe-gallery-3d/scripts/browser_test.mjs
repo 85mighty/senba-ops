@@ -98,7 +98,7 @@ try {
     const ceilA = s.getSurface('ceiling').paint; window.__switchSlot('B'); s.surface('ceiling').paint = '#1c1c1c'; s.commit('paint'); window.__switchSlot('A');
     if (s.active !== 'A' || s.getSurface('ceiling').paint !== ceilA) throw new Error('안 전환 실패');
     window.__switchSlot('B'); if (s.getSurface('ceiling').paint !== '#1c1c1c') throw new Error('B안 저장 실패'); window.__switchSlot('A');
-    if (document.querySelectorAll('#slotBar button').length !== 5) throw new Error('안 버튼 5개 아님');
+    if (document.querySelectorAll('#slotBar button').length !== 6) throw new Error('안 버튼 6개 아님(A~F)');
     // D안(이케아 코너): 처음 열 때 C안을 바탕으로 자동 생성 — 주방 입구 막기 + 사이드보드·거울·흉상·장식
     const dd = s.getSlot('D'); if (!dd?.closures?.kitchen || !['sideboard', 'wall_mirror', 'sculpture', 'deco_set'].every((t) => dd.props.some((p) => p.type === t))) throw new Error('D안 이케아 코너 없음');
     window.__switchSlot('D'); if (!e.walls().some((w) => w.id === 'wall_kitchen_close') || !e.closureG.children.length) throw new Error('주방 입구 막기 벽 없음');
@@ -229,6 +229,17 @@ try {
   const counts = await page.evaluate(() => { const i = window.__interior; const o = {}; for (const k in i.layers) o[k] = i.layers[k].children.length; return o; });
   console.log('인테리어 레이어 객체 수:', counts);
   if (!counts.molding) problems.push('몰딩 프레임이 생성되지 않음'); if (!counts.mirror_4_sides) problems.push('거울이 생성되지 않음 (central_wide_column 확인)');
+// F안: E안을 바탕으로 쑥빛 윗벽 + 꿀색 원목 허리 판넬(검은 띠 덮기)
+{
+  const pf = await browser.newPage({ viewport: { width: 1200, height: 800 } }); pf.setDefaultTimeout(180000); const errs = []; pf.on('pageerror', (e) => errs.push(e.message));
+  await pf.goto(`http://127.0.0.1:${PORT}/app/`, { waitUntil: 'load' }); await pf.waitForFunction(() => window.__viewerReady === true);
+  await pf.evaluate(() => document.querySelector('button[data-mode=interior]').click()); await pf.waitForFunction(() => !window.__viewer.loadingCount);
+  const r = await pf.evaluate(() => { window.__switchSlot('F'); const s = window.__store; const e = window.__editor; const lo = s.design.global.lower; let ws = 0; e.bands.traverse((o) => { if (o.isMesh && o.userData.surface) ws++; });
+    return { active: s.active, lower: lo, sage: s.design.surfaces.wall_x_1?.paint, damask: s.design.surfaces.wall_rec_back_in?.paint, hasE: s.hasSlot('E'), ws }; });
+  if (errs.length) throw new Error('F안 오류: ' + errs.join(' | '));
+  if (r.active !== 'F' || r.lower?.style !== 'wainscot' || r.sage !== '#6b8272' || r.damask !== 'tex:wall_damask_red' || !r.hasE || r.ws < 200) throw new Error('F안 이상 ' + JSON.stringify(r));
+  await pf.close(); console.log('F안 OK', JSON.stringify(r));
+}
 // 일본어 화면(ja.html): E안만, 패널·북마크에 한글이 남지 않아야 한다
 {
   const pj = await browser.newPage({ viewport: { width: 1200, height: 800 } }); pj.setDefaultTimeout(180000); const errs = []; pj.on('pageerror', (e) => errs.push(e.message));

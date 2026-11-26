@@ -5,7 +5,7 @@ export const PALETTE_WALL = [
   ['더스티 블루', '#8a9bab'], ['네이비', '#2f3a4f'], ['와인', '#7a2e2e'], ['테라코타', '#b8623f'], ['차콜', '#3a3a3a'], ['블랙', '#1c1c1c'],
 ];
 export const PALETTE_TRIM = [['블랙(현재)', '#1c1c1c'], ['원목(오크)', '#a98457'], ['원목(월넛)', '#6b4a2e'], ['다크 월넛', '#4a3220'], ['화이트', '#f3f1ec'], ['웜 화이트', '#efe6d6'], ['차콜', '#3a3a3a'], ['골드', '#c9a24a']];
-export const PALETTE_LOWER = [['벽지 그대로', null], ['원목 패널(오크)', '#a98457'], ['원목 패널(월넛)', '#6b4a2e'], ['화이트 패널', '#f3f1ec'], ['딥 그린', '#3f5a52'], ['네이비', '#2f3a4f'], ['와인', '#7a2e2e'], ['차콜', '#3a3a3a'], ['블랙', '#1c1c1c']];
+export const PALETTE_LOWER = [['벽지 그대로', null], ['허니 오크(경성미술관)', '#b07a38'], ['원목 패널(오크)', '#a98457'], ['원목 패널(월넛)', '#6b4a2e'], ['화이트 패널', '#f3f1ec'], ['딥 그린', '#3f5a52'], ['네이비', '#2f3a4f'], ['와인', '#7a2e2e'], ['차콜', '#3a3a3a'], ['블랙', '#1c1c1c']];
 export const DEFAULT_GLOBAL = () => ({ rail: { color: '#1c1c1c', style: 'flat' }, base: { color: '#1c1c1c', style: 'flat' }, moldingColor: '#f4f1ea', lower: { paint: null, style: 'flat' } });
 export const PALETTE_FLOOR = [
   ['현재 우드(스캔)', null], ['실제 원목 마루(사진)', 'tex:wood_real', 'url(../assets/textures/floor_wood_real.jpg) center/300%'], ['헤링본 LVT(フロアタイル)', 'tex:herringbone', 'url(../assets/textures/floor_herringbone.jpg) center/160%'], ['현재 톤 · 밝게', '#866752'], ['현재 톤 · 어둡게', '#4f351d'], ['라이트 오크', '#c9a97a'], ['내추럴 오크', '#a98457'],
@@ -22,7 +22,7 @@ export const PROP_TYPES = [
 ];
 
 export const STORAGE_KEY = 'kobe3d.design.v1';
-export const SLOTS = ['A', 'B', 'C', 'D', 'E'];
+export const SLOTS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
 export function emptyDesign() {
   return { version: 1, surfaces: {}, columns: {}, windows: null, landmarks: {}, props: [], global: DEFAULT_GLOBAL() };

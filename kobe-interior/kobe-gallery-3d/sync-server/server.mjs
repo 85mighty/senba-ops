@@ -20,7 +20,7 @@ const DATA_DIR = process.env.DATA_DIR || path.join(path.dirname(new URL(import.m
 const TOKEN = process.env.SYNC_TOKEN || '';
 const ORIGINS = (process.env.ALLOW_ORIGIN || 'https://85mighty.github.io').split(',').map((s) => s.trim()).filter(Boolean);
 const PREFIX = (process.env.PATH_PREFIX ?? '/kobe3d-api').replace(/\/$/, '');
-const SLOTS = ['A', 'B', 'C', 'D', 'E'];
+const SLOTS = ['A', 'B', 'C', 'D', 'E', 'F'];
 const MAX_BODY = 1024 * 1024;
 const KEEP_HISTORY = +(process.env.KEEP_HISTORY || 50);
 
