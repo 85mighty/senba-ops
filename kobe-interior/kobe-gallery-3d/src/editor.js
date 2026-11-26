@@ -195,6 +195,18 @@ export class Editor {
         { const inner = new THREE.Mesh(new THREE.TorusGeometry(r + 0.004, 0.012, 8, 48, Math.PI), goldM); inner.position.set(r, spring, T / 2); inner.scale.z = (T / 2) / 0.012; trimM.add(inner); }
         const zmin = Math.min(...ws.map((x) => x.offset)), xmin = Math.min(...ws.map((x) => x.offset));
         if (w.axis === 'z') { am.position.set(w.from, 0, zmin); am.add(trimM); } else { am.rotation.y = Math.PI / 2; am.position.set(xmin, 0, w.to); am.add(trimM); }   // 로컬 +x→월드 −z, 로컬 +z→월드 +x
+        // 11/26: 금색 테를 바닥까지 — 아치 양쪽 면(앞·뒤) 모두 반원 끝에서 바닥까지 곧게 내려 마감한다.
+        //  옆이 같은 평면의 벽이면 그 벽 면 위에(반원 테와 같은 굵기 원기둥), 옆이 직각으로 붙은 벽이면 그 벽의 면(개구 쪽)에 붙여 감싼다
+        { am.updateMatrix(); const arSet = new Set(ws.map((x) => x.id)); const others = this.walls().filter((x) => !arSet.has(x.id) && x.axis !== w.axis);
+          const boxOf = (x) => { const o2 = x.two_sided ? [x.offset - T / 2, x.offset + T / 2] : [Math.min(x.offset, x.offset - x.inward * T), Math.max(x.offset, x.offset - x.inward * T)]; return x.axis === 'x' ? { x: o2, z: [x.from, x.to] } : { x: [x.from, x.to], z: o2 }; };
+          const inside = (px, pz) => others.some((x) => { const b = boxOf(x); return px > b.x[0] + 0.004 && px < b.x[1] - 0.004 && pz > b.z[0] + 0.004 && pz < b.z[1] - 0.004; });
+          for (const sd of [-1, 1]) for (const fz of [-1, 1]) {
+            const lx = sd < 0 ? -0.035 : W + 0.035, lz = fz < 0 ? -0.014 : T + 0.014; const wp = new THREE.Vector3(lx, 0, lz).applyMatrix4(am.matrix);
+            let cx = lx, cz = lz, rad = 0.03;
+            if (inside(wp.x, wp.z)) { cx = sd < 0 ? 0.012 : W - 0.012; cz = fz < 0 ? -0.04 : T + 0.04; rad = 0.025; }   // 직각 벽: 그 벽의 개구 쪽 면에 붙인다
+            const leg = new THREE.Mesh(new THREE.CylinderGeometry(rad, rad, spring, 16), goldM); leg.position.set(cx, spring / 2, cz); leg.userData.archLeg = true; am.add(leg);
+            const foot = new THREE.Mesh(new THREE.CylinderGeometry(rad + 0.008, rad + 0.008, 0.03, 16), goldM); foot.position.set(cx, 0.015, cz); foot.userData.archLeg = true; am.add(foot);   // 바닥 받침(걸레받이 높이 3 cm)
+          } }
         cg.add(am); continue; }
       for (const w of closureWalls(c, this.s.design)) { const m = new THREE.Mesh(new THREE.BoxGeometry(w.to - w.from, HT, T), mat); m.userData.surface = w.id; this.placeOnWall(m, { ...w, sid: w.id }, (w.from + w.to) / 2, HT / 2, -T / 2); cg.add(m); }
       // 바닥(카펫): 복원 바닥 삼각형 중 영역 안의 것만 — 바닥 칠 위(y 0.016)에 깐다
