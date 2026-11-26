@@ -205,7 +205,8 @@ export class Editor {
         const perp = [-0.05, W + 0.05].some((lx) => [-0.014, T / 2, T + 0.014].some((lz) => inside(lx, lz)));   // 개구 옆에 직각 벽이 붙어 있나
         const Rr = perp ? r : r + 0.035, tubeR = 0.03;
         const goldM = new THREE.MeshStandardMaterial({ color: '#c9a24a', metalness: 0.6, roughness: 0.4 }); const trimM = new THREE.Group();
-        for (const zz of [-0.014, T + 0.014]) {
+        const OFF = 0.03;   /* 몰딩이 벽면에서 3 cm 나오게 — 허리 판넬(약 6 cm 두께)과 비슷하게 튀어나와 판넬 끝에 가려지지 않는다 */
+        for (const zz of [-OFF, T + OFF]) {
           const ring = new THREE.Mesh(new THREE.TorusGeometry(Rr, tubeR, 10, 48, Math.PI), goldM); ring.position.set(r, spring, zz); trimM.add(ring);
           for (const lx of [r - Rr, r + Rr]) {   // 반원 끝에서 바닥까지 다리 + 받침
             const leg = new THREE.Mesh(new THREE.CylinderGeometry(tubeR, tubeR, spring, 16), goldM); leg.position.set(lx, spring / 2, zz); leg.userData.archLeg = true; trimM.add(leg);
@@ -214,7 +215,7 @@ export class Editor {
         }
         // 11/26: 개구 안쪽 면(벽 두께 부분)도 금색으로 채운다 — 앞·뒤 테 사이를 메워 하나의 금색 틀(단면이 둥근 띠)로.
         //  위: 반고리 모양을 벽 두께만큼 밀어낸 띠, 옆: 다리 사이를 메우는 판(바닥~스프링)
-        { const z0 = -0.014, depth = T + 0.028; const Ro = Rr + tubeR, Ri = Math.min(Rr - tubeR, r - 0.006);
+        { const z0 = -OFF, depth = T + 2 * OFF; const Ro = Rr + tubeR, Ri = Math.min(Rr - tubeR, r - 0.006);
           const band = new THREE.Shape(); band.moveTo(r + Ro, spring); band.absarc(r, spring, Ro, 0, Math.PI, false); band.lineTo(r - Ri, spring); band.absarc(r, spring, Ri, Math.PI, 0, true); band.closePath();
           const soffit = new THREE.Mesh(new THREE.ExtrudeGeometry(band, { depth, bevelEnabled: false, curveSegments: 36 }), goldM); soffit.position.z = z0; soffit.userData.archFill = true; trimM.add(soffit);
           for (const [xa, xb] of [[r - Ro, r - Ri], [r + Ri, r + Ro]]) { const jamb = new THREE.Mesh(new THREE.BoxGeometry(xb - xa, spring, depth), goldM); jamb.position.set((xa + xb) / 2, spring / 2, z0 + depth / 2); jamb.userData.archFill = true; trimM.add(jamb);
@@ -314,7 +315,9 @@ export class Editor {
     const c0 = new THREE.Color(color), tint = new THREE.Color(Math.min(1, c0.r / 0.21), Math.min(1, c0.g / 0.085), Math.min(1, c0.b / 0.023));   // sRGB 7e522a → 선형값으로 나눔
     // 텍스처를 2배로 늘려 판 하나(31 cm)≈결 한 줄, 가로 이음이 거의 안 보이게. 판마다 위치를 흩뜨림
     const woodMat = (wdt, hgt) => { const t = this._apTex.clone(); t.needsUpdate = true; t.center.set(0.5, 0.5); t.rotation = Math.PI / 2; t.repeat.set(hgt / 4.3, wdt / 4.3); t.offset.set(Math.random(), Math.random()); return new THREE.MeshStandardMaterial({ color: tint, map: t, roughness: 0.6 }); };
-    const ext = isCol ? face : 0, from = f.from - ext, to = f.to + ext;
+    const ext = isCol ? face : 0; let from = f.from - ext, to = f.to + ext;
+    // 11/26: 아치 개구와 같은 줄로 이어지는 벽(날개벽 등)은 판넬이 금색 아치 다리 중심까지 닿아 몰딩 앞으로 튀어나온다 → 다리 굵기(반지름 3 cm)+여유만큼 판넬을 물려 금색 몰딩이 좌우를 가르게 한다
+    if (!isCol && !f.key) { let a0 = 0, a1 = 0; for (const c of this.meta.closures || []) { if (!c.arch) continue; for (const aw of closureWalls(c, this.s.design)) { if (aw.axis !== f.axis || Math.abs(aw.offset - f.offset) > 0.25) continue; if (Math.abs(aw.to - f.from) < 0.03) a0 = 0.07; if (Math.abs(aw.from - f.to) < 0.03) a1 = 0.07; } } from += a0; to -= a1; }
     const box = (a, b, y0, y1, depth, off, mat) => { const m = new THREE.Mesh(new THREE.BoxGeometry(b - a, y1 - y0, depth), mat); this.placeOnWall(m, ww, (a + b) / 2, (y0 + y1) / 2, off); m.userData.surface = sid; this.bands.add(m); };
     this.eachPiece(f, from, to, 0.003, top, (a, b, c, d) => {
       box(a, b, c, d, P.t, off0 + P.t / 2, woodMat(b - a, d - c));
@@ -330,7 +333,9 @@ export class Editor {
     // 장면 조명이 세로 벽면에 어둡게 닿아(≈ 0.27 배) 같은 색이 화면에서 어둡게 보인다 → 고른 색이 화면에서 그 색으로 보이도록 선형 보정(실측: 이전 허니 오크 판넬 #a66431 에 맞춤)
     const gain = new THREE.Color(Editor.WAINSCOT_GAIN[0], Editor.WAINSCOT_GAIN[1], Editor.WAINSCOT_GAIN[2]); const lit = new THREE.Color(color).multiply(gain);
     this._wsLit = this._wsLit || {}; const m0 = this._wsLit[color] || (this._wsLit[color] = new THREE.MeshStandardMaterial({ color: lit, roughness: 0.7, metalness: 0 }));   // 뒷판·몰딩 모두 같은 도장 색(단색)
-    const ext = isCol ? face : 0, from = f.from - ext, to = f.to + ext;
+    const ext = isCol ? face : 0; let from = f.from - ext, to = f.to + ext;
+    // 11/26: 아치 개구와 같은 줄로 이어지는 벽(날개벽 등)은 판넬이 금색 아치 다리 중심까지 닿아 몰딩 앞으로 튀어나온다 → 다리 굵기(반지름 3 cm)+여유만큼 판넬을 물려 금색 몰딩이 좌우를 가르게 한다
+    if (!isCol && !f.key) { let a0 = 0, a1 = 0; for (const c of this.meta.closures || []) { if (!c.arch) continue; for (const aw of closureWalls(c, this.s.design)) { if (aw.axis !== f.axis || Math.abs(aw.offset - f.offset) > 0.25) continue; if (Math.abs(aw.to - f.from) < 0.03) a0 = 0.07; if (Math.abs(aw.from - f.to) < 0.03) a1 = 0.07; } } from += a0; to -= a1; }
     const hi = this._wsLit[color + '#hi'] || (this._wsLit[color + '#hi'] = new THREE.MeshStandardMaterial({ color: m0.color.clone().multiplyScalar(1.22), roughness: 0.7 }));   // 몰딩 안쪽 단은 살짝 밝게(같은 색 계열 — 단이 눈에 읽히도록)
     const box = (a, b, y0, y1, depth, offStart, mat = m0) => { const m = new THREE.Mesh(new THREE.BoxGeometry(b - a, y1 - y0, depth), mat); this.placeOnWall(m, ww, (a + b) / 2, (y0 + y1) / 2, offStart + depth / 2); m.userData.surface = sid; this.bands.add(m); return m; };
     const plinthH = 0.11, capH = 0.075, yb = plinthH + 0.08, yt = H - capH - 0.08, fw = 0.035, fi = 0.015;
