@@ -197,6 +197,14 @@ export function applySconces(base) {
   d.editedAt = Date.now(); return d;
 }
 
+// 11/26: 들어서자마자 보이는 레지 뒤 벽(안쪽 면)을 무지 크림슨 → 다마스크 무늬 벽지(경성미술관 사진 느낌)로
+export function applyDamaskWall(base) {
+  const d = JSON.parse(JSON.stringify(base || {})); d.surfaces = d.surfaces || {}; const prev = d.surfaces.wall_rec_back_in || {};
+  d.surfaces.wall_rec_back_in = { ...prev, paint: 'tex:wall_damask_red', zone: 'all', texture: false, molding: false, art: false, artCount: null, splits: 1 };
+  d.editedAt = Date.now(); return d;
+}
+export function applyPlainCrimson(base) { const d = JSON.parse(JSON.stringify(base || {})); d.surfaces = d.surfaces || {}; if (d.surfaces.wall_rec_back_in) d.surfaces.wall_rec_back_in.paint = CRIMSON; d.editedAt = Date.now(); return d; }
+
 // 11/21: 바닥 → 헤링본 LVT(フロアタイル, 판 90×450 45°) — 업체 견적의 바닥 교체를 헤링본으로 할 때 비교용
 export function applyHerringboneFloor(base) {
   const d = JSON.parse(JSON.stringify(base || {})); d.surfaces = d.surfaces || {};
