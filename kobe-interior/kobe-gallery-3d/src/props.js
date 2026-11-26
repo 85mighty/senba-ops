@@ -148,8 +148,8 @@ export function buildProp(p) {
       g.add(cyl(0.04, 0.05, 0.03, std(0xc9a24a, { metalness: 0.7, roughness: 0.3 }), -0.32, H + 0.033, 0.1, 16));   // 호출 벨
       g.add(box(0.12, 0.09, 0.06, std(0xf3f1ec), 0.32, H + 0.06, 0.12));                    // 명함·쿠폰 꽂이
       const st = buildProp({ id: p.id, type: 'stool', x: 0, z: -0.48, rot: 0, scale: 1.4, color: '#2a2a2a' }); st.name = 'sub'; g.add(st);   // 직원 스툴(높이 약 60 cm)
-      // 11/18: 접이식 보조 상판(드롭 리프) — 레지 +X 끝(세로 배치에서 북쪽, 뒤 벽 쪽)에 경첩. 평소엔 끝면에 접어 내려 두고, 레지를 누르면 올라와 상판이 0.45 길어진다
-      { const LW = 0.45, LT = 0.03; const pivot = new THREE.Group(); pivot.name = 'register_leaf'; pivot.position.set(W / 2 + 0.03, H + 0.0175, 0.01); g.add(pivot);
+      // 11/18: 접이식 보조 상판(드롭 리프) — 레지 +X 끝(세로 배치에서 북쪽, 뒤 벽 쪽)에 경첩. 평소엔 끝면에 접어 내려 두고, 레지를 누르면 올라와 상판이 0.8 길어진다 (11/26: 0.45 → 0.8)
+      { const LW = 0.8, LT = 0.03; const pivot = new THREE.Group(); pivot.name = 'register_leaf'; pivot.position.set(W / 2 + 0.03, H + 0.0175, 0.01); g.add(pivot);
         const leaf = box(LW, LT, D + 0.06, oak, LW / 2 + 0.004, -LT / 2, 0); leaf.name = 'register_leaf_board'; pivot.add(leaf);
         for (const sz of [-1, 1]) { const brk = box(LW * 0.7, 0.02, 0.02, blk, LW * 0.4, -LT - 0.012, sz * (D / 2 - 0.02)); pivot.add(brk); }   // 받침 브래킷(상판 밑에 붙어 같이 접힘)
         const hingeBar = box(0.016, 0.016, D + 0.06, std(0xb08d57, { metalness: 0.6, roughness: 0.4 }), 0, -0.008, 0); pivot.add(hingeBar);

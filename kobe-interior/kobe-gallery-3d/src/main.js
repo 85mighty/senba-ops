@@ -152,7 +152,7 @@ canvas.addEventListener('pointerup', (e) => {
   if (finishDrag(e)) return;
   if (!downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 6) return; downAt = null;
   if (editor && (viewer.mode === 'reconstructed' || viewer.mode === 'interior') && !editor.placing && !editor.measuring) {   // 문을 누르면 열고 닫기
-    const door = editor.doorAt(e); if (door) { const open = editor.toggleDoor(door); const sw = door.userData.swing, curtain = sw.kind === 'scale'; toast(curtain ? `${sw.label || '커튼'} ${open ? '걷힘' : '쳐짐'}` : sw.prop ? `${sw.label} ${open ? '올림 — 상판 0.45 m 연장' : '내림'}` : `${door.name === 'stall_door_leaf' ? '양변기 칸 문' : '화장실 문'} ${open ? '열림' : '닫힘'}`); return; }
+    const door = editor.doorAt(e); if (door) { const open = editor.toggleDoor(door); const sw = door.userData.swing, curtain = sw.kind === 'scale'; toast(curtain ? `${sw.label || '커튼'} ${open ? '걷힘' : '쳐짐'}` : sw.prop ? `${sw.label} ${open ? '올림 — 상판 0.8 m 연장' : '내림'}` : `${door.name === 'stall_door_leaf' ? '양변기 칸 문' : '화장실 문'} ${open ? '열림' : '닫힘'}`); return; }
   }
   if (editor && editor.enabled && (viewer.mode === 'reconstructed' || viewer.mode === 'interior')) { editor.onClick(e); return; }
 });
