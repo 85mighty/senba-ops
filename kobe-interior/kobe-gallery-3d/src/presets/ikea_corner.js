@@ -189,6 +189,14 @@ export function applyArchWiden(base) {
   d.closureXform = {}; d.closureShift = {}; d.editedAt = Date.now(); return d;
 }
 
+// 11/26: 사진 코너 거울 양옆에 벽 조명(황동 스콘스) 2개 — 거울 중심에서 좌 0.775 / 우 0.82 (날개벽과 거울 사이 한가운데), 높이 1.5 m, 거울과 같은 벽·방향
+export function applySconces(base) {
+  const d = JSON.parse(JSON.stringify(base || {})); d.props = (d.props || []).filter((p) => !String(p.id).startsWith('sc_'));
+  const m = d.props.find((p) => p.type === 'wall_mirror' && p.id === 'ik_mirror') || { x: CX, z: WALL_FACE_Z - 0.005, rot: Math.PI };
+  d.props.push({ id: 'sc_l', type: 'wall_sconce', x: +(m.x - 0.775).toFixed(3), y: 1.5, z: m.z, rot: m.rot ?? Math.PI, scale: 1, color: null }, { id: 'sc_r', type: 'wall_sconce', x: +(m.x + 0.82).toFixed(3), y: 1.5, z: m.z, rot: m.rot ?? Math.PI, scale: 1, color: null });
+  d.editedAt = Date.now(); return d;
+}
+
 // 11/21: 바닥 → 헤링본 LVT(フロアタイル, 판 90×450 45°) — 업체 견적의 바닥 교체를 헤링본으로 할 때 비교용
 export function applyHerringboneFloor(base) {
   const d = JSON.parse(JSON.stringify(base || {})); d.surfaces = d.surfaces || {};
