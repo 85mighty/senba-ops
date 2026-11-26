@@ -223,6 +223,12 @@ export class Editor {
         am.add(trimM);
         cg.add(am); continue; }
       for (const w of closureWalls(c, this.s.design)) { const m = new THREE.Mesh(new THREE.BoxGeometry(w.to - w.from, HT, T), mat); m.userData.surface = w.id; this.placeOnWall(m, { ...w, sid: w.id }, (w.from + w.to) / 2, HT / 2, -T / 2); cg.add(m); }
+      // 11/26: 아무 벽과도 이어지지 않은 벽 끝(날개벽·가림벽의 노출 단면)은 회색 단면이 그대로 보인다 → 아치 몰딩과 같은 금색으로 끝을 감싼다(높이 전체, 양 면으로 0.8 cm 씩 나옴)
+      { const goldM = this._capGold || (this._capGold = new THREE.MeshStandardMaterial({ color: '#c9a24a', metalness: 0.6, roughness: 0.4 })); const all = this.allWalls().concat((this.meta.closures || []).filter((cc) => cc.arch).flatMap((cc) => closureWalls(cc, this.s.design))); const seen = this._capSeen = new Set(); const sizeOf = (x) => x.two_sided ? [x.offset - T / 2, x.offset + T / 2] : [Math.min(x.offset, x.offset - x.inward * T), Math.max(x.offset, x.offset - x.inward * T)];
+        for (const w of closureWalls(c, this.s.design)) { const mid = w.two_sided ? w.offset : w.offset - w.inward * T / 2;
+          for (const end of ['from', 'to']) { const e = w[end], q = e + (end === 'from' ? -0.03 : 0.03);
+            const covered = all.some((x) => { if (x.id === w.id) return false; const o2 = sizeOf(x); return x.axis === w.axis ? (Math.abs(x.offset - w.offset) < 0.12 && q > x.from - 0.004 && q < x.to + 0.004) : (q > o2[0] - 0.004 && q < o2[1] + 0.004 && mid > x.from - 0.004 && mid < x.to + 0.004); });
+            const ck = `${w.axis}:${Math.round(e * 100)}:${Math.round(mid * 100)}`; if (covered || seen.has(ck)) continue; seen.add(ck); const cap = new THREE.Mesh(new THREE.BoxGeometry(0.03, HT, T + 0.016), goldM); cap.userData.surface = w.id; this.placeOnWall(cap, { ...w, sid: w.id }, end === 'from' ? e + 0.003 : e - 0.003, HT / 2, -T / 2); cg.add(cap); } } }
       // 바닥(카펫): 복원 바닥 삼각형 중 영역 안의 것만 — 바닥 칠 위(y 0.016)에 깐다
       for (const r of c.floor || []) { const geo = new THREE.PlaneGeometry(r.x[1] - r.x[0], r.z[1] - r.z[0]); geo.rotateX(-Math.PI / 2); geo.translate((r.x[0] + r.x[1]) / 2, 0, (r.z[0] + r.z[1]) / 2); const f = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: r.color || '#6e1620', roughness: 0.97, polygonOffset: true, polygonOffsetFactor: -3 })); f.position.y = 0.016; f.userData.surface = 'floor'; this.closureG.add(f); } }
     this.curtainOpen = this.curtainOpen || {};
