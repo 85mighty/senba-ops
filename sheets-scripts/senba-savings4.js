@@ -13,8 +13,8 @@ const LIST_COL = 11;                          // 드롭다운 보조 목록 시�
 const steps = (a, b, d) => Array.from({ length: Math.round((b - a) / d) + 1 }, (_, i) => a + i * d);
 
 const HOUSE_ITEMS = [   // 가계 지출 초기값 (경영 대시보드 생활비 내역 2026-11)
-  ['라쿠텐 (카드)', 164356, '가게 물품 결제가 섞여 있으면 빼고 입력 (가게 비용과 이중 차감 방지)'],
-  ['메루카리', 80460, ''],
+  ['라쿠텐 (카드)', 0, '사장님 입력 0 (2026-11-27) — 카드 생활비는 생활예산 안에서 쓴다는 전제. 대시보드 11월 실적 164,356'],
+  ['메루카리', 0, '사장님 입력 0 (2026-11-27) — 대시보드 11월 실적 80,460'],
   ['건강보험료', 41000, '소득 연동 — 이익이 늘면 오름'],
   ['관리비', 40900, ''],
   ['맘삐 장학금', 19721, ''],
@@ -31,8 +31,8 @@ const HOUSE_ITEMS = [   // 가계 지출 초기값 (경영 대시보드 생활�
 const SHOP = {   // 가게 비용 초기값
   margin: 0.879697,                           // 소비세 전 마진율 (종이 180 + 박스 85엔/인 · 잡재료 4% 차감, 객단가 3,300 기준)
   ctax: 0.036364,                             // 소비세 간이과세 제4종(음식점, 간주매입률 60%) = 10/110 × 40% ≈ 3.64% (서비스업 제5종이면 4.55%)
-  hRent: 300000, hMkt: 65000, hAlba: 130000,  // 본점: 야칭·공과금 · 마케팅(구루나비·메타·인스타·MOGU) · 알바 1인 체제
-  kRent: 157500, kUtil: 25000, kMkt: 20000, kAlba: 130000, kCommute: 780 * 22, kInit: 1188000,   // 고베
+  hRent: 300000, hMkt: 65000, hAlba: 110000,  // 본점: 야칭·공과금 · 마케팅(구루나비·메타·인스타·MOGU) · 알바 1인 체제
+  kRent: 157500, kUtil: 25000, kMkt: 20000, kAlba: 130000, kCommute: 780 * 22, kInit: 0,   // 고베
 };
 const K_LABEL = { alba: '알바 1인 체제', own: '사장 직접', none: '미오픈' };
 const LISTS = [   // 시뮬레이터 드롭다운 목록 (순서 = 입력 칸 sIn1~sIn6)
@@ -68,12 +68,12 @@ const iSecS = push(['■ ② 가게 비용 — 금액 직접 수정']);
 const hS = push(['항목', '월 금액', '메모']);
 const sGross = push(['마진율 (소비세 전)', SHOP.margin, '매출에서 종이 180+박스 85엔/인·잡재료 4%를 뺀 비율']);
 const sCtax = push(['소비세 (간이과세)', SHOP.ctax, '음식점 제4종 ≈ 3.64% (매출 대비) — 드로잉 체험이 서비스업 제5종으로 분류되면 4.55%']);
-const sMargin = push(['세후 마진율', '', '= 마진율 − 소비세 (매출 중 손에 남는 비율)']);
+const sMargin = push(['세후 마진율', '', '계산: 마진율 − 소비세 (매출 중 손에 남는 비율)']);
 const sHRent = push(['본점 야칭·공과금', SHOP.hRent, '']);
 const sHMkt = push(['본점 마케팅', SHOP.hMkt, '구루나비·메타 인증·인스타 홍보·MOGU']);
-const sHAlba = push(['본점 알바비', SHOP.hAlba, '아이미짱 1인 체제 (10월 실측 128,700)']);
+const sHAlba = push(['본점 알바비', SHOP.hAlba, '아이미짱 1인 체제 — 사장님 입력 110,000 (10월 실측 128,700)']);
 const sHFix = push(['본점 고정비 합계', `=${A(sHRent)}+${A(sHMkt)}+${A(sHAlba)}`, '']);
-const sHBe = push(['본점 손익분기 매출', '', '= 고정비 ÷ 마진율']);
+const sHBe = push(['본점 손익분기 매출', '', '계산: 고정비 ÷ 마진율']);
 const sKRent = push(['고베 야칭+상점가비', SHOP.kRent, 'ヒライビル 3F 148,500 + 상점가비 9,000']);
 const sKUtil = push(['고베 공과금', SHOP.kUtil, '가정치']);
 const sKMkt = push(['고베 마케팅', SHOP.kMkt, '']);
@@ -81,8 +81,8 @@ const sKAlba = push(['고베 알바비 (1인 체제)', SHOP.kAlba, '본점과 �
 const sKCom = push(['고베 사장 직접 통근비', SHOP.kCommute, '石橋阪大前↔神戸三宮 왕복 780 × 22일']);
 const sKFixA = push(['고베 고정비 (알바 1인 체제)', `=${A(sKRent)}+${A(sKUtil)}+${A(sKMkt)}+${A(sKAlba)}`, '']);
 const sKFixO = push(['고베 고정비 (사장 직접)', `=${A(sKRent)}+${A(sKUtil)}+${A(sKMkt)}+${A(sKCom)}`, '']);
-const sKBe = push(['고베 손익분기 매출 (알바)', '', '= 알바 체제 고정비 ÷ 마진율']);
-const sKInit = push(['고베 초기비용', SHOP.kInit, '보증금·레이킨·중개·보증회사·첫달 야칭 (견적서)']);
+const sKBe = push(['고베 손익분기 매출 (알바)', '', '계산: 알바 체제 고정비 ÷ 마진율']);
+const sKInit = push(['고베 초기비용', SHOP.kInit, '견적 1,188,000 — 이미 지불(자산현황 「고베점 계약」)이라 0으로 입력']);
 const sKInitM = push(['고베 초기비용 월할 (첫 1년)', `=ROUND(${A(sKInit)}/12,0)`, '첫 1년 동안 매달 이만큼 갚는다고 보고 차감']);
 rows[sMargin][1] = `=${A(sGross)}-${A(sCtax)}`;
 rows[sHBe][1] = `=ROUND(${A(sHFix)}/${A(sMargin)},-3)`;
@@ -100,15 +100,15 @@ const sIn4 = push(['유모차 순수익', 200000, '드롭다운: 0~30만 — 차
 const sIn5 = push(['소득세·주민세 적립률', 0, '드롭다운: 0% / 5% / 10% / 15% / 20% — 소비세(②)와는 별개. 기본 0% = 다른 탭과 같이 소득세 미반영']);
 const sIn6 = push(['고베 초기비용', '첫 1년 월할 포함', '드롭다운: 첫 1년 월할 포함 / 제외(2년차 이후)']);
 const NONE = `${A(sIn3)}="${K_LABEL.none}"`;
-const sR1 = push(['본점 순이익', `=ROUND(${A(sIn1)}*${M}-${H_FIX},0)`, '= 본점 매출 × 마진율 − 본점 고정비']);
+const sR1 = push(['본점 순이익', `=ROUND(${A(sIn1)}*${M}-${H_FIX},0)`, '계산: 본점 매출 × 마진율 − 본점 고정비']);
 const sKf = push(['고베 고정비', `=IF(${NONE},0,IF(${A(sIn3)}="${K_LABEL.own}",${K_OWN},${K_ALBA}))`, '체제에 따라 ②의 고베 고정비 (미오픈이면 0)']);
-const sR2 = push(['고베 순이익', '', '= 고베 매출 × 마진율 − 고베 고정비 (미오픈이면 0)']);
-const sBiz = push(['사업이익 합계', '', '= 본점 + 고베 + 유모차']);
-const sTax = push(['소득세·주민세 적립', '', '= 사업이익 × 적립률 (적자면 0)']);
+const sR2 = push(['고베 순이익', '', '계산: 고베 매출 × 마진율 − 고베 고정비 (미오픈이면 0)']);
+const sBiz = push(['사업이익 합계', '', '계산: 본점 + 고베 + 유모차']);
+const sTax = push(['소득세·주민세 적립', '', '계산: 사업이익 × 적립률 (적자면 0)']);
 const sHouse = push(['가계 지출', `=-${HOUSE}`, '① 가계 지출 합계']);
 const sInit = push(['고베 초기비용 월할', `=IF(OR(${NONE},${A(sIn6)}<>"첫 1년 월할 포함"),0,-${K_INITM})`, '첫 1년 포함 시 ②의 월할 금액 (미오픈이면 0)']);
-const sSave = push(['★ 월 저금액', '', '= 사업이익 − 세금 − 가계 지출 − 초기비용 월할']);
-const sYear = push(['★ 연간 저금액', '', '= 월 저금액 × 12']);
+const sSave = push(['★ 월 저금액', '', '계산: 사업이익 − 세금 − 가계 지출 − 초기비용 월할']);
+const sYear = push(['★ 연간 저금액', '', '계산: 월 저금액 × 12']);
 rows[sR2][1] = `=IF(${NONE},0,ROUND(${A(sIn2)}*${M}-${A(sKf)},0))`;
 rows[sBiz][1] = `=${A(sR1)}+${A(sR2)}+${A(sIn4)}`;
 rows[sTax][1] = `=-ROUND(MAX(${A(sBiz)},0)*${A(sIn5)},0)`;

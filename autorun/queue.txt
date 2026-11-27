@@ -1,4 +1,4 @@
 # senba-ops 자동 실행 목록 — runner.sh 가 이 파일의 새 커밋을 감지하면 아래 스크립트를 순서대로 실행
 # 형식: sheets-scripts/이름.js (한 줄에 하나, #은 주석). runner 는 이 패턴 외에는 실행하지 않음.
-# 2026-11-27 (4차): 저금 시나리오 v3.2 — 소비세 간이 음식점 3.64%, 소득세 적립은 별도 선택(기본 0%) + 가계·가게 비용 노란 칸 수식 참조
-sheets-scripts/senba-savings4.js
+# 2026-11-27 (5차): 저금 시나리오 v3 메모 칸 #ERROR! 9칸만 텍스트로 수정 (사장님이 고친 노란 칸은 유지 — 탭 재생성 안 함)
+sheets-scripts/senba-savings4-memofix.js
