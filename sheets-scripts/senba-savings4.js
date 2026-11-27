@@ -2,6 +2,7 @@
 // v3.1: 가계 지출 항목과 가게 비용을 이 탭 안의 노란 칸으로 두고, 시뮬레이터·시나리오·매트릭스가 모두 그 칸을 수식으로 참조
 //       → 금액이 바뀌면 노란 칸만 고치면 탭 전체가 다시 계산됨 (스크립트를 다시 돌리면 아래 초기값으로 덮어써지니 주의)
 // 초기값: 가계 = 경영 대시보드 생활비(2026-11) · 본점 = 야칭·공과금 30만 + 마케팅 6.5만 + 알바 13만 · 고베 = 「고베 2호점」 탭(2026-11-10 개정)
+// v3.2: 소비세를 간이과세 음식점(제4종, 매출의 약 3.64%)으로 · 소득세·주민세 적립은 별도 선택(기본 0%)
 const path = require('path');
 const { google } = require(path.join('/opt/senba-sales-sync/node_modules/googleapis'));
 
@@ -28,7 +29,8 @@ const HOUSE_ITEMS = [   // 가계 지출 초기값 (경영 대시보드 생활�
   ['', '', ''],
 ];
 const SHOP = {   // 가게 비용 초기값
-  margin: 0.834197,                           // 세후 마진율 (소비세 간이 4.55% · 종이·박스 · 잡재료 4% 차감)
+  margin: 0.879697,                           // 소비세 전 마진율 (종이 180 + 박스 85엔/인 · 잡재료 4% 차감, 객단가 3,300 기준)
+  ctax: 0.036364,                             // 소비세 간이과세 제4종(음식점, 간주매입률 60%) = 10/110 × 40% ≈ 3.64% (서비스업 제5종이면 4.55%)
   hRent: 300000, hMkt: 65000, hAlba: 130000,  // 본점: 야칭·공과금 · 마케팅(구루나비·메타·인스타·MOGU) · 알바 1인 체제
   kRent: 157500, kUtil: 25000, kMkt: 20000, kAlba: 130000, kCommute: 780 * 22, kInit: 1188000,   // 고베
 };
@@ -38,7 +40,7 @@ const LISTS = [   // 시뮬레이터 드롭다운 목록 (순서 = 입력 칸 sI
   steps(0, 1000000, 50000),
   [K_LABEL.alba, K_LABEL.own, K_LABEL.none],
   [0, 50000, 100000, 150000, 200000, 250000, 300000],
-  [0, 0.1, 0.15, 0.2],
+  [0, 0.05, 0.1, 0.15, 0.2],
   ['첫 1년 월할 포함', '제외(2년차 이후)'],
 ];
 
@@ -64,7 +66,9 @@ blank();
 // ② 가게 비용
 const iSecS = push(['■ ② 가게 비용 — 금액 직접 수정']);
 const hS = push(['항목', '월 금액', '메모']);
-const sMargin = push(['세후 마진율', SHOP.margin, '매출 중 손에 남는 비율 — 소비세 간이 4.55%·종이 180+박스 85엔/인·잡재료 4% 차감']);
+const sGross = push(['마진율 (소비세 전)', SHOP.margin, '매출에서 종이 180+박스 85엔/인·잡재료 4%를 뺀 비율']);
+const sCtax = push(['소비세 (간이과세)', SHOP.ctax, '음식점 제4종 ≈ 3.64% (매출 대비) — 드로잉 체험이 서비스업 제5종으로 분류되면 4.55%']);
+const sMargin = push(['세후 마진율', '', '= 마진율 − 소비세 (매출 중 손에 남는 비율)']);
 const sHRent = push(['본점 야칭·공과금', SHOP.hRent, '']);
 const sHMkt = push(['본점 마케팅', SHOP.hMkt, '구루나비·메타 인증·인스타 홍보·MOGU']);
 const sHAlba = push(['본점 알바비', SHOP.hAlba, '아이미짱 1인 체제 (10월 실측 128,700)']);
@@ -80,6 +84,7 @@ const sKFixO = push(['고베 고정비 (사장 직접)', `=${A(sKRent)}+${A(sKUt
 const sKBe = push(['고베 손익분기 매출 (알바)', '', '= 알바 체제 고정비 ÷ 마진율']);
 const sKInit = push(['고베 초기비용', SHOP.kInit, '보증금·레이킨·중개·보증회사·첫달 야칭 (견적서)']);
 const sKInitM = push(['고베 초기비용 월할 (첫 1년)', `=ROUND(${A(sKInit)}/12,0)`, '첫 1년 동안 매달 이만큼 갚는다고 보고 차감']);
+rows[sMargin][1] = `=${A(sGross)}-${A(sCtax)}`;
 rows[sHBe][1] = `=ROUND(${A(sHFix)}/${A(sMargin)},-3)`;
 rows[sKBe][1] = `=ROUND(${A(sKFixA)}/${A(sMargin)},-3)`;
 blank();
@@ -92,14 +97,14 @@ const sIn1 = push(['본점 매출', 900000, '드롭다운: 60만~120만 (5만 �
 const sIn2 = push(['고베 매출', 700000, '드롭다운: 0~100만 (5만 단위) · 70만 = 22일 영업 하루 약 9.6명']);
 const sIn3 = push(['고베 체제', K_LABEL.alba, '드롭다운: 알바 1인 체제 / 사장 직접 / 미오픈']);
 const sIn4 = push(['유모차 순수익', 200000, '드롭다운: 0~30만 — 차량·보관·소모품 등 비용 뺀 뒤 손에 남는 금액']);
-const sIn5 = push(['세금 적립률', 0.15, '드롭다운: 0% / 10% / 15% / 20% — 소득세·주민세 가정치 (세무사 확인 권장)']);
+const sIn5 = push(['소득세·주민세 적립률', 0, '드롭다운: 0% / 5% / 10% / 15% / 20% — 소비세(②)와는 별개. 기본 0% = 다른 탭과 같이 소득세 미반영']);
 const sIn6 = push(['고베 초기비용', '첫 1년 월할 포함', '드롭다운: 첫 1년 월할 포함 / 제외(2년차 이후)']);
 const NONE = `${A(sIn3)}="${K_LABEL.none}"`;
 const sR1 = push(['본점 순이익', `=ROUND(${A(sIn1)}*${M}-${H_FIX},0)`, '= 본점 매출 × 마진율 − 본점 고정비']);
 const sKf = push(['고베 고정비', `=IF(${NONE},0,IF(${A(sIn3)}="${K_LABEL.own}",${K_OWN},${K_ALBA}))`, '체제에 따라 ②의 고베 고정비 (미오픈이면 0)']);
 const sR2 = push(['고베 순이익', '', '= 고베 매출 × 마진율 − 고베 고정비 (미오픈이면 0)']);
 const sBiz = push(['사업이익 합계', '', '= 본점 + 고베 + 유모차']);
-const sTax = push(['세금 적립', '', '= 사업이익 × 적립률 (적자면 0)']);
+const sTax = push(['소득세·주민세 적립', '', '= 사업이익 × 적립률 (적자면 0)']);
 const sHouse = push(['가계 지출', `=-${HOUSE}`, '① 가계 지출 합계']);
 const sInit = push(['고베 초기비용 월할', `=IF(OR(${NONE},${A(sIn6)}<>"첫 1년 월할 포함"),0,-${K_INITM})`, '첫 1년 포함 시 ②의 월할 금액 (미오픈이면 0)']);
 const sSave = push(['★ 월 저금액', '', '= 사업이익 − 세금 − 가계 지출 − 초기비용 월할']);
@@ -114,8 +119,8 @@ blank();
 const STROLLER = A(sIn4), TAX = A(sIn5);
 
 // 단계별 시나리오 (유모차·세금률은 시뮬레이터 값)
-const iSec2 = push(['■ 단계별 시나리오 — 유모차·세금률은 시뮬레이터 값 사용 · 고베 알바 1인 체제']);
-const h2 = push(['단계', '본점 매출', '고베 매출', '본점 순이익', '고베 순이익', '유모차', '세금 적립', '가계 지출', '★ 월 저금 (2년차~)', '★ 월 저금 (첫 1년)']);
+const iSec2 = push(['■ 단계별 시나리오 — 유모차·소득세 적립률은 시뮬레이터 값 사용 · 고베 알바 1인 체제']);
+const h2 = push(['단계', '본점 매출', '고베 매출', '본점 순이익', '고베 순이익', '유모차', '소득세 적립', '가계 지출', '★ 월 저금 (2년차~)', '★ 월 저금 (첫 1년)']);
 const SC = [
   ['지금 (고베 미오픈)', 900000, K_LABEL.none, 'alba'],
   ['보수 (본점 부진·고베 초기)', 750000, 400000, 'alba'],
@@ -143,7 +148,7 @@ const scNote = push(['※ 사장 직접 운영은 고베 상주라 유모차 병
 blank();
 
 // 매트릭스
-const iSec3 = push(['■ 매트릭스 — 월 저금액 (2년차~) · 유모차·세금률은 시뮬레이터 값 · 고베 알바 1인 체제']);
+const iSec3 = push(['■ 매트릭스 — 월 저금액 (2년차~) · 유모차·소득세 적립률은 시뮬레이터 값 · 고베 알바 1인 체제']);
 const KS = [300000, 400000, 500000, 600000, 700000, 800000];
 const HS = [700000, 800000, 900000, 1000000, 1100000];
 const h3 = push(['본점 ↓ / 고베 →', K_LABEL.none, ...KS]);
@@ -161,8 +166,8 @@ const mxNote = push(['※ 첫 1년은 고베 오픈 칸에서 초기비용 월�
 blank();
 
 // 유모차 순수익별 (본점·고베는 시뮬레이터 값)
-const iSec4 = push(['■ 유모차 순수익별 — 본점·고베 매출과 체제·세금률은 시뮬레이터 값 사용']);
-const h4 = push(['유모차 순수익', '사업이익', '세금 적립', '★ 월 저금 (2년차~)', '★ 월 저금 (첫 1년)', '연간 (2년차~)']);
+const iSec4 = push(['■ 유모차 순수익별 — 본점·고베 매출과 체제·소득세 적립률은 시뮬레이터 값 사용']);
+const h4 = push(['유모차 순수익', '사업이익', '소득세 적립', '★ 월 저금 (2년차~)', '★ 월 저금 (첫 1년)', '연간 (2년차~)']);
 const stStart = rows.length;
 for (const s of [0, 100000, 150000, 200000, 300000]) {
   const n = rows.length + 1;
@@ -175,7 +180,9 @@ const iSec5 = push(['■ 읽는 법·주의']);
 const h5 = push(['항목', '내용']);
 const notes = [
   ['고치는 법', '금액이 바뀌면 ①·② 노란 칸만 수정 → 시뮬레이터·시나리오·매트릭스가 자동 재계산. 이 탭을 스크립트(senba-savings4.js)로 다시 만들면 초기값으로 돌아가니, 바꾼 금액은 스크립트에도 알려 주세요'],
-  ['유모차가 핵심', '유모차 순수익 10만이 늘 때마다 저금은 약 (1 − 세금률) × 10만씩 늘어남 — 유모차 0이면 목표 매출에서도 적자'],
+  ['소비세 vs 소득세', '소비세(②, 매출의 3.64%)는 마진율에 이미 빠져 있음 · 소득세·주민세는 이익에 붙는 별도 세금이라 시뮬레이터 적립률로 따로 선택 (기본 0%) — 이익 월 70만 수준이면 실제로는 월 10만 안팎이 나올 수 있어 연말에 몰아서 나가는 돈으로 대비 필요'],
+  ['업종 구분', '간이과세 업종은 매출 내용으로 정해짐 — 드로잉 체험료는 서비스업(제5종 4.55%), 음료·음식 제공분은 음식점(제4종 3.64%)으로 나뉠 수 있음. 세무사에게 확인 후 ②의 소비세 칸만 바꾸면 됨'],
+  ['유모차가 핵심', '유모차 순수익 10만이 늘 때마다 저금은 약 (1 − 소득세 적립률) × 10만씩 늘어남'],
   ['고베 손익분기', '고베 매출이 ②의 손익분기 밑이면 고베를 여는 것보다 안 여는 쪽이 저금이 많음 (매트릭스 미오픈 열과 비교)'],
   ['국민건강보험', '소득 연동이라 이익이 늘면 보험료도 오름 — ①의 건강보험료를 올려서 반영'],
   ['미반영', '고베 집기·간판·재료 초기 재고 · 차량 교체 · 연말 일시 지출(에어컨·가구 등) · 소비세 본과세 전환(매출 1천만 초과 2년 후)'],
@@ -188,7 +195,7 @@ const iN = push(['※ 이전 「저금 시나리오 v2 (고베 20만)」 탭은 
 
 // 요약 줄 (시뮬레이터 결과를 문장으로)
 const man = r => `TEXT(${A(r)}/10000,"0.0")&"만"`;
-rows[iSub][0] = `="현재 시뮬레이터: 본점 "&TEXT(${A(sIn1)}/10000,"0")&"만 · 고베 "&IF(${NONE},"미오픈",TEXT(${A(sIn2)}/10000,"0")&"만")&" · 유모차 "&TEXT(${A(sIn4)}/10000,"0")&"만 → 사업이익 "&${man(sBiz)}&" · 세금 "&TEXT(-${A(sTax)}/10000,"0.0")&"만 · 가계 "&TEXT(${HOUSE}/10000,"0.0")&"만 → ★ 월 저금 "&${man(sSave)}&" (연 "&TEXT(${A(sYear)}/10000,"0")&"만)"`;
+rows[iSub][0] = `="현재 시뮬레이터: 본점 "&TEXT(${A(sIn1)}/10000,"0")&"만 · 고베 "&IF(${NONE},"미오픈",TEXT(${A(sIn2)}/10000,"0")&"만")&" · 유모차 "&TEXT(${A(sIn4)}/10000,"0")&"만 → 사업이익 "&${man(sBiz)}&" · 소득세 적립 "&TEXT(-${A(sTax)}/10000,"0.0")&"만 · 가계 "&TEXT(${HOUSE}/10000,"0.0")&"만 → ★ 월 저금 "&${man(sSave)}&" (연 "&TEXT(${A(sYear)}/10000,"0")&"만)"`;
 
 (async () => {
   const auth = new google.auth.GoogleAuth({ keyFile: '/opt/senba-sales-sync/service-account.json', scopes: ['https://www.googleapis.com/auth/spreadsheets'] });
@@ -251,8 +258,9 @@ rows[iSub][0] = `="현재 시뮬레이터: 본점 "&TEXT(${A(sIn1)}/10000,"0")&"
   costTable(hH, hiStart, hTotal + 1, [[hiStart, hiEnd]], [hTotal]);
   cellFmt(range(hiStart, hiEnd, 0, 1), { backgroundColor: C.sim }, 'userEnteredFormat.backgroundColor');   // 항목명도 수정 가능
   cellFmt(range(hTotal, hTotal + 1, 0, 2), { backgroundColor: C.gold, textFormat: { bold: true, fontSize: 11 } }, 'userEnteredFormat(backgroundColor,textFormat)');
-  costTable(hS, sMargin, sKInitM + 1, [[sMargin, sHFix], [sKRent, sKFixA], [sKInit, sKInit + 1]], [sHFix, sHBe, sKFixA, sKFixO, sKBe, sKInitM]);
-  cellFmt(range(sMargin, sMargin + 1, 1, 2), { numberFormat: { type: 'NUMBER', pattern: '0.000000' } }, 'userEnteredFormat.numberFormat');
+  costTable(hS, sGross, sKInitM + 1, [[sGross, sMargin], [sHRent, sHFix], [sKRent, sKFixA], [sKInit, sKInit + 1]], [sMargin, sHFix, sHBe, sKFixA, sKFixO, sKBe, sKInitM]);
+  for (const r of [sGross, sMargin]) cellFmt(range(r, r + 1, 1, 2), { numberFormat: { type: 'NUMBER', pattern: '0.0000' } }, 'userEnteredFormat.numberFormat');
+  cellFmt(range(sCtax, sCtax + 1, 1, 2), { numberFormat: { type: 'PERCENT', pattern: '0.00%' } }, 'userEnteredFormat.numberFormat');
 
   // ③ 시뮬레이터
   cellFmt(range(sIn1, sYear + 1, 0, 1), { textFormat: { bold: true } }, 'userEnteredFormat.textFormat.bold');
