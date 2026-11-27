@@ -7,6 +7,8 @@ const { google } = require(path.join('/opt/senba-sales-sync/node_modules/googlea
 const SHEET_ID = '1OiQnj_slGsZvQ8BBQBP6a6eK3_j4J35nCReSTT2HRgc';
 const TAB = '저금 시나리오 v3 (유모차 20만)';
 const NCOL = 10;
+const LIST_COL = 11;                          // 드롭다운 보조 목록 시작 열(L) — 숨김 처리
+const steps = (a, b, d) => Array.from({ length: Math.round((b - a) / d) + 1 }, (_, i) => a + i * d);
 
 const M = 0.834197;                           // 세후 마진율 (소비세 간이 4.55% · 종이·박스 · 잡재료 4% 차감)
 const H_FIX = 300000 + 65000 + 130000;        // 본점: 야칭·공과금 + 마케팅(구루나비·메타·인스타·MOGU) + 알바 1인 체제(1,200엔)
@@ -29,6 +31,14 @@ const be = f => Math.round(f / M);
 const man = n => (n / 10000).toFixed(1) + '만';
 const yen = n => Math.round(n).toLocaleString('ja-JP');
 
+const LISTS = [   // 시뮬레이터 드롭다운 목록 (순서 = 입력 칸 sIn1~sIn6)
+  steps(600000, 1200000, 50000),
+  steps(0, 1000000, 50000),
+  [K_LABEL.alba, K_LABEL.own, K_LABEL.none],
+  [0, 50000, 100000, 150000, 200000, 250000, 300000],
+  [0, 0.1, 0.15, 0.2],
+  ['첫 1년 월할 포함', '제외(2년차 이후)'],
+];
 const rows = [];
 const push = r => { rows.push(r); return rows.length - 1; };
 const blank = () => push([]);
@@ -122,11 +132,14 @@ const iN = push(['※ 전제가 바뀌면 senba-savings4.js 상수만 수정 후
   const old = meta.data.sheets.find(s => s.properties.title === TAB);
   const reqs0 = [];
   if (old) reqs0.push({ deleteSheet: { sheetId: old.properties.sheetId } });
-  reqs0.push({ addSheet: { properties: { title: TAB, gridProperties: { rowCount: rows.length + 5, columnCount: NCOL } } } });
+  reqs0.push({ addSheet: { properties: { title: TAB, gridProperties: { rowCount: rows.length + 5, columnCount: LIST_COL + 6 } } } });
   const created = await sheets.spreadsheets.batchUpdate({ spreadsheetId: SHEET_ID, requestBody: { requests: reqs0 } });
   const sid = created.data.replies[old ? 1 : 0].addSheet.properties.sheetId;
 
   await sheets.spreadsheets.values.update({ spreadsheetId: SHEET_ID, range: `'${TAB}'!A1`, valueInputOption: 'RAW', requestBody: { values: rows } });
+  const maxLen = Math.max(...LISTS.map(l => l.length));
+  const listRows = Array.from({ length: maxLen }, (_, i) => LISTS.map(l => l[i] ?? ''));
+  await sheets.spreadsheets.values.update({ spreadsheetId: SHEET_ID, range: `'${TAB}'!${String.fromCharCode(65 + LIST_COL)}1`, valueInputOption: 'RAW', requestBody: { values: listRows } });
   const F = r => r + 1, B = r => `B${F(r)}`;
   const isNone = `${B(sIn3)}="${K_LABEL.none}"`;
   await sheets.spreadsheets.values.batchUpdate({
@@ -184,14 +197,10 @@ const iN = push(['※ 전제가 바뀌면 senba-savings4.js 상수만 수정 후
   for (let i = sIn1; i <= sYear; i++) merge(i, i + 1, 2, NCOL);
   cellFmt(range(sIn1, sYear + 1, 2, NCOL), { textFormat: { fontSize: 9, foregroundColor: C.note } }, 'userEnteredFormat.textFormat');
   R.push({ updateBorders: { range: range(sIn1, sYear + 1, 0, 2), top: gb, bottom: gb, left: gb, right: gb, innerHorizontal: ib, innerVertical: ib } });
-  const dd = (row, vals) => R.push({ setDataValidation: { range: range(row, row + 1, 1, 2), rule: { condition: { type: 'ONE_OF_LIST', values: vals.map(v => ({ userEnteredValue: String(v) })) }, strict: true, showCustomUi: true } } });
-  const steps = (a, b, d) => Array.from({ length: (b - a) / d + 1 }, (_, i) => a + i * d);
-  dd(sIn1, steps(600000, 1200000, 50000));
-  dd(sIn2, steps(0, 1000000, 50000));
-  dd(sIn3, [K_LABEL.alba, K_LABEL.own, K_LABEL.none]);
-  dd(sIn4, [0, 50000, 100000, 150000, 200000, 250000, 300000]);
-  dd(sIn5, [0, 0.1, 0.15, 0.2]);
-  dd(sIn6, ['첫 1년 월할 포함', '제외(2년차 이후)']);
+  const COLL = c => String.fromCharCode(65 + c);
+  const dd = (row, k) => R.push({ setDataValidation: { range: range(row, row + 1, 1, 2), rule: { condition: { type: 'ONE_OF_RANGE', values: [{ userEnteredValue: `='${TAB}'!${COLL(LIST_COL + k)}1:${COLL(LIST_COL + k)}${LISTS[k].length}` }] }, strict: true, showCustomUi: true } } });
+  LISTS.forEach((_, k) => dd([sIn1, sIn2, sIn3, sIn4, sIn5, sIn6][k], k));
+  R.push({ updateDimensionProperties: { range: { sheetId: sid, dimension: 'COLUMNS', startIndex: LIST_COL, endIndex: LIST_COL + LISTS.length }, properties: { hiddenByUser: true }, fields: 'hiddenByUser' } });
 
   const table = (hRow, nData, cols, { numFrom = 1 } = {}) => {
     const d0 = hRow + 1, d1 = hRow + 1 + nData;
